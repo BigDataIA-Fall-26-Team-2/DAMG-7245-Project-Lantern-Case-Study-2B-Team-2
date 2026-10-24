@@ -1,0 +1,10 @@
+pandas>=2.2
+pyarrow>=14
+requests>=2.31
+pyyaml>=6
+matplotlib>=3.8
+jupyterlab>=4
+pytest>=8
+dvc>=3.50
+# Optional, for notebook 07 (verify your dependency). Pin the exact version your instructor announces:
+# edgartools==<pinned version>

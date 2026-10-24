@@ -1,0 +1,68 @@
+adsh	tag	version	ddate	qtrs	uom	segments	dimn	value	footnote	footlen
+0009000001-26-000101	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD		0	169416000.0000		0
+0009000001-26-000101	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Northwind Logistics LLC | S + 5.25% (9.55%) | 06/2030()	1	17460000.0000		0
+0009000001-26-000101	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Harbor Point Software Inc. | S + 5.25% (9.55%) | 06/2030()	1	18506000.0000		0
+0009000001-26-000101	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Cedar Ridge Dental Partners LLC | S + 5.25% (9.55%) | 06/2030()	1	19560000.0000		0
+0009000001-26-000101	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Bluefin Packaging Holdings Corp. | S + 5.25% (9.55%) | 06/2030()	1	20622000.0000		0
+0009000001-26-000101	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Summit Lane HVAC Services LLC | S + 5.25% (9.55%) | 06/2030()	1	21692000.0000		0
+0009000001-26-000101	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Ironwood Data Systems Inc. | S + 5.25% (9.55%) | 06/2030()	1	22770000.0000		0
+0009000001-26-000101	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Meadowbrook Pet Care LLC | S + 5.25% (9.55%) | 06/2030()	1	23856000.0000		0
+0009000001-26-000101	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Granite Peak Insurance Brokers LLC | S + 5.25% (9.55%) | 06/2030()	1	24950000.0000		0
+0009000002-26-000202	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD		0	158760000.0000		0
+0009000002-26-000202	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Cedar Ridge Dental Partners LLC | S + 5.25% (9.55%) | 06/2030()	1	14700000.0000		0
+0009000002-26-000202	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Bluefin Packaging Holdings Corp. | S + 5.25% (9.55%) | 06/2030()	1	16170000.0000		0
+0009000002-26-000202	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Summit Lane HVAC Services LLC | S + 5.25% (9.55%) | 06/2030()	1	17640000.0000		0
+0009000002-26-000202	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Ironwood Data Systems Inc. | S + 5.25% (9.55%) | 06/2030()	1	19110000.0000		0
+0009000002-26-000202	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Meadowbrook Pet Care LLC | S + 5.25% (9.55%) | 06/2030()	1	20580000.0000		0
+0009000002-26-000202	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Granite Peak Insurance Brokers LLC | S + 5.25% (9.55%) | 06/2030()	1	22050000.0000		0
+0009000002-26-000202	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=Second Lien Senior Secured Loan | Lumen Bay Analytics Inc. | S + 5.25% (9.55%) | 06/2030()	1	23520000.0000		0
+0009000002-26-000202	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=Second Lien Senior Secured Loan | Silver Creek Foods LLC | S + 5.25% (9.55%) | 06/2030()	1	24990000.0000		0
+0009000003-26-000301	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD		0	143416000.0000		0
+0009000003-26-000301	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Summit Lane HVAC Services LLC | S + 5.25% (9.55%) | 06/2030()	1	13790000.0000		0
+0009000003-26-000301	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Ironwood Data Systems Inc. | S + 5.25% (9.55%) | 06/2030()	1	14972000.0000		0
+0009000003-26-000301	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Meadowbrook Pet Care LLC | S + 5.25% (9.55%) | 06/2030()	1	16154000.0000		0
+0009000003-26-000301	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Granite Peak Insurance Brokers LLC | S + 5.25% (9.55%) | 06/2030()	1	17336000.0000		0
+0009000003-26-000301	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Lumen Bay Analytics Inc. | S + 5.25% (9.55%) | 06/2030()	1	18518000.0000		0
+0009000003-26-000301	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Silver Creek Foods LLC | S + 5.25% (9.55%) | 06/2030()	1	19700000.0000		0
+0009000003-26-000301	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Copperline Telecom Holdings LLC | S + 5.25% (9.55%) | 06/2030()	1	20882000.0000		0
+0009000003-26-000301	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Riverton Learning Inc. | S + 5.25% (9.55%) | 06/2030()	1	22064000.0000		0
+0009000003-26-000301	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIssuerAffiliationAxis(us-gaap/2025)=InvestmentUnaffiliatedIssuerMember(us-gaap/2025)	1	80770000.0000		0
+0009000003-26-000301	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIssuerAffiliationAxis(us-gaap/2025)=InvestmentAffiliatedIssuerNoncontrolledMember(us-gaap/2025)	1	40582000.0000		0
+0009000003-26-000301	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIssuerAffiliationAxis(us-gaap/2025)=InvestmentAffiliatedIssuerControlledMember(us-gaap/2025)	1	22064000.0000		0
+0009000004-26-000401	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentTypeAxis(us-gaap/2025)=UnfundedLoanCommitmentsMember(0009000004-26-000401)	1	-3000000.0000		0
+0009000004-26-000401	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD		0	146490000.0000		0
+0009000004-26-000401	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Meadowbrook Pet Care LLC | S + 5.25% (9.55%) | 06/2030()	1	18810000.0000		0
+0009000004-26-000401	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Granite Peak Insurance Brokers LLC | S + 5.25% (9.55%) | 06/2030()	1	19800000.0000		0
+0009000004-26-000401	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Lumen Bay Analytics Inc. | S + 5.25% (9.55%) | 06/2030()	1	20790000.0000		0
+0009000004-26-000401	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Silver Creek Foods LLC | S + 5.25% (9.55%) | 06/2030()	1	21780000.0000		0
+0009000004-26-000401	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Copperline Telecom Holdings LLC | S + 5.25% (9.55%) | 06/2030()	1	22770000.0000		0
+0009000004-26-000401	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Senior Secured Loan | Riverton Learning Inc. | S + 5.25% (9.55%) | 06/2030()	1	23760000.0000		0
+0009000004-26-000401	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Revolver | Copperline Telecom Holdings LLC | S + 5.25% (9.55%) | 06/2030()	1	9900000.0000		0
+0009000004-26-000401	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=First Lien Delayed Draw Term Loan | Riverton Learning Inc. | S + 5.25% (9.55%) | 06/2030()	1	11880000.0000		0
+0009000005-26-000501	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD		0	45965000.0000		0
+0009000005-26-000501	InvestmentFairValueCustom	0009000005-26-000501	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=Growth Capital Term Loan | Harbor Point Software Inc. | S + 7.00% (11.30%) | 06/2030()	1	5820000.0000		0
+0009000005-26-000501	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=Growth Capital Term Loan | Cedar Ridge Dental Partners LLC | S + 7.00% (11.30%) | 06/2030()	1	6305000.0000		0
+0009000005-26-000501	InvestmentFairValueCustom	0009000005-26-000501	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=Growth Capital Term Loan | Bluefin Packaging Holdings Corp. | S + 7.00% (11.30%) | 06/2030()	1	6790000.0000		0
+0009000005-26-000501	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=Growth Capital Term Loan | Summit Lane HVAC Services LLC | S + 7.00% (11.30%) | 06/2030()	1	7275000.0000		0
+0009000005-26-000501	InvestmentFairValueCustom	0009000005-26-000501	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=Growth Capital Term Loan | Ironwood Data Systems Inc. | S + 7.00% (11.30%) | 06/2030()	1	7760000.0000		0
+0009000005-26-000501	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=Growth Capital Term Loan | Meadowbrook Pet Care LLC | S + 7.00% (11.30%) | 06/2030()	1	8245000.0000		0
+0009000005-26-000501	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=Warrants to Purchase Series C Preferred Stock | Harbor Point Software Inc.()	1	640000.0000		0
+0009000005-26-000501	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=Series B Preferred Stock | Bluefin Packaging Holdings Corp.()	1	2500000.0000		0
+0009000005-26-000501	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentIdentifierAxis(us-gaap/2025)=Common Stock | Lumen Bay Analytics Inc.()	1	630000.0000		0
+0009000006-26-000601	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD		0	99500000.0000		0
+0009000006-26-000601	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentPositionCustomAxis(0009000006-26-000601)=First Lien Senior Secured Loan | Bluefin Packaging Holdings Corp. | S + 5.25% (9.55%) | 06/2030()	1	8955000.0000		0
+0009000006-26-000601	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentPositionCustomAxis(0009000006-26-000601)=First Lien Senior Secured Loan | Summit Lane HVAC Services LLC | S + 5.25% (9.55%) | 06/2030()	1	9950000.0000		0
+0009000006-26-000601	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentPositionCustomAxis(0009000006-26-000601)=First Lien Senior Secured Loan | Ironwood Data Systems Inc. | S + 5.25% (9.55%) | 06/2030()	1	10945000.0000		0
+0009000006-26-000601	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentPositionCustomAxis(0009000006-26-000601)=First Lien Senior Secured Loan | Meadowbrook Pet Care LLC | S + 5.25% (9.55%) | 06/2030()	1	11940000.0000		0
+0009000006-26-000601	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentPositionCustomAxis(0009000006-26-000601)=First Lien Senior Secured Loan | Granite Peak Insurance Brokers LLC | S + 5.25% (9.55%) | 06/2030()	1	12935000.0000		0
+0009000006-26-000601	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentPositionCustomAxis(0009000006-26-000601)=First Lien Senior Secured Loan | Lumen Bay Analytics Inc. | S + 5.25% (9.55%) | 06/2030()	1	13930000.0000		0
+0009000006-26-000601	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentPositionCustomAxis(0009000006-26-000601)=First Lien Senior Secured Loan | Silver Creek Foods LLC | S + 5.25% (9.55%) | 06/2030()	1	14925000.0000		0
+0009000006-26-000601	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD	InvestmentPositionCustomAxis(0009000006-26-000601)=First Lien Senior Secured Loan | Copperline Telecom Holdings LLC | S + 5.25% (9.55%) | 06/2030()	1	15920000.0000		0
+0009000001-26-000101	InvestmentOwnedAtFairValue	us-gaap/2025	20251231	0	USD		0	120610000.0000		0
+0009000002-26-000201	InvestmentOwnedAtFairValue	us-gaap/2025	20260630	0	USD		0	330750000.0000		0
+0009000001-26-000101	NetAssets	us-gaap/2025	20260630	0	USD		0	150000000.0000		0
+0009000002-26-000202	NetAssets	us-gaap/2025	20260630	0	USD		0	140000000.0000		0
+0009000003-26-000301	NetAssets	us-gaap/2025	20260630	0	USD		0	120000000.0000		0
+0009000004-26-000401	NetAssets	us-gaap/2025	20260630	0	USD		0	110000000.0000		0
+0009000005-26-000501	NetAssets	us-gaap/2025	20260630	0	USD		0	60000000.0000		0
+0009000006-26-000601	NetAssets	us-gaap/2025	20260630	0	USD		0	70000000.0000		0

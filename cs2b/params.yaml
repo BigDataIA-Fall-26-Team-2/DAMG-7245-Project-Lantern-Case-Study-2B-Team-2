@@ -1,0 +1,15 @@
+# Lab 2B / Case Study 2B parameters. Every notebook and script reads this file.
+release: "2026_05"            # one month for now; becomes "2026q2" once the combine step exists
+releases: ["2026_04", "2026_05", "2026_06"]   # Team 2 quarter 2026q2, three monthly SEC ZIPs
+data:
+  use_fixture: false           # real data
+  raw_dir: data/raw
+  fixture_dir: data/fixture
+sec:
+  user_agent: "Sai Guna Vardhan Vudatala vudatala.s@northeastern.edu"   # the SEC requires a name and an email
+  base_url: "https://www.sec.gov/files/datastandardsinnovation/data/business-development-company-bdc-data-sets/"
+reconcile:
+  tolerance: 0.01             # admit a filing when |holdings - filed| / filed <= tolerance
+outputs:
+  panel: outputs/panel
+  reports: reports
