@@ -1,0 +1,6 @@
+[core]
+    remote = storage
+['remote "storage"']
+    url = s3://damg7245-team2-lantern-cs2b
+    region = us-east-1
+    allow_anonymous_login = true
