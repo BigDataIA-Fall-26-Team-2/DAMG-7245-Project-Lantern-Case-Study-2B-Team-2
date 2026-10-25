@@ -11,6 +11,11 @@ from .load import load_sub, load_tag, load_soi, soi_header
 from .mapping import map_soi_columns, soi_usecols, to_canonical
 from .paths import repo_root
 
+# Filers that list the portfolios of their unconsolidated JVs tag each JV row
+# with this axis. Kept as `subsidiary` so two JVs holding the same loan stay
+# two holdings instead of being merged as a "conflict".
+SUBSIDIARY_AXIS = "Investment Company, Nonconsolidated Subsidiary Axis"
+
 
 def release_dirs(params: dict, root=None) -> dict:
     """{month: folder} for every month in params['releases'] (or the single release)."""
@@ -45,7 +50,8 @@ def load_tag_all(dirs: dict) -> pd.DataFrame:
 
 
 def load_soi_all(dirs: dict, tag=None) -> pd.DataFrame:
-    """Canonical SOI rows of every month, with `release` and per-month `soi_row`."""
+    """Canonical SOI rows of every month, with `release`, per-month `soi_row`
+    and `subsidiary` (the JV a row belongs to, if the filer tags one)."""
     tag = load_tag_all(dirs) if tag is None else tag
     parts = []
     for m, d in dirs.items():
@@ -53,8 +59,13 @@ def load_soi_all(dirs: dict, tag=None) -> pd.DataFrame:
             continue
         header = soi_header(d)
         colmap = map_soi_columns(header, tag)
-        soi = load_soi(d, usecols=soi_usecols(header, colmap))
+        cols = soi_usecols(header, colmap)
+        if SUBSIDIARY_AXIS in header:
+            cols.append(SUBSIDIARY_AXIS)
+        soi = load_soi(d, usecols=cols)
         can = to_canonical(soi, colmap)
+        can["subsidiary"] = (soi[SUBSIDIARY_AXIS]
+                             if SUBSIDIARY_AXIS in soi.columns else pd.NA)
         can.insert(0, "release", m)
         parts.append(can)
     return pd.concat(parts, ignore_index=True)

@@ -5,7 +5,7 @@ from .mapping import CANONICAL
 
 KEY = ["adsh", "ddate", "identifier"]
 TEXT = ["investment_type", "industry", "affiliation"]
-META = ["cik", "name", "form", "period", "cstm", "inlineurl",
+META = ["release", "cik", "name", "form", "period", "cstm", "inlineurl",
         "is_current"]
 
 
@@ -21,12 +21,15 @@ def split_periods(df, sub=None) -> pd.DataFrame:
 
 
 def coalesce_holdings(df: pd.DataFrame) -> pd.DataFrame:
-    """One row per (filing, date, identifier), first non-null value
-    per field; n_conflicts counts fields whose values disagree."""
+    """One row per (filing, date, identifier[, subsidiary]), first non-null
+    value per field; n_conflicts counts fields whose values disagree.
+    `subsidiary` (the unconsolidated JV a row belongs to) joins the key when
+    present, so two JVs holding the same loan stay two holdings."""
     rows = df[df["identifier"].notna()].copy()
     fields = [f for f in list(CANONICAL) + TEXT if f in rows]
     meta = [c for c in META if c in rows]
-    g = rows.groupby(KEY, sort=False, dropna=False)
+    key = KEY + (["subsidiary"] if "subsidiary" in rows else [])
+    g = rows.groupby(key, sort=False, dropna=False)
     out = g[meta + fields].first()
     out["source_rows"] = g["soi_row"].apply(
         lambda s: ";".join(map(str, s)))
