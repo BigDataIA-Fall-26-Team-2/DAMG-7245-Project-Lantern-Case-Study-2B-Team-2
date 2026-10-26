@@ -233,3 +233,16 @@ def test_rollforward_copy_rule_drops_only_bare_twins():
         "source_rows": [str(i) for i in range(5)]})
     drop, _ = clean.rule_rollforward_copies(h)
     assert drop.tolist() == [False, True, False, False, False], drop.tolist()
+
+
+def test_total_rule_spares_companies_named_total():
+    # Real borrowers named "Total ..." carry a company suffix or a maturity
+    # date; true totals carry neither.
+    h = pd.DataFrame({
+        "identifier": ["Total Investments at Fair Value", "Total Equity",
+                       "Total Expert, Inc. | Growth Capital Loan",
+                       "Total Access Elevator, LLC  Term Debt",
+                       "PAI Pharma Total Investments First Lien - Revolver Maturity Date 02/13/32"],
+        "adsh": ["x"] * 5, "source_rows": [str(i) for i in range(5)]})
+    drop, _ = clean.rule_totals(h)
+    assert drop.tolist() == [True, True, False, False, False], drop.tolist()

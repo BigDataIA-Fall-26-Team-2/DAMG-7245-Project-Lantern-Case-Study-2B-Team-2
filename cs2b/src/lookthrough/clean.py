@@ -14,8 +14,16 @@ def _matches(h, pattern):
         pattern, case=False, regex=True, na=False)
 
 
+# A real holding can start with "Total": companies named "Total Expert,
+# Inc." or "Total Access Elevator, LLC", or a loan described with a maturity
+# date. Totals never carry a company suffix or a maturity date.
+NOT_A_TOTAL = (r"\b(?:llc|inc|corp|ltd|limited|l\.?p|gmbh|holdings)\b\.?"
+               r"|maturity date")
+
+
 def rule_totals(h: pd.DataFrame):
-    return _matches(h, TOTAL), "identifier names a total or subtotal"
+    return (_matches(h, TOTAL) & ~_matches(h, NOT_A_TOTAL),
+            "identifier names a total or subtotal")
 
 
 # A money-market fund the filer itself lists as a short-term investment is

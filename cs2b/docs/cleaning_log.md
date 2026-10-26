@@ -16,6 +16,62 @@ SOI row numbers restart in each monthly file, so an example names its month.
 | + filer-aware `rule_cash` | 80 | 28.2% |
 | + `rule_issuer_subtotals` | 86 | 40.9% |
 | + `rule_rollforward_copies` | 90 | 43.4% |
+| + `rule_totals` false positives fixed | 90 | 43.5% |
+
+## rule_totals (starter kit, false positives fixed)
+
+**Artifact.** Schedules include total and subtotal lines ("Total Investments at Fair Value",
+"Total First Lien Secured Debt", "TOTAL INVESTMENTS - 280.5%"). Counting them adds the same
+dollars again. Example: Lord Abbett Private Credit Fund, adsh 0000930413-26-001612, SOI row
+163030, "Total Investments at Fair Value", $1,413.0M.
+
+**False positives found.** The starter pattern matches any identifier that starts with
+"Total", and four real borrowers do: Total Expert, Inc. (a TriplePoint borrower), Total Access
+Elevator, LLC, Total Power Limited and Total Safety Holdings, LLC. It also matched one real
+PAI Pharma revolver whose description contains "Total Investments" beside a maturity date.
+
+**Change.** A row is not a total when its identifier carries a company suffix (LLC, Inc., Corp.,
+Ltd., Limited, L.P., GmbH, Holdings) or a maturity date (`NOT_A_TOTAL`). True totals carry
+neither. Rows dropped: 29 (was 42); the 13 kept rows are real holdings.
+
+**Effect.** TriplePoint Venture Growth (adsh 0001580345-26-000021) goes −2.85% → 0.00% and is
+admitted: its Total Expert loan ($22.1M, principal $22.5M) had been dropped. TriplePoint Private
+Venture Credit (adsh 0001792509-26-000017) goes +0.41% → +2.36% and is no longer admitted. Its
+Total Expert loan ($7.35M, principal $7.5M, SOI row 163022) is also real; the earlier admission
+came from wrongly dropping it, which happened to offset a separate ~$9.1M overcount. That
+overcount is left for triage rather than hidden. Net admitted filings unchanged at 90;
+share of dollars 43.4% → 43.5%.
+
+**Tests.** Starter `test_total_rule_spares_ordinary_names` still passes;
+`test_total_rule_spares_companies_named_total` covers the fix.
+
+## rule_cash (starter kit, made filer-aware)
+
+**Artifact.** Some schedules list cash and money-market lines. Whether the filed total includes
+them varies by filer, and the filer's own label says which: a money-market fund presented as a
+*short-term investment* is part of the investment portfolio and is in the total; a line presented
+as *cash and cash equivalents* is not. The starter rule dropped every such line.
+
+**Change.** `rule_cash` still drops cash and money-market lines, except those whose identifier
+labels them a short-term investment (`SHORT_TERM_INV`).
+
+**Examples.**
+- Kept: Palmer Square Capital BDC, adsh 0001193125-26-207523 (2026_05), SOI row 143944,
+  "Short-Term Investments Fidelity Investments Money Market Government Portfolio", $23.37M.
+  Gap −2.02% → 0.000%. Great Elm Capital, adsh 0001193125-26-204228, SOI row 120300,
+  "Short-Term Investments Money Market", $9.60M. Gap −3.47% → 0.000%.
+- Still dropped: Blackstone Secured Lending, adsh 0001736035-26-000010, SOI row 137249,
+  "Other Cash and Cash Equivalents", $305.8M. It reconciles (0.000%) only with its cash lines dropped.
+
+**Rows affected.** 36 current-period lines dropped (was 38; the 2 short-term-investment lines are now kept).
+
+**Effect.** 2 filings newly admitted, none harmed.
+
+**Limitation.** The pattern matches the words "money market" anywhere in an identifier, so a
+borrower with those words in its name would be dropped. No such borrower appears in 2026q2
+(all 38 matching lines were checked).
+
+**Test.** `test_cash_rule_keeps_money_market_labelled_short_term_investment`.
 
 ## rule_jv_portfolio
 
@@ -121,107 +177,35 @@ investigation.
 
 **Test.** `test_rollforward_copy_rule_drops_only_bare_twins`.
 
-## rule_totals (starter kit)
+## Investigated, no rule: unfunded commitments (negative values)
 
-To be completed: verify the example in `reports/cleaning_log.csv` in its filing.
+**What we found.** 7,166 current-period holdings in 107 filings carry a negative fair value,
+totalling −$494.9M (about 0.09% of the $542.2bn attempted). 4,225 of them are named as
+revolvers, delayed-draw loans or unfunded commitments: the negative value is the unrealized
+loss on the undrawn part of a commitment.
 
-## rule_cash (starter kit, made filer-aware)
+**Why no rule.** BDCs net these into the investment total they file. Manulife Private Credit
+Fund (adsh 0001193125-26-219274) reconciles at 0.00% with its line "Short-term investments 9.6%
+| Less unfunded loan commitments (61.8%)" (−$102.9M) included. Dropping every negative value
+was tested: 4 admitted filings would fail (Manulife, Oaktree Specialty Lending, Golub Capital
+BDC, Blue Owl Technology Income) and only 2 would gain. Negative values are therefore kept.
 
-**Artifact.** Some schedules list cash and money-market lines. Whether the filed total includes
-them varies by filer, and the filer's own label says which: a money-market fund presented as a
-*short-term investment* is part of the investment portfolio and is in the total; a line presented
-as *cash and cash equivalents* is not. The starter rule dropped every such line.
+**Related observation.** Muzinich BDC lists "Liabilities in Excess of Other Assets" (−$76.3M) on
+the identifier axis. It is a net-assets reconciliation line, not a holding; the filing has no
+filed total, so it does not affect admission and is left for the triage report.
 
-**Change.** `rule_cash` still drops cash and money-market lines, except those whose identifier
-labels them a short-term investment (`SHORT_TERM_INV`).
+## Handled upstream: comparative-period rows
 
-**Examples.**
-- Kept: Palmer Square Capital BDC, adsh 0001193125-26-207523 (2026_05), SOI row 143944,
-  "Short-Term Investments Fidelity Investments Money Market Government Portfolio", $23.37M.
-  Gap −2.02% → 0.000%. Great Elm Capital, adsh 0001193125-26-204228, SOI row 120300,
-  "Short-Term Investments Money Market", $9.60M. Gap −3.47% → 0.000%.
-- Still dropped: Blackstone Secured Lending, adsh 0001736035-26-000010, SOI row 137249,
-  "Other Cash and Cash Equivalents", $305.8M. It reconciles (0.000%) only with its cash lines dropped.
+Each filing's schedule also carries the prior period's holdings for comparison.
+`holdings.split_periods` keeps only rows dated at the filing's own period, so comparative rows
+never reach the cleaning rules: across the quarter 94,670 of 191,043 SOI rows (49.6%) are
+comparative and are set aside (`reports/period_split.csv`). No cleaning rule is needed.
 
-**Rows affected.** 36 current-period lines dropped (was 38; the 2 short-term-investment lines are now kept).
+## Kept on purpose: equity and warrants
 
-**Effect.** 2 filings newly admitted, none harmed.
-
-**Limitation.** The pattern matches the words "money market" anywhere in an identifier, so a
-borrower with those words in its name would be dropped. No such borrower appears in 2026q2
-(all 38 matching lines were checked).
-
-**Test.** `test_cash_rule_keeps_money_market_labelled_short_term_investment`.
-
-## rule_issuer_subtotals
-
-**Artifact.** Some schedules list a company-level line and then each of the company's
-instruments underneath it. The company line is the sum of its instruments, so counting both
-counts the same dollars twice. These lines do not contain the word "total", so `rule_totals`
-does not catch them.
-
-**Rule.** Drop a row when (1) its identifier is the start of other identifiers in the same
-filing and period, its children, and (2) its fair value equals the children's sum (within 0.2%,
-or $1 for small values). Text after the parent that only numbers a sibling tranche ("One", "2")
-or repeats the label ("[Member]") does not make a child. JV portfolio rows are not used as
-children. The filed total is not used, so a row is only dropped when the arithmetic shows it
-repeats lines already counted.
-
-**Example.** Ares Capital, adsh 0001628280-26-027688 (2026_04), SOI row 1781,
-"Ivy Hill Asset Management, L.P.", $2,661.2M, equal to its "Member interest" ($1,899.0M, SOI
-row 1777) plus its "Subordinated revolving loan" ($762.2M, SOI row 1779). Ares goes from
-+16.59% to +0.11% and is admitted. Prospect Capital: "First Tower Finance Company LLC"
-$952.3M = Class A Units $503.0M + First Lien Term Loan $449.3M.
-
-**Rows affected.** 382 current-period rows.
-
-**Effect.** 27 filings change; 6 newly admitted (Ares Capital, Ares Strategic Income Fund,
-Golub Capital BDC, Blue Owl Technology Income, TPG Twin Brook Capital Income Fund, Advanced
-Flower Capital); none harmed and none moved further from its filed total. Large overcounts
-shrink but remain, for example FS KKR +47.6% → +21.0% and Prospect +61.3% → +4.0%.
-
-**False positives found and fixed.** A first version dropped 5 holdings that were not
-subtotals: identical sibling tranches ("... Revolver" and "... Revolver One" at Stellus Private
-Credit, Kayne Anderson, Antares), two warrants within the old $1,000 tolerance (Eagle Point),
-and a repeated "[Member]" label (Lord Abbett). The sibling-suffix exclusion and the tighter
-tolerance remove all five.
-
-**Test.** `test_issuer_subtotal_rule_drops_only_true_subtotals`.
-
-## rule_rollforward_copies
-
-**Artifact.** BDCs must file an affiliated-investments roll-forward table (Rule 12-14) that
-restates each affiliate holding's beginning and ending fair value beside its additions,
-reductions, gains and income. The SOI data set carries those rows on the same identifier axis,
-so each affiliate holding appears twice: once from the schedule (with cost, principal, rate)
-and once from the roll-forward (fair value only).
-
-**Rule.** Drop a holding that has a positive fair value but no cost and no principal, when the
-same filing and period has a holding of the same issuer (identifier text before " | " or ",",
-without a trailing tranche number) with the identical fair value that does carry cost or
-principal. The filed total is not used.
-
-**Example.** FS KKR Capital, adsh 0001628280-26-033118 (2026_05). Schedule line SOI row 171216,
-"Wittur Holding GmbH | Capital Goods 1", fair value $65.9M, cost $63.5M, principal $58.7M.
-Roll-forward copy SOI rows 171222–171223, "Wittur Holding GmbH 1": row 171223 repeats the
-$65.9M ending fair value and row 171222 holds the roll-forward flows (gross additions $3.8M,
-unrealized gain $7.3M, interest income $0.7M). The copy is dropped; the schedule line is kept.
-
-**Rows affected.** 252 current-period rows in 18 filings.
-
-**Effect.** 4 newly admitted (Main Street Capital +12.82% → −0.04%, MSC Income Fund
-+4.41% → −0.49%, Monroe Capital Income Plus, Lafayette Square); none harmed and none moved
-further from its filed total. FS KKR +21.0% → +10.8%, CION +37.6% → +7.3%, Franklin BSP
-+35.1% → +16.8%.
-
-**Limitation.** Negative values are left alone. Allowing them brought MSC Income Fund to
-exactly 0.00%, so its unfunded commitments also appear to be repeated in the roll-forward, but
-it moved HPS Corporate Lending and Crescent Capital BDC slightly further from their totals. The
-positive-only version is kept; negative repeated values are left for the unfunded-commitment
-investigation.
-
-**Test.** `test_rollforward_copy_rule_drops_only_bare_twins`.
-
-## rule_totals (starter kit)
-
-To be completed: verify the example in `reports/cleaning_log.csv` in its filing.
+Equity, preferred units and warrants are real holdings and count in the filed total, so no rule
+drops them. After cleaning there are 6,284 such holdings in 158 filings ($34.9bn, 6.0% of
+cleaned fair value); 2,594 of them sit in admitted filings ($10.2bn). Example: Main Street
+Capital (adsh 0001396440-26-000073) keeps 185 equity holdings worth $1,251M, such as
+"OMi Topco, LLC | Preferred Member Units" ($79.0M, SOI row 136276), and still reconciles at
+−0.04%. Warrants with a zero value are kept too; they add nothing to the totals.
