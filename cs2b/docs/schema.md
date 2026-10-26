@@ -17,6 +17,23 @@ Mapping is by XBRL tag via `mapping.map_soi_columns`, using labels from the TAG 
 | investment_type | Investment Type Axis | `Investment Type Axis` | text | Filled on 9% of May rows. |
 | industry | Industry Sector Axis | `Industry Sector Axis` | text | Filled on 11% of May rows. |
 | affiliation | Investment, Issuer Affiliation Axis | `Investment, Issuer Affiliation Axis` | text | Filled on 5% of May rows. Values: unaffiliated, affiliated noncontrolled, affiliated controlled. |
+| subsidiary | Investment Company, Nonconsolidated Subsidiary Axis | `Investment Company, Nonconsolidated Subsidiary Axis` | text | The unconsolidated JV a row belongs to. Filled in 24 filings (3,065 rows). Part of the holding key. Added by `combine.load_soi_all`. |
+
+## Metadata columns (in every row)
+
+| Column | Meaning |
+|---|---|
+| `release` | Which monthly file the row came from (2026_04 or 2026_05). Added by `combine.load_soi_all`. |
+| `soi_row` | Row number inside that month's soi.tsv, starting at 0. Restarts each month, so cite `release` + `soi_row` together. |
+| `adsh` | Filing accession number. |
+| `cik` | The BDC's Central Index Key (SEC company ID). |
+| `name` | The BDC's name. |
+| `form` | 10-Q, 10-K or 10-K/A. |
+| `period` | The filing's period end (from SUB). |
+| `ddate` | The date of the fact; equals `period` for current rows. |
+| `is_current` | True when `ddate` equals `period` (set by `split_periods`). |
+| `cstm` | Whether the row uses custom tags (from SOI). |
+| `inlineurl` | Link to the filing on EDGAR, for checking a row by hand. |
 
 ## Filing counts
 
@@ -41,7 +58,6 @@ No filing is flagged as amended. April contains one 10-K/A (Equus Total Return, 
 | `Investment, Issuer Affiliation [Extensible Enumeration]` | Maybe | Affiliation fallback; affiliation stretch goal. |
 
 The other unmapped columns (derivatives, income, cash-flow lines; 239 in May, 30 in April) are not holdings fields.
-
 
 ## Holdings and conflicts (current period, 2026q2)
 
