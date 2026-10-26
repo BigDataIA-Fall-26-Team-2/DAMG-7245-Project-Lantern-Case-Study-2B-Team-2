@@ -1,0 +1,11 @@
+tag	version	custom	abstract	datatype	iord	crdr	tlabel	doc
+InvestmentOwnedAtFairValue	us-gaap/2025	0	0	monetary	I	D	Investment Owned, Fair Value	
+InvestmentOwnedAtCost	us-gaap/2025	0	0	monetary	I	D	Investment Owned, Cost	
+InvestmentOwnedBalancePrincipalAmount	us-gaap/2025	0	0	monetary	I	D	Investment Owned, Balance, Principal Amount	
+InvestmentInterestRate	us-gaap/2025	0	0	monetary	I	D	Investment Interest Rate	
+InvestmentBasisSpreadVariableRate	us-gaap/2025	0	0	monetary	I	D	Investment, Basis Spread, Variable Rate	
+InvestmentMaturityDate	us-gaap/2025	0	0	monetary	I	D	Investment Maturity Date	
+InvestmentOwnedPercentOfNetAssets	us-gaap/2025	0	0	monetary	I	D	Investment Owned, Net Assets, Percentage	
+InvestmentInterestRatePaidInKind	us-gaap/2025	0	0	monetary	I	D	Investment, Interest Rate, Paid in Kind	
+NetAssets	us-gaap/2025	0	0	monetary	I	C	Net Assets	
+InvestmentFairValueCustom	0009000005-26-000501	1	0	monetary	I	D	Fair value of investment (custom)	

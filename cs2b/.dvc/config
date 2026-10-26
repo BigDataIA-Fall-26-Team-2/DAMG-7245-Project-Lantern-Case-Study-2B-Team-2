@@ -1,0 +1,6 @@
+[core]
+    remote = storage
+['remote "storage"']
+    url = s3://lantern-team2-dvc-fall-2026/cs2b
+    region = us-east-1
+    allow_anonymous_login = true
