@@ -194,6 +194,32 @@ BDC, Blue Owl Technology Income) and only 2 would gain. Negative values are ther
 the identifier axis. It is a net-assets reconciliation line, not a holding; the filing has no
 filed total, so it does not affect admission and is left for the triage report.
 
+## Investigated, no rule: holdings without an identifier (custom axes)
+
+**Rows with a value but no identifier are category totals, not holdings.** 17,278
+current-period rows carry a fair value but no `Investment, Identifier Axis` member; together
+they come to $5.9 trillion, eleven times the $542.2bn attempted. They are totals by industry,
+investment type, affiliation or joint venture, or for the whole filing (for example Ares
+Capital, SOI row 1 (2026_04), $11.9bn on the Nonconsolidated Subsidiary Axis for Ivy Hill
+with no identifier). `holdings.coalesce` builds holdings only from identified rows, so these
+are already excluded, which is correct.
+
+**Five filings have a filed total but no identified holdings.**
+
+| Filing | adsh | What the data set holds | Can it be recovered? |
+|---|---|---|---|
+| Partners Group Lending Fund | 0001398344-26-009326 | 784 rows on a filer-defined `InvestmentsIdentifier` axis; values under "Investments, Fair Value Disclosure" | No. The custom member is a category ("Investments-non-controlled/non-affiliated [Member]"), not an issuer; summing it gives +615.6% |
+| SuRo Capital | 0001493152-26-021430 | Holdings named on `Legal Entity Axis` / `Consolidated Entities Axis` (174 rows) | Not safely. Summing the 84 current rows with a legal-entity name gives +59.5%: they mix holdings with totals on other axes |
+| Horizon Technology Finance | 0001437749-26-014916 | No SOI rows in any 2026q2 monthly file (filed total $695.7M) | No: absent from the data set |
+| Firsthand Technology Value Fund | 0001437749-26-017006 | No SOI rows in any monthly file | No: absent from the data set |
+| Equus Total Return | 0001096906-26-000571 | 18 rows, all filing-level summaries on non-investment axes | No: no holding-level rows |
+
+**Why no rule.** Turning a custom axis into an identifier would need a separate mapping per
+filer and, for both filers that use one, still would not reconcile; the result would be
+fitted rather than evidenced. These filings stay attempted and unadmitted, and are passed to
+triage as three categories: *holdings on a custom axis* (Partners Group, SuRo), *no SOI rows in
+the data set* (Horizon, Firsthand), *summary rows only* (Equus).
+
 ## Handled upstream: comparative-period rows
 
 Each filing's schedule also carries the prior period's holdings for comparison.
