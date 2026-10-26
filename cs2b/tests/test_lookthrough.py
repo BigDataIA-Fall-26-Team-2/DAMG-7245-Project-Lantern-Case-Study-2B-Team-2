@@ -202,3 +202,18 @@ def test_cash_rule_keeps_money_market_labelled_short_term_investment():
         "source_rows": ["1", "2"]})
     drop, _ = clean.rule_cash(h)
     assert drop.tolist() == [True, False], drop.tolist()
+
+
+def test_issuer_subtotal_rule_drops_only_true_subtotals():
+    # "Ivy Hill" equals the sum of its two holdings: a subtotal, dropped.
+    # "Acme Loan One" is a sibling tranche, so "Acme Loan" is kept.
+    # "Beta Corp" does not equal its child's value, so it is kept.
+    h = pd.DataFrame({
+        "adsh": ["A"] * 7, "ddate": ["2026-03-31"] * 7,
+        "identifier": ["Ivy Hill", "Ivy Hill, Member interest",
+                       "Ivy Hill, Subordinated loan", "Acme Loan",
+                       "Acme Loan One", "Beta Corp", "Beta Corp, Term loan"],
+        "fair_value": [300.0, 200.0, 100.0, 50.0, 50.0, 70.0, 60.0],
+        "source_rows": [str(i) for i in range(7)]})
+    drop, _ = clean.rule_issuer_subtotals(h)
+    assert drop.tolist() == [True, False, False, False, False, False, False], drop.tolist()

@@ -2,3 +2,4 @@ rule,artifact,rows_affected,example
 rule_totals,identifier names a total or subtotal,42,0002037804-26-000010 / soi_row 33021
 rule_cash,cash or money-market line (not labelled a short-term investment),36,0001476765-26-000033 / soi_row 37364
 rule_jv_portfolio,"holding of an unconsolidated JV's portfolio, not the BDC's own",1014,0001628280-26-027688 / soi_row 161
+rule_issuer_subtotals,issuer-level subtotal equal to the sum of its holdings,382,0001628280-26-027688 / soi_row 193

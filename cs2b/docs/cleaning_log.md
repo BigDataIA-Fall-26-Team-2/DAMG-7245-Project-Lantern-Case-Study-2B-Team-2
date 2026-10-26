@@ -14,6 +14,7 @@ SOI row numbers restart in each monthly file, so an example names its month.
 | Starter rules (`rule_totals`, `rule_cash`) | 73 | 25.8% |
 | + `rule_jv_portfolio` | 78 | 27.9% |
 | + filer-aware `rule_cash` | 80 | 28.2% |
+| + `rule_issuer_subtotals` | 86 | 40.9% |
 
 ## rule_jv_portfolio
 
@@ -50,6 +51,41 @@ than a rule fitted to force a match.
 holding and again inside a JV; only the JV copy is dropped, and nothing is dropped when there
 is no `subsidiary` column.
 
+## rule_issuer_subtotals
+
+**Artifact.** Some schedules list a company-level line and then each of the company's
+instruments underneath it. The company line is the sum of its instruments, so counting both
+counts the same dollars twice. These lines do not contain the word "total", so `rule_totals`
+does not catch them.
+
+**Rule.** Drop a row when (1) its identifier is the start of other identifiers in the same
+filing and period, its children, and (2) its fair value equals the children's sum (within 0.2%,
+or $1 for small values). Text after the parent that only numbers a sibling tranche ("One", "2")
+or repeats the label ("[Member]") does not make a child. JV portfolio rows are not used as
+children. The filed total is not used, so a row is only dropped when the arithmetic shows it
+repeats lines already counted.
+
+**Example.** Ares Capital, adsh 0001628280-26-027688 (2026_04), SOI row 1781,
+"Ivy Hill Asset Management, L.P.", $2,661.2M, equal to its "Member interest" ($1,899.0M, SOI
+row 1777) plus its "Subordinated revolving loan" ($762.2M, SOI row 1779). Ares goes from
++16.59% to +0.11% and is admitted. Prospect Capital: "First Tower Finance Company LLC"
+$952.3M = Class A Units $503.0M + First Lien Term Loan $449.3M.
+
+**Rows affected.** 382 current-period rows.
+
+**Effect.** 27 filings change; 6 newly admitted (Ares Capital, Ares Strategic Income Fund,
+Golub Capital BDC, Blue Owl Technology Income, TPG Twin Brook Capital Income Fund, Advanced
+Flower Capital); none harmed and none moved further from its filed total. Large overcounts
+shrink but remain, for example FS KKR +47.6% → +21.0% and Prospect +61.3% → +4.0%.
+
+**False positives found and fixed.** A first version dropped 5 holdings that were not
+subtotals: identical sibling tranches ("... Revolver" and "... Revolver One" at Stellus Private
+Credit, Kayne Anderson, Antares), two warrants within the old $1,000 tolerance (Eagle Point),
+and a repeated "[Member]" label (Lord Abbett). The sibling-suffix exclusion and the tighter
+tolerance remove all five.
+
+**Test.** `test_issuer_subtotal_rule_drops_only_true_subtotals`.
+
 ## rule_totals (starter kit)
 
 To be completed: verify the example in `reports/cleaning_log.csv` in its filing.
@@ -81,6 +117,41 @@ borrower with those words in its name would be dropped. No such borrower appears
 (all 38 matching lines were checked).
 
 **Test.** `test_cash_rule_keeps_money_market_labelled_short_term_investment`.
+
+## rule_issuer_subtotals
+
+**Artifact.** Some schedules list a company-level line and then each of the company's
+instruments underneath it. The company line is the sum of its instruments, so counting both
+counts the same dollars twice. These lines do not contain the word "total", so `rule_totals`
+does not catch them.
+
+**Rule.** Drop a row when (1) its identifier is the start of other identifiers in the same
+filing and period, its children, and (2) its fair value equals the children's sum (within 0.2%,
+or $1 for small values). Text after the parent that only numbers a sibling tranche ("One", "2")
+or repeats the label ("[Member]") does not make a child. JV portfolio rows are not used as
+children. The filed total is not used, so a row is only dropped when the arithmetic shows it
+repeats lines already counted.
+
+**Example.** Ares Capital, adsh 0001628280-26-027688 (2026_04), SOI row 1781,
+"Ivy Hill Asset Management, L.P.", $2,661.2M, equal to its "Member interest" ($1,899.0M, SOI
+row 1777) plus its "Subordinated revolving loan" ($762.2M, SOI row 1779). Ares goes from
++16.59% to +0.11% and is admitted. Prospect Capital: "First Tower Finance Company LLC"
+$952.3M = Class A Units $503.0M + First Lien Term Loan $449.3M.
+
+**Rows affected.** 382 current-period rows.
+
+**Effect.** 27 filings change; 6 newly admitted (Ares Capital, Ares Strategic Income Fund,
+Golub Capital BDC, Blue Owl Technology Income, TPG Twin Brook Capital Income Fund, Advanced
+Flower Capital); none harmed and none moved further from its filed total. Large overcounts
+shrink but remain, for example FS KKR +47.6% → +21.0% and Prospect +61.3% → +4.0%.
+
+**False positives found and fixed.** A first version dropped 5 holdings that were not
+subtotals: identical sibling tranches ("... Revolver" and "... Revolver One" at Stellus Private
+Credit, Kayne Anderson, Antares), two warrants within the old $1,000 tolerance (Eagle Point),
+and a repeated "[Member]" label (Lord Abbett). The sibling-suffix exclusion and the tighter
+tolerance remove all five.
+
+**Test.** `test_issuer_subtotal_rule_drops_only_true_subtotals`.
 
 ## rule_totals (starter kit)
 

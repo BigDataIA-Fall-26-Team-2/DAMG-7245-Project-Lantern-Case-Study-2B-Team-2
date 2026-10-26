@@ -17,7 +17,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 from lookthrough import clean, combine, holdings, load, paths, reconcile  # noqa: E402
 
-RULES = [clean.rule_totals, clean.rule_cash, clean.rule_jv_portfolio]
+RULES = [clean.rule_totals, clean.rule_cash, clean.rule_jv_portfolio,
+         clean.rule_issuer_subtotals]
 
 
 def prepare(P):
