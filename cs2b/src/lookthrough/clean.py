@@ -20,6 +20,17 @@ def rule_cash(h: pd.DataFrame):
     return _matches(h, CASH), "cash or money-market line in schedule"
 
 
+def rule_jv_portfolio(h: pd.DataFrame):
+    """Rows tagged with a `subsidiary` (the Investment Company,
+    Nonconsolidated Subsidiary Axis) list the portfolio of an
+    unconsolidated joint venture. The BDC's filed total counts its stake
+    in the JV, not each loan inside it, so these rows are dropped."""
+    if "subsidiary" not in h:
+        return pd.Series(False, index=h.index), "no subsidiary column"
+    return (h["subsidiary"].notna(),
+            "holding of an unconsolidated JV's portfolio, not the BDC's own")
+
+
 def apply_rules(h: pd.DataFrame, rules) -> tuple:
     """Apply rules in order; return kept rows and a cleaning log."""
     log, keep = [], pd.Series(True, index=h.index)

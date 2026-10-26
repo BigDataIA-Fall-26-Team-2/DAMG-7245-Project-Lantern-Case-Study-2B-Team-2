@@ -172,3 +172,21 @@ def test_checker_catches_a_silently_dropped_filing():
         cov[~cov["name"].str.contains("FOXTROT")].to_csv(root / "reports" / "coverage.csv", index=False)
         failed = [n for n, ok, _ in check.run_checks(root) if not ok]
         assert failed == ["every filing with SOI rows is in coverage.csv (none dropped)"], failed
+
+
+def test_jv_portfolio_rule_drops_only_jv_rows():
+    # Same loan held by the BDC and listed again inside a JV's portfolio:
+    # only the JV copy is dropped.
+    h = pd.DataFrame({
+        "adsh": ["A", "A", "A"],
+        "identifier": ["First Lien Loan | Acme Corp",
+                       "First Lien Loan | Acme Corp",
+                       "Equity | Senior Loan Fund JV LLC"],
+        "subsidiary": [pd.NA, "Senior Loan Fund JV LLC", pd.NA],
+        "source_rows": ["1", "2", "3"]})
+    drop, why = clean.rule_jv_portfolio(h)
+    assert drop.tolist() == [False, True, False], drop.tolist()
+    assert "JV" in why
+    # Without a subsidiary column (e.g. the starter key) nothing is dropped.
+    drop2, _ = clean.rule_jv_portfolio(h.drop(columns="subsidiary"))
+    assert not drop2.any()
