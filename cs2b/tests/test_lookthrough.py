@@ -217,3 +217,19 @@ def test_issuer_subtotal_rule_drops_only_true_subtotals():
         "source_rows": [str(i) for i in range(7)]})
     drop, _ = clean.rule_issuer_subtotals(h)
     assert drop.tolist() == [True, False, False, False, False, False, False], drop.tolist()
+
+
+def test_rollforward_copy_rule_drops_only_bare_twins():
+    # "Wittur Holding GmbH 1" repeats the schedule line's fair value with no
+    # cost or principal: a roll-forward copy, dropped. A bare line with a
+    # different value, and a bare negative line, are kept.
+    h = pd.DataFrame({
+        "adsh": ["A"] * 5, "ddate": ["2026-03-31"] * 5,
+        "identifier": ["Wittur Holding GmbH | Capital Goods 1", "Wittur Holding GmbH 1",
+                       "Acme LLC | Software 1", "Acme LLC 1", "Beta Inc 1"],
+        "fair_value": [65.9e6, 65.9e6, 10e6, 9e6, -1e6],
+        "cost": [63.5e6, None, 9e6, None, None],
+        "principal": [58.7e6, None, 10e6, None, None],
+        "source_rows": [str(i) for i in range(5)]})
+    drop, _ = clean.rule_rollforward_copies(h)
+    assert drop.tolist() == [False, True, False, False, False], drop.tolist()

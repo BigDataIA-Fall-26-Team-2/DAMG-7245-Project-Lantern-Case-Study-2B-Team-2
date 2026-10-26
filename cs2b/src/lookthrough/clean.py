@@ -82,6 +82,37 @@ def rule_issuer_subtotals(h: pd.DataFrame, rel_tol: float = 0.002,
     return drop, "issuer-level subtotal equal to the sum of its holdings"
 
 
+def _issuer_key(identifier: str) -> str:
+    """Issuer part of an identifier: text before ' | ' or ',' and without a
+    trailing tranche number ("Wittur Holding GmbH | Capital Goods 1" and
+    "Wittur Holding GmbH 1" both give "wittur holding gmbh")."""
+    s = re.split(r"\s*\|\s*|\s*,\s*", str(identifier).strip())[0]
+    return re.sub(r"\s+\d+$", "", s).strip().lower()
+
+
+def rule_rollforward_copies(h: pd.DataFrame):
+    """Drop holdings repeated from the affiliated-investments roll-forward
+    table. That table restates each affiliate holding's ending fair value
+    beside its additions, reductions and income, so the holding is counted
+    twice. The copy carries a fair value but no cost and no principal; it is
+    dropped only when the same filing and period has a holding of the same
+    issuer with the identical fair value that does carry cost or principal.
+    Positive values only: negative values are unfunded commitments."""
+    drop = pd.Series(False, index=h.index)
+    if h.empty:
+        return drop, "affiliate roll-forward copy of a holding already in the schedule"
+    iss = h["identifier"].fillna("").map(_issuer_key)
+    fv = h["fair_value"]
+    has_terms = h["cost"].notna() | h["principal"].notna()
+    bare = fv.notna() & (fv > 0) & ~has_terms
+    full = fv.notna() & has_terms
+    keys = set(zip(h.loc[full, "adsh"], h.loc[full, "ddate"], iss[full],
+                   fv[full].round(0)))
+    drop[bare] = [(a, d, i, round(f)) in keys for a, d, i, f in
+                  zip(h.loc[bare, "adsh"], h.loc[bare, "ddate"], iss[bare], fv[bare])]
+    return drop, "affiliate roll-forward copy of a holding already in the schedule"
+
+
 def apply_rules(h: pd.DataFrame, rules) -> tuple:
     """Apply rules in order; return kept rows and a cleaning log."""
     log, keep = [], pd.Series(True, index=h.index)

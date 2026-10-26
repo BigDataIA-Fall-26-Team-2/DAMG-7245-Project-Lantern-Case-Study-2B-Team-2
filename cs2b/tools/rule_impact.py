@@ -18,7 +18,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from lookthrough import clean, combine, holdings, load, paths, reconcile  # noqa: E402
 
 RULES = [clean.rule_totals, clean.rule_cash, clean.rule_jv_portfolio,
-         clean.rule_issuer_subtotals]
+         clean.rule_issuer_subtotals, clean.rule_rollforward_copies]
 
 
 def prepare(P):

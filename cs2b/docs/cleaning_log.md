@@ -15,6 +15,7 @@ SOI row numbers restart in each monthly file, so an example names its month.
 | + `rule_jv_portfolio` | 78 | 27.9% |
 | + filer-aware `rule_cash` | 80 | 28.2% |
 | + `rule_issuer_subtotals` | 86 | 40.9% |
+| + `rule_rollforward_copies` | 90 | 43.4% |
 
 ## rule_jv_portfolio
 
@@ -86,6 +87,40 @@ tolerance remove all five.
 
 **Test.** `test_issuer_subtotal_rule_drops_only_true_subtotals`.
 
+## rule_rollforward_copies
+
+**Artifact.** BDCs must file an affiliated-investments roll-forward table (Rule 12-14) that
+restates each affiliate holding's beginning and ending fair value beside its additions,
+reductions, gains and income. The SOI data set carries those rows on the same identifier axis,
+so each affiliate holding appears twice: once from the schedule (with cost, principal, rate)
+and once from the roll-forward (fair value only).
+
+**Rule.** Drop a holding that has a positive fair value but no cost and no principal, when the
+same filing and period has a holding of the same issuer (identifier text before " | " or ",",
+without a trailing tranche number) with the identical fair value that does carry cost or
+principal. The filed total is not used.
+
+**Example.** FS KKR Capital, adsh 0001628280-26-033118 (2026_05). Schedule line SOI row 171216,
+"Wittur Holding GmbH | Capital Goods 1", fair value $65.9M, cost $63.5M, principal $58.7M.
+Roll-forward copy SOI rows 171222–171223, "Wittur Holding GmbH 1": row 171223 repeats the
+$65.9M ending fair value and row 171222 holds the roll-forward flows (gross additions $3.8M,
+unrealized gain $7.3M, interest income $0.7M). The copy is dropped; the schedule line is kept.
+
+**Rows affected.** 252 current-period rows in 18 filings.
+
+**Effect.** 4 newly admitted (Main Street Capital +12.82% → −0.04%, MSC Income Fund
++4.41% → −0.49%, Monroe Capital Income Plus, Lafayette Square); none harmed and none moved
+further from its filed total. FS KKR +21.0% → +10.8%, CION +37.6% → +7.3%, Franklin BSP
++35.1% → +16.8%.
+
+**Limitation.** Negative values are left alone. Allowing them brought MSC Income Fund to
+exactly 0.00%, so its unfunded commitments also appear to be repeated in the roll-forward, but
+it moved HPS Corporate Lending and Crescent Capital BDC slightly further from their totals. The
+positive-only version is kept; negative repeated values are left for the unfunded-commitment
+investigation.
+
+**Test.** `test_rollforward_copy_rule_drops_only_bare_twins`.
+
 ## rule_totals (starter kit)
 
 To be completed: verify the example in `reports/cleaning_log.csv` in its filing.
@@ -152,6 +187,40 @@ and a repeated "[Member]" label (Lord Abbett). The sibling-suffix exclusion and 
 tolerance remove all five.
 
 **Test.** `test_issuer_subtotal_rule_drops_only_true_subtotals`.
+
+## rule_rollforward_copies
+
+**Artifact.** BDCs must file an affiliated-investments roll-forward table (Rule 12-14) that
+restates each affiliate holding's beginning and ending fair value beside its additions,
+reductions, gains and income. The SOI data set carries those rows on the same identifier axis,
+so each affiliate holding appears twice: once from the schedule (with cost, principal, rate)
+and once from the roll-forward (fair value only).
+
+**Rule.** Drop a holding that has a positive fair value but no cost and no principal, when the
+same filing and period has a holding of the same issuer (identifier text before " | " or ",",
+without a trailing tranche number) with the identical fair value that does carry cost or
+principal. The filed total is not used.
+
+**Example.** FS KKR Capital, adsh 0001628280-26-033118 (2026_05). Schedule line SOI row 171216,
+"Wittur Holding GmbH | Capital Goods 1", fair value $65.9M, cost $63.5M, principal $58.7M.
+Roll-forward copy SOI rows 171222–171223, "Wittur Holding GmbH 1": row 171223 repeats the
+$65.9M ending fair value and row 171222 holds the roll-forward flows (gross additions $3.8M,
+unrealized gain $7.3M, interest income $0.7M). The copy is dropped; the schedule line is kept.
+
+**Rows affected.** 252 current-period rows in 18 filings.
+
+**Effect.** 4 newly admitted (Main Street Capital +12.82% → −0.04%, MSC Income Fund
++4.41% → −0.49%, Monroe Capital Income Plus, Lafayette Square); none harmed and none moved
+further from its filed total. FS KKR +21.0% → +10.8%, CION +37.6% → +7.3%, Franklin BSP
++35.1% → +16.8%.
+
+**Limitation.** Negative values are left alone. Allowing them brought MSC Income Fund to
+exactly 0.00%, so its unfunded commitments also appear to be repeated in the roll-forward, but
+it moved HPS Corporate Lending and Crescent Capital BDC slightly further from their totals. The
+positive-only version is kept; negative repeated values are left for the unfunded-commitment
+investigation.
+
+**Test.** `test_rollforward_copy_rule_drops_only_bare_twins`.
 
 ## rule_totals (starter kit)
 
