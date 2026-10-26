@@ -5,7 +5,9 @@ Every rule follows the `rule_totals` contract (a drop mask and a one-line artifa
 `reports/cleaning_log.csv` lists each rule, its artifact, the rows it affects and an example;
 `reports/rule_impact.csv` shows every filing's gap with all rules and with each rule left out.
 Both are written by `PYTHONPATH=src python tools/rule_impact.py`.
-SOI row numbers restart in each monthly file, so an example names its month.
+SOI row numbers restart in each monthly file, so an example names its month. A row number is
+`soi_row` from `combine.load_soi_all`: the row's position in that month's `soi.tsv` counting
+from 0 (pandas index), so the line in the file is the row number + 2 (header and 1-based lines).
 
 ## Coverage after each rule
 
@@ -158,9 +160,9 @@ principal. The filed total is not used.
 
 **Example.** FS KKR Capital, adsh 0001628280-26-033118 (2026_05). Schedule line SOI row 171216,
 "Wittur Holding GmbH | Capital Goods 1", fair value $65.9M, cost $63.5M, principal $58.7M.
-Roll-forward copy SOI rows 171222–171223, "Wittur Holding GmbH 1": row 171223 repeats the
-$65.9M ending fair value and row 171222 holds the roll-forward flows (gross additions $3.8M,
-unrealized gain $7.3M, interest income $0.7M). The copy is dropped; the schedule line is kept.
+Roll-forward copy "Wittur Holding GmbH 1": SOI row 171222 repeats the $65.9M ending fair value
+with no cost or principal, and row 171223 holds the quarter's roll-forward flows (gross
+additions $2.0M, interest income $0.2M); row 171221 holds the prior year's flows. The copy is dropped; the schedule line is kept.
 
 **Rows affected.** 252 current-period rows in 18 filings.
 
@@ -219,6 +221,46 @@ filer and, for both filers that use one, still would not reconcile; the result w
 fitted rather than evidenced. These filings stay attempted and unadmitted, and are passed to
 triage as three categories: *holdings on a custom axis* (Partners Group, SuRo), *no SOI rows in
 the data set* (Horizon, Firsthand), *summary rows only* (Equus).
+
+## Investigated (stretch): fair values under custom or alternative tags
+
+**Question.** Do holdings that lack `InvestmentOwnedAtFairValue` carry their value under a
+filer-defined (custom) tag in NUM, or under another standard tag in the SOI, so that it can be
+recovered and close an undercount? After cleaning, 17 filings undercount by more than 1%.
+
+**Custom tags in NUM.** Current-period instant facts on the identifier axis with a custom tag
+(`version` = the filing's adsh): 3,488 facts in 39 filings. 2,895 of them are commitment or
+financial-support amounts (`InvestmentCompanyFinancialCommitmentToInvestee...`,
+`UnfundedCommitmentFairValue`), not holding values, and 33 are cash or money-market lines.
+Three tags do name a holding's fair value: `InvestmentOwnedFairValueNetOfUnamortizedFees`
+(Blue Owl Credit Income, Blue Owl Capital Corp II), `InvestmentOwnedFairValueEndingBalance`
+(TCW Direct Lending VII, two filings) and `InvestmentOwnedFairValueBalance` (Goldman Sachs BDC).
+
+- Matched to holdings with no fair value: 34 holdings, $1,111.1M, all at TCW Direct Lending VII.
+  They are "Controlled Affiliated Investments ..." ending balances from the affiliate
+  roll-forward, so they repeat holdings already counted: recovering them moves adsh
+  0001193125-26-141887 from +16.72% to +112.46% and adsh 0001193125-26-221880 from +16.62% to
+  +91.68%.
+- Goldman Sachs BDC (adsh 0001193125-26-212431, −6.11%): its 9 facts ($143.9M) are affiliate
+  roll-forward balances on names that differ from the schedule's ("Non-Controlled Affiliates
+  Elah Holdings Inc."); they do not match its missing holdings and do not explain its $197.3M gap.
+- Blue Owl's `...NetOfUnamortizedFees` facts sum to −$101.4M and −$1.6M: fee adjustments on
+  holdings that already have a fair value, not missing values.
+
+**Alternative standard tag in the SOI.** Lord Abbett Private Credit Fund S (adsh
+0000930413-26-001613, −5.66%, $381.5M filed vs $359.9M) reports its joint-venture investment
+under the `Investments` tag, not `InvestmentOwnedAtFairValue`: SOI row 17151 (2026_05),
+"Investments in Joint Venture [Member]", $21.608M, exactly its shortfall. But the same
+fallback also picks up "Second Lien - Secured Debt [Member]" (SOI row 21666, $7.661M), a
+category subtotal, and the filing moves to +2.01%. The `Investments` tag appears on current
+identified rows of this one filing only.
+
+**Conclusion: no recovery rule.** In 2026q2 the custom fair-value tags carry commitments, fee
+adjustments or roll-forward repeats, so recovering them double counts; the alternative-tag
+fallback is evidenced for one row of one filing and would be fitted rather than general. The
+undercounts are left for triage. Lord Abbett S is recorded as a single named exception
+(joint-venture value under `Investments`), and the tag test is kept in
+`test_lean_num_keeps_custom_fair_value_facts`.
 
 ## Handled upstream: comparative-period rows
 
