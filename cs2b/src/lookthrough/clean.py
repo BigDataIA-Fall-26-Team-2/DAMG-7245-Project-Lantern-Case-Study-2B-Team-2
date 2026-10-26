@@ -16,8 +16,18 @@ def rule_totals(h: pd.DataFrame):
     return _matches(h, TOTAL), "identifier names a total or subtotal"
 
 
+# A money-market fund the filer itself lists as a short-term investment is
+# part of its investment portfolio (and of its filed total), so it is kept.
+SHORT_TERM_INV = r"short[- ]term investment"
+
+
 def rule_cash(h: pd.DataFrame):
-    return _matches(h, CASH), "cash or money-market line in schedule"
+    """Drop cash and money-market lines, except those the filer labels as
+    short-term investments: whether the filed total includes them varies by
+    filer, and the filer's own label says which (e.g. Palmer Square, Great
+    Elm keep them in the total; Blackstone Secured Lending does not)."""
+    return (_matches(h, CASH) & ~_matches(h, SHORT_TERM_INV),
+            "cash or money-market line (not labelled a short-term investment)")
 
 
 def rule_jv_portfolio(h: pd.DataFrame):

@@ -13,6 +13,7 @@ SOI row numbers restart in each monthly file, so an example names its month.
 |---|---|---|
 | Starter rules (`rule_totals`, `rule_cash`) | 73 | 25.8% |
 | + `rule_jv_portfolio` | 78 | 27.9% |
+| + filer-aware `rule_cash` | 80 | 28.2% |
 
 ## rule_jv_portfolio
 
@@ -53,9 +54,34 @@ is no `subsidiary` column.
 
 To be completed: verify the example in `reports/cleaning_log.csv` in its filing.
 
-## rule_cash (starter kit) — under review
+## rule_cash (starter kit, made filer-aware)
 
-`tools/rule_impact.py` shows this rule hurts two filers whose filed total includes their cash
-and money-market lines: Palmer Square Capital BDC and Great Elm Capital reconcile at exactly
-0.0% only when those lines are kept. The case study notes that whether the filed total
-includes cash varies by filer, so this rule is being made filer-aware (next rule).
+**Artifact.** Some schedules list cash and money-market lines. Whether the filed total includes
+them varies by filer, and the filer's own label says which: a money-market fund presented as a
+*short-term investment* is part of the investment portfolio and is in the total; a line presented
+as *cash and cash equivalents* is not. The starter rule dropped every such line.
+
+**Change.** `rule_cash` still drops cash and money-market lines, except those whose identifier
+labels them a short-term investment (`SHORT_TERM_INV`).
+
+**Examples.**
+- Kept: Palmer Square Capital BDC, adsh 0001193125-26-207523 (2026_05), SOI row 143944,
+  "Short-Term Investments Fidelity Investments Money Market Government Portfolio", $23.37M.
+  Gap −2.02% → 0.000%. Great Elm Capital, adsh 0001193125-26-204228, SOI row 120300,
+  "Short-Term Investments Money Market", $9.60M. Gap −3.47% → 0.000%.
+- Still dropped: Blackstone Secured Lending, adsh 0001736035-26-000010, SOI row 137249,
+  "Other Cash and Cash Equivalents", $305.8M. It reconciles (0.000%) only with its cash lines dropped.
+
+**Rows affected.** 36 current-period lines dropped (was 38; the 2 short-term-investment lines are now kept).
+
+**Effect.** 2 filings newly admitted, none harmed.
+
+**Limitation.** The pattern matches the words "money market" anywhere in an identifier, so a
+borrower with those words in its name would be dropped. No such borrower appears in 2026q2
+(all 38 matching lines were checked).
+
+**Test.** `test_cash_rule_keeps_money_market_labelled_short_term_investment`.
+
+## rule_totals (starter kit)
+
+To be completed: verify the example in `reports/cleaning_log.csv` in its filing.

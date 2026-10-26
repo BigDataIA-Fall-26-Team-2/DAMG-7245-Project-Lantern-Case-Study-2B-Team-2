@@ -190,3 +190,15 @@ def test_jv_portfolio_rule_drops_only_jv_rows():
     # Without a subsidiary column (e.g. the starter key) nothing is dropped.
     drop2, _ = clean.rule_jv_portfolio(h.drop(columns="subsidiary"))
     assert not drop2.any()
+
+
+def test_cash_rule_keeps_money_market_labelled_short_term_investment():
+    # Cash-equivalent lines are dropped; a money-market fund the filer lists
+    # as a short-term investment is part of its portfolio and is kept.
+    h = pd.DataFrame({
+        "adsh": ["A", "A"],
+        "identifier": ["Other Cash and Cash Equivalents",
+                       "Short-Term Investments Fidelity Money Market Government Portfolio"],
+        "source_rows": ["1", "2"]})
+    drop, _ = clean.rule_cash(h)
+    assert drop.tolist() == [True, False], drop.tolist()
