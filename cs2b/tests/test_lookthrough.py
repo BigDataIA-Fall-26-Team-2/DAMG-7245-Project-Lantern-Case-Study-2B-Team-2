@@ -137,12 +137,16 @@ def _outputs_in_temp_repo(t, triage=True):
     (root / "params.yaml").write_text(yaml.safe_dump(p))
     shutil.copytree(ROOT / "data" / "fixture", root / "data" / "fixture")
     B = pipeline.run_baseline(root / "data" / "fixture" / f"{paths.FIXTURE_RELEASE}_bdc", 0.01)
-    report.write_outputs(B["kept"], B["rec"], B["diag"], B["log"], root, P)
-    if triage:                                     # what a team does after investigating each exclusion
-        cov = pd.read_csv(root / "reports" / "coverage.csv", dtype={"adsh": str})
-        for k, v in TRIAGED.items():
-            cov.loc[cov["name"].str.contains(k), "triage_category"] = v
-        cov.to_csv(root / "reports" / "coverage.csv", index=False)
+    if triage:  # synthetic reviewed evidence is an input, never a hand-edited report
+        entries = []
+        for row in B["rec"].loc[~B["rec"]["admitted"]].itertuples():
+            category = next(value for name, value in TRIAGED.items() if name in row.name)
+            entries.append({"adsh": row.adsh, "triage_category": category,
+                            "evidence": "Synthetic fixture evidence", "example": "Synthetic SOI example",
+                            "fix_or_reason": "Intentionally unresolved fixture case", "review_status": "reviewed",
+                            "reviewed_holdings_fv": row.holdings_fv, "reviewed_filed_fv": row.filed_fv})
+        pd.DataFrame(entries).to_csv(root / p["triage"]["input"], index=False)
+    report.write_outputs(B["kept"], B["rec"], B["diag"], B["log"], root, p, sub=B["sub"])
     return root
 
 
@@ -285,3 +289,156 @@ def test_reconciliation_boundary_missing_values_and_coverage():
     empty = reconcile.reconcile(holdings.iloc[:0], filed, sub, .01, soi_adsh=set())
     assert empty.empty
     assert reconcile.coverage(empty, sub)["filings_without_soi_rows"] == len(sub)
+
+
+def test_reports_preserve_triage_and_flag_changed_totals():
+    import json
+    p = {**P, "data": {**P["data"], "use_fixture": True}}
+    b = pipeline.run_baseline({paths.FIXTURE_RELEASE: RDIR}, .01)
+    with tempfile.TemporaryDirectory() as t:
+        root = Path(t)
+        source = root / p["triage"]["input"]
+        source.parent.mkdir(parents=True)
+        entries = []
+        for row in b["rec"].loc[~b["rec"]["admitted"]].itertuples():
+            name = next(n for n in TRIAGED if n in row.name)
+            entries.append({"adsh": row.adsh, "triage_category": TRIAGED[name],
+                            "evidence": "Synthetic fixture evidence for " + row.adsh,
+                            "example": "Synthetic SOI example for " + row.adsh,
+                            "fix_or_reason": "Fixture intentionally retains this unresolved artifact",
+                            "review_status": "reviewed", "reviewed_holdings_fv": row.holdings_fv,
+                            "reviewed_filed_fv": row.filed_fv})
+        pd.DataFrame(entries).to_csv(source, index=False)
+        original = source.read_bytes()
+        for _ in range(2):
+            report.write_outputs(b["kept"], b["rec"], b["diag"], b["log"], root, p, sub=b["sub"])
+            assert source.read_bytes() == original
+        metrics = json.loads((root / "reports/coverage.json").read_text())
+        assert metrics["triage_complete"] and metrics["triage_incomplete_filings"] == 0
+        cov = pd.read_csv(root / "reports/coverage.csv", keep_default_na=False)
+        assert list(cov.columns) == report.COVERAGE_COLS
+        assert cov.loc[cov.admitted, "triage_category"].eq("").all()
+        panel = pd.read_parquet(root / "outputs/panel/holdings.parquet")
+        assert set(panel.adsh) == set(cov.loc[cov.admitted, "adsh"])
+        assert set(panel.release) == {paths.FIXTURE_RELEASE}
+        sums = panel.groupby("adsh").fair_value.sum()
+        for row in cov[cov.admitted].itertuples():
+            assert abs(sums[row.adsh] - float(row.holdings_fv)) < .01
+        assert "Synthetic fixture evidence" in (root / "reports/triage.md").read_text()
+        changed = b["rec"].copy()
+        target = entries[0]["adsh"]
+        changed.loc[changed.adsh.eq(target), "holdings_fv"] += 10
+        report.write_outputs(b["kept"], changed, b["diag"], b["log"], root, p, sub=b["sub"])
+        metrics = json.loads((root / "reports/coverage.json").read_text())
+        assert metrics["triage_incomplete_adsh"] == [target]
+        assert "totals changed; re-review required" in (root / "reports/triage.md").read_text()
+        assert source.read_bytes() == original
+
+
+def test_reports_handle_unreviewed_triage_and_empty_panel():
+    import json
+    p = {**P, "data": {**P["data"], "use_fixture": True}}
+    b = pipeline.run_baseline({paths.FIXTURE_RELEASE: RDIR}, .01)
+    with tempfile.TemporaryDirectory() as t:
+        root = Path(t)
+        rec = b["rec"].copy()
+        rec["admitted"] = False
+        report.write_outputs(b["kept"], rec, b["diag"], b["log"], root, p, sub=b["sub"])
+        assert pd.read_parquet(root / "outputs/panel/holdings.parquet").empty
+        metrics = json.loads((root / "reports/coverage.json").read_text())
+        assert metrics["triage_incomplete_filings"] == len(rec)
+        assert metrics["filings_admitted"] == 0
+        tri = (root / "reports/triage.md").read_text()
+        assert tri.count("## ") == len(rec)  # even when diagnostics omit a filing
+        source = root / p["triage"]["input"]
+        source.parent.mkdir(parents=True)
+        entry = {c: "" for c in report.TRIAGE_COLS}
+        entry.update(adsh=rec.adsh.iloc[0], triage_category="other", evidence="Draft evidence")
+        pd.DataFrame([entry]).to_csv(source, index=False)
+        report.write_outputs(b["kept"], rec, b["diag"], b["log"], root, p, sub=b["sub"])
+        cov = pd.read_csv(root / "reports/coverage.csv")
+        assert cov.triage_category.eq("to_triage").all()
+        assert "Draft evidence" in (root / "reports/triage.md").read_text()
+        for bad_rows in ([{**entry, "triage_category": "invented_category"}], [entry, entry]):
+            pd.DataFrame(bad_rows).to_csv(source, index=False)
+            try:
+                report.write_outputs(b["kept"], rec, b["diag"], b["log"], root, p, sub=b["sub"])
+            except ValueError:
+                continue
+            raise AssertionError("Malformed triage must fail, not silently replace reports")
+
+
+def test_reports_reject_panel_mismatch_or_missing_provenance():
+    p = {**P, "data": {**P["data"], "use_fixture": True}}
+    b = pipeline.run_baseline({paths.FIXTURE_RELEASE: RDIR}, .01)
+    admitted = set(b["rec"].loc[b["rec"].admitted, "adsh"])
+    index = b["kept"].index[b["kept"].adsh.isin(admitted)][0]
+    with tempfile.TemporaryDirectory() as t:
+        for column, value in (("fair_value", 1e15), ("source_rows", ""),
+                              ("release", ""), ("is_current", False)):
+            kept = b["kept"].copy()
+            kept.loc[index, column] = value
+            try:
+                report.write_outputs(kept, b["rec"], b["diag"], b["log"], Path(t), p, sub=b["sub"])
+            except ValueError:
+                continue
+            raise AssertionError(f"Invalid panel accepted: {column}")
+
+
+def test_configured_rules_preserve_order_and_reject_unavailable_names():
+    assert pipeline.configured_rules({}) == [clean.rule_totals, clean.rule_cash]
+    assert pipeline.configured_rules({"cleaning": {"rules": ["rule_cash", "rule_totals"]}}) == [clean.rule_cash, clean.rule_totals]
+    for names in ([], "rule_cash", ["rule_cash", "rule_cash"],
+                  ["rule_not_implemented"], ["apply_rules"], [None]):
+        try:
+            pipeline.configured_rules({"cleaning": {"rules": names}})
+        except ValueError:
+            continue
+        raise AssertionError(f"Invalid rule selection accepted: {names}")
+
+
+def test_checker_uses_release_and_row_together():
+    import yaml
+    with tempfile.TemporaryDirectory() as t:
+        root = _outputs_in_temp_repo(t)
+        p = paths.load_params(root)
+        p["data"]["use_fixture"] = False
+        p["releases"] = ["2026_04", "2026_05"]
+        for release in p["releases"]:
+            shutil.copytree(RDIR, root / "data/raw" / f"{release}_bdc")
+        (root / "params.yaml").write_text(yaml.safe_dump(p))
+        b = pipeline.run_baseline(paths.release_dirs(p, root), .01)
+        report.write_outputs(b["kept"], b["rec"], b["diag"], b["log"], root, p, sub=b["sub"])
+        assert all(ok for _, ok, _ in check.run_checks(root, sample=1000))
+        output = root / "outputs/panel/holdings.parquet"
+        original = pd.read_parquet(output)
+        assert set(original.release) == {"2026_05"}
+        wrong = original.copy()
+        wrong["release"] = "2026_04"  # same row numbers, but an unselected filing copy
+        wrong.to_parquet(output, index=False)
+        result = check.run_checks(root, sample=1000)
+        assert not result[-1][1], result
+        original.drop(columns="release").to_parquet(output, index=False)
+        assert not check.run_checks(root)[0][1]
+
+
+def test_checker_rejects_missing_totals_and_gap_tampering():
+    with tempfile.TemporaryDirectory() as t:
+        root = _outputs_in_temp_repo(t)
+        output = root / "reports/coverage.csv"
+        original = pd.read_csv(output, dtype={"adsh": str})
+        for field, expected_failure in (("filed_fv", "filed totals match NUM"),
+                                        ("gap_pct", "gap_pct is computed correctly")):
+            altered = original.copy()
+            altered.loc[altered.admitted, field] = float("nan")
+            altered.to_csv(output, index=False)
+            failed = [name for name, ok, _ in check.run_checks(root) if not ok]
+            assert expected_failure in failed, failed
+        duplicate = pd.concat([original, original.iloc[[0]]], ignore_index=True)
+        duplicate.to_csv(output, index=False)
+        assert not check.run_checks(root)[2][1]
+        original.to_csv(output, index=False)
+        # An allowed category alone is insufficient evidence for completed triage.
+        (root / P["triage"]["input"]).unlink()
+        failed = [name for name, ok, _ in check.run_checks(root) if not ok]
+        assert failed == ["every excluded filing has a valid triage_category"], failed

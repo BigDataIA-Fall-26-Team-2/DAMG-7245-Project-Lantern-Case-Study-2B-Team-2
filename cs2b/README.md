@@ -70,11 +70,11 @@ current filings fails rather than silently reducing coverage. An entirely empty
 selection fails with a diagnostic rather than producing a misleading baseline.
 
 Outputs are `reports/baseline.json`, `reports/baseline_reconciliation.csv`, and
-`reports/baseline_diagnostics.csv`. They use the two starter cleaning rules and
+`reports/baseline_diagnostics.csv`. They use the ordered `cleaning.rules` selection (currently the two starter rules) and
 are not the final panel or completed triage. The existing single-directory
 `run_baseline` API remains available for the starter notebooks and smoke tool.
-Those tools and the final self-check still use a single release; quarter-wide
-final reporting/checker integration belongs to subsequent Part 3 work.
+The original notebooks and smoke tool still use one directory. The self-check
+uses the same configured release mapping as the baseline and report generation.
 
 Input loading is centralized in `combine.load_inputs`, which reuses the existing
 combined table loaders and selects consistent filing copies across SUB/SOI/NUM.
@@ -100,4 +100,81 @@ Coverage retains every attempted filing. It also identifies SUB filings without
 SOI rows and counts attempts without a usable filed total. Dollar coverage uses
 only known positive filed totals: dollars for unresolved filings are unknown,
 not estimated as zero. These safeguards do not replace filing-level triage or
-human-readable spot checks. Final report/checker integration remains a later batch.
+human-readable spot checks. Final cleaning integration and evidence review remain pending.
+
+
+### Generate the preliminary panel and reports
+
+```bash
+python tools/baseline.py --write-outputs
+```
+
+This uses the configured cleaning rules, currently the two starter rules. It produces
+`outputs/panel/holdings.parquet`, `reports/coverage.csv`, `reports/coverage.json`,
+`reports/coverage.md`, `reports/triage.md`, and `reports/cleaning_log.csv`.
+The panel retains `release` and semicolon-separated `source_rows`, includes only
+current holdings of admitted filings, and is checked against admitted totals
+before being written. Parquet support is required; there is no silent CSV fallback.
+The CSV uses the eight handout columns. JSON and Markdown use the same coverage
+calculation, including attempted filings without usable totals and the separate
+list of SUB filings without SOI rows. Final DVC tracking and stage integration
+are still pending; generating these outputs does not publish them to S3.
+
+Human triage belongs in the Git-tracked CSV configured by `triage.input`
+(default `data/triage.csv`), not in generated reports. The supplied file is an
+empty template; no real filing has been marked reviewed by this implementation.
+
+Each input row contains:
+- `adsh`: the filing accession number (one unique row per filing).
+- `triage_category`: one of the handout's allowed categories.
+- `evidence`: the observed facts supporting the explanation, with citations.
+- `example`: filing and relevant release/SOI row references; explain explicitly
+  if a row example is unavailable (for example, no identifiable holding rows).
+- `fix_or_reason`: the applied fix, or why the filing remains unresolved.
+- `review_status`: blank, `draft`, or `reviewed`. Mark reviewed only after checking
+  the evidence. A matching sum alone does not establish a correct explanation.
+- `reviewed_holdings_fv`, `reviewed_filed_fv`: the numeric totals being reviewed,
+  without currency symbols or commas; leave blank only when the value is missing.
+
+Report generation never changes this input. It preserves notes for filings
+outside the current run as well. Excluded filings without complete, reviewed
+entries receive `to_triage`, an INCOMPLETE marker and a count in `coverage.json`.
+If either total changes by more than one cent, the saved entry requires re-review.
+These are completeness checks, not automated verification of human claims; changes
+in holdings that leave totals unchanged still require human review. Entries for
+admitted filings remain saved but their coverage category is blank.
+
+The self-check supports the configured releases, but final cleaning integration
+and triage review remain pending. Preliminary reports are not a finished submission.
+
+
+### Rule selection and multi-release validation
+
+`cleaning.rules` in `params.yaml` lists the `rule_*` functions to run, in order.
+The command resolves every name before processing data; a missing, duplicate,
+empty or invalid selection is an error. There is no fallback that silently skips
+an unavailable Part 2 rule. The current selection is `rule_totals`, `rule_cash`.
+After the corrected cleaning PR is integrated and reviewed, extend that list to
+include its JV, issuer-subtotal and roll-forward rules in their approved order.
+The low-level `run_baseline(..., rules=...)` interface remains available to notebooks
+and tools; callers using parameters should pass `pipeline.configured_rules(params)`.
+
+Run the checks from `cs2b`:
+
+```bash
+PYTHONPATH=src python -m lookthrough.check
+```
+
+The ten checks now read the same selected SUB/SOI/NUM inputs as the baseline,
+including the same winner for repeated filings. A multi-release panel must carry
+`release`; sampled provenance uses `(release, source_rows)` and verifies the filing,
+current period and fair value. A value absent from SOI is not automatically accepted
+as NUM recovery: a future recovery implementation needs an evidenced validation path.
+
+The checker rejects missing reported totals substituted for known values, blank or
+incorrect gaps, extra/duplicate coverage rows and incomplete/stale triage evidence.
+An allowed category alone is insufficient: the separate input must contain a reviewed
+explanation, example and matching totals. It remains a structural checker, not a
+replacement for opening filings and evaluating the claims. Incomplete real-data triage
+is expected to fail until those investigations are performed; do not relabel drafts
+as reviewed merely to pass the checker.

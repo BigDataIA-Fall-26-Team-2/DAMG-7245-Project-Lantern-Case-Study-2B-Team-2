@@ -13,3 +13,7 @@ reconcile:
 outputs:
   panel: outputs/panel
   reports: reports
+triage:
+  input: data/triage.csv       # human-reviewed evidence; report generation never edits this
+cleaning:
+  rules: [rule_totals, rule_cash]  # extend only after reviewed Part 2 rules are integrated
