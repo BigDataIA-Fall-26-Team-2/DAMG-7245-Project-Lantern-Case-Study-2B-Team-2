@@ -13,8 +13,9 @@ def run_baseline(rdir, tolerance, rules=None) -> dict:
                                    sub)
     h = holdings.coalesce_holdings(canon)
     if rules is None:
-        rules = [clean.rule_totals, clean.rule_cash]
+        rules = clean.RULES
     kept, log = clean.apply_rules(h[h["is_current"]], rules)
+    kept = clean.flag_debt(kept)
     filed = reconcile.filed_totals(num, sub)
     rec = reconcile.reconcile(kept, filed, sub, tolerance,
                               soi_adsh=set(soi["adsh"]))

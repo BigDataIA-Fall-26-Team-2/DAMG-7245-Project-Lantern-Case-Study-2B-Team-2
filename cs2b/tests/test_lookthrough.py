@@ -102,7 +102,10 @@ def test_baseline_reconciliation_counts_every_filing():
     assert d["DELTA"]["negative_type_level_fv"] == -3_000_000
     assert d["ECHO"]["custom_fv_facts_in_num"] == 3 and d["ECHO"]["missing_fv_rows"] == 3
     assert d["FOXTROT"]["rows_without_identifier"] == 3
-    assert list(B["log"]["rows_affected"]) == [1, 1]
+    # The pipeline runs clean.RULES; the three Part 2 rules find nothing in
+    # the fixture (no JV rows, issuer subtotals or roll-forward copies).
+    assert list(B["log"]["rule"]) == [r.__name__ for r in clean.RULES]
+    assert list(B["log"]["rows_affected"]) == [1, 1, 0, 0, 0]
 
 
 def test_manifest_is_portable_and_detects_changes():
@@ -206,17 +209,23 @@ def test_cash_rule_keeps_money_market_labelled_short_term_investment():
 
 def test_issuer_subtotal_rule_drops_only_true_subtotals():
     # "Ivy Hill" equals the sum of its two holdings: a subtotal, dropped.
-    # "Acme Loan One" is a sibling tranche, so "Acme Loan" is kept.
+    # "Acme Partners One" is a sibling tranche, so "Acme Partners" is kept.
     # "Beta Corp" does not equal its child's value, so it is kept.
+    # The tolerance is 0.2%: "Gamma Inc" is 2% above its child (kept) and
+    # "Delta LP" is 0.1% above its child, a rounding difference (dropped).
     h = pd.DataFrame({
-        "adsh": ["A"] * 7, "ddate": ["2026-03-31"] * 7,
+        "adsh": ["A"] * 11, "ddate": ["2026-03-31"] * 11,
         "identifier": ["Ivy Hill", "Ivy Hill, Member interest",
-                       "Ivy Hill, Subordinated loan", "Acme Loan",
-                       "Acme Loan One", "Beta Corp", "Beta Corp, Term loan"],
-        "fair_value": [300.0, 200.0, 100.0, 50.0, 50.0, 70.0, 60.0],
-        "source_rows": [str(i) for i in range(7)]})
+                       "Ivy Hill, Subordinated loan", "Acme Partners",
+                       "Acme Partners One", "Beta Corp", "Beta Corp, Term loan",
+                       "Gamma Inc", "Gamma Inc, Term loan",
+                       "Delta LP", "Delta LP, Term loan"],
+        "fair_value": [300.0, 200.0, 100.0, 50.0, 50.0, 70.0, 60.0,
+                       102.0, 100.0, 1001.0, 1000.0],
+        "source_rows": [str(i) for i in range(11)]})
     drop, _ = clean.rule_issuer_subtotals(h)
-    assert drop.tolist() == [True, False, False, False, False, False, False], drop.tolist()
+    assert drop.tolist() == [True, False, False, False, False, False, False,
+                             False, False, True, False], drop.tolist()
 
 
 def test_rollforward_copy_rule_drops_only_bare_twins():
@@ -246,3 +255,80 @@ def test_total_rule_spares_companies_named_total():
         "adsh": ["x"] * 5, "source_rows": [str(i) for i in range(5)]})
     drop, _ = clean.rule_totals(h)
     assert drop.tolist() == [True, True, False, False, False], drop.tolist()
+
+
+def test_debt_flag_marks_equity_and_warrants_without_dropping_them():
+    # Equity, preferred units and warrants stay in the panel, flagged False.
+    h = pd.DataFrame({
+        "identifier": ["Acme Corp | First lien term loan", "Acme Corp | Common Stock",
+                       "Beta LLC | Warrants", "Gamma Inc | Preferred Units"],
+        "investment_type": [None, "Equity", None, None],
+        "principal": [10.0, None, None, None], "spread": [None, None, None, None],
+        "fair_value": [9.0, 3.0, 0.5, 2.0]})
+    out = clean.flag_debt(h)
+    assert len(out) == len(h)
+    assert out["is_debt"].tolist() == [True, False, False, False], out["is_debt"].tolist()
+
+
+# Regression tests from Lokesh's review of PR #3.
+
+def test_rollforward_rule_keeps_a_distinct_instrument_with_the_same_value():
+    # A loan (with cost and principal) and a separate preferred-equity holding
+    # of the same issuer, both worth 100: the equity is not a copy of the loan.
+    h = pd.DataFrame({
+        "adsh": ["A", "A"], "ddate": ["2026-03-31"] * 2,
+        "identifier": ["Acme, Inc. | First lien loan", "Acme, Inc. | Preferred equity"],
+        "fair_value": [100.0, 100.0], "cost": [98.0, None], "principal": [100.0, None],
+        "source_rows": ["0", "1"]})
+    drop, _ = clean.rule_rollforward_copies(h)
+    assert drop.tolist() == [False, False], drop.tolist()
+
+
+def test_rollforward_rule_ignores_a_counterpart_already_dropped_as_jv():
+    # The only full counterpart is a JV loan that rule_jv_portfolio drops first,
+    # so the BDC's own bare holding must survive apply_rules.
+    h = pd.DataFrame({
+        "adsh": ["A", "A"], "ddate": ["2026-03-31"] * 2,
+        "identifier": ["Acme, Inc. | First lien loan", "Acme, Inc. | First lien loan"],
+        "subsidiary": ["Senior Loan Program [Member]", None],
+        "fair_value": [100.0, 100.0], "cost": [98.0, None], "principal": [100.0, None],
+        "source_rows": ["0", "1"]})
+    kept, log = clean.apply_rules(h, [clean.rule_jv_portfolio, clean.rule_rollforward_copies])
+    assert kept["source_rows"].tolist() == ["1"], kept["source_rows"].tolist()
+    assert log["rows_affected"].tolist() == [1, 0]
+
+
+def test_rollforward_rule_lets_one_holding_vouch_for_one_copy():
+    # One schedule holding cannot make two bare rows into copies.
+    h = pd.DataFrame({
+        "adsh": ["A"] * 3, "ddate": ["2026-03-31"] * 3,
+        "identifier": ["Acme, Inc. | Secured debt 1", "Acme, Inc. | Secured debt 1.1",
+                       "Acme, Inc. | Secured debt 1.2"],
+        "fair_value": [100.0, 100.0, 100.0], "cost": [98.0, None, None],
+        "principal": [100.0, None, None], "source_rows": ["0", "1", "2"]})
+    drop, _ = clean.rule_rollforward_copies(h)
+    assert drop.tolist() == [False, True, False], drop.tolist()
+
+
+def test_issuer_subtotal_rule_needs_a_real_name_boundary():
+    # "ABC" is not the start of "ABCD LLC"; "ABC" and "ABC, LLC" differ only by a
+    # company suffix. Equal values alone do not make a subtotal.
+    h = pd.DataFrame({
+        "adsh": ["A"] * 4, "ddate": ["2026-03-31"] * 4,
+        "identifier": ["ABC", "ABCD LLC", "XYZ", "XYZ, LLC"],
+        "fair_value": [100.0, 100.0, 50.0, 50.0],
+        "source_rows": [str(i) for i in range(4)]})
+    drop, _ = clean.rule_issuer_subtotals(h)
+    assert drop.tolist() == [False, False, False, False], drop.tolist()
+
+
+def test_issuer_subtotal_rule_keeps_a_parent_that_names_an_instrument():
+    # Two distinct instruments with equal values: the first names a specific
+    # loan, so it is a holding, not an issuer subtotal of the second.
+    h = pd.DataFrame({
+        "adsh": ["A", "A"], "ddate": ["2026-03-31"] * 2,
+        "identifier": ["Acme, Inc. | First lien loan",
+                       "Acme, Inc. | First lien loan, delayed draw"],
+        "fair_value": [100.0, 100.0], "source_rows": ["0", "1"]})
+    drop, _ = clean.rule_issuer_subtotals(h)
+    assert drop.tolist() == [False, False], drop.tolist()

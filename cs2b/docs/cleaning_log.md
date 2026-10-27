@@ -9,6 +9,15 @@ SOI row numbers restart in each monthly file, so an example names its month. A r
 `soi_row` from `combine.load_soi_all`: the row's position in that month's `soi.tsv` counting
 from 0 (pandas index), so the line in the file is the row number + 2 (header and 1-based lines).
 
+## Where the rules run
+
+All rules live in `clean.RULES`, applied in that order. `pipeline.run_baseline`,
+`tools/rule_impact.py` (coverage with and without each rule) and `tools/break_rules.py`
+(`reports/tests_that_fail.md`) all use that one list, so the pipeline and the evidence cannot
+drift apart. Each example in `reports/cleaning_log.csv` names its month file and was opened in
+the raw `soi.tsv` to confirm it: `reports/cleaning_log_check.md`
+(`PYTHONPATH=src python tools/verify_examples.py`).
+
 ## Coverage after each rule
 
 | Rules applied | Admitted filings (of 177) | Share of filed dollars |
@@ -19,6 +28,17 @@ from 0 (pandas index), so the line in the file is the row number + 2 (header and
 | + `rule_issuer_subtotals` | 86 | 40.9% |
 | + `rule_rollforward_copies` | 90 | 43.4% |
 | + `rule_totals` false positives fixed | 90 | 43.5% |
+| + review fixes (PR #3: name boundary, instrument match, rules see survivors only) | 90 | 43.5% |
+
+The same rules in their final pipeline order (`clean.RULES`), adding one at a time:
+
+| Rules applied (final versions) | Admitted filings (of 177) | Share of filed dollars |
+|---|---|---|
+| `rule_totals` | 74 | 23.5% |
+| + `rule_cash` | 75 | 26.1% |
+| + `rule_jv_portfolio` | 80 | 28.2% |
+| + `rule_issuer_subtotals` | 85 | 40.1% |
+| + `rule_rollforward_copies` | 90 | 43.5% |
 
 ## rule_totals (starter kit, false positives fixed)
 
@@ -130,7 +150,7 @@ row 1777) plus its "Subordinated revolving loan" ($762.2M, SOI row 1779). Ares g
 +16.59% to +0.11% and is admitted. Prospect Capital: "First Tower Finance Company LLC"
 $952.3M = Class A Units $503.0M + First Lien Term Loan $449.3M.
 
-**Rows affected.** 382 current-period rows.
+**Rows affected.** 133 current-period rows in 20 filings (382 before the review fixes below).
 
 **Effect.** 27 filings change; 6 newly admitted (Ares Capital, Ares Strategic Income Fund,
 Golub Capital BDC, Blue Owl Technology Income, TPG Twin Brook Capital Income Fund, Advanced
@@ -164,7 +184,8 @@ Roll-forward copy "Wittur Holding GmbH 1": SOI row 171222 repeats the $65.9M end
 with no cost or principal, and row 171223 holds the quarter's roll-forward flows (gross
 additions $2.0M, interest income $0.2M); row 171221 holds the prior year's flows. The copy is dropped; the schedule line is kept.
 
-**Rows affected.** 252 current-period rows in 18 filings.
+**Rows affected.** 324 current-period rows in 20 filings (252 before the review fixes below; rows the
+subtotal rule now keeps are matched here instead when they are bare copies of a schedule holding).
 
 **Effect.** 4 newly admitted (Main Street Capital +12.82% → −0.04%, MSC Income Fund
 +4.41% → −0.49%, Monroe Capital Income Plus, Lafayette Square); none harmed and none moved
@@ -178,6 +199,48 @@ positive-only version is kept; negative repeated values are left for the unfunde
 investigation.
 
 **Test.** `test_rollforward_copy_rule_drops_only_bare_twins`.
+
+## Review fixes (PR #3, Lokesh)
+
+Lokesh reproduced two unintended deletions on small hand-made inputs. Both were real, and both
+are fixed with regression tests that fail on the pre-review code (23 of 28 tests pass there)
+and pass now (28 of 28).
+
+**P2, `rule_issuer_subtotals`: an unrestricted name prefix.** "ABC" was treated as the parent
+of "ABCD LLC" because one string starts with the other, and equal values then "proved" a
+subtotal. Now a child counts only if the parent's name ends at a word boundary (the next
+character is a space, comma, "|" or bracket), and not if the extra text is only a company
+suffix ("XYZ" / "XYZ, LLC") or a tranche number. A parent that itself names an instrument
+("Acme, Inc. | First lien loan") is a holding, not an issuer subtotal, so it is kept. Tests:
+`test_issuer_subtotal_rule_needs_a_real_name_boundary`,
+`test_issuer_subtotal_rule_keeps_a_parent_that_names_an_instrument`.
+
+**P1, `rule_rollforward_copies`: matching by issuer and value only.** A preferred-equity holding
+was dropped as a "copy" of a same-value loan of the same issuer. Now each identifier is
+classed as debt, equity or unknown from its words (`clean.instrument_kind`); a copy matches only
+a compatible counterpart (debt never matches equity), and each counterpart vouches for one copy.
+The `affiliation` column, which would show roll-forward provenance directly, is empty for every
+holding in 2026q2, so the evidence used is: no cost and no principal, identical value, same
+issuer, compatible instrument, one-to-one. Tests:
+`test_rollforward_rule_keeps_a_distinct_instrument_with_the_same_value`,
+`test_rollforward_rule_lets_one_holding_vouch_for_one_copy`.
+
+**P1, rule interaction in `apply_rules`.** Every rule was given the original frame, so a JV loan
+already dropped by `rule_jv_portfolio` could still serve as the counterpart for the BDC's own
+holding, deleting both. `apply_rules` now gives each rule only the rows the earlier rules kept.
+Test: `test_rollforward_rule_ignores_a_counterpart_already_dropped_as_jv`.
+
+**Effect on 2026q2.** The fixed rules drop no new rows and keep 177 rows ($912.5M, 20 filings)
+that the earlier versions dropped. Admitted filings stay at 90 of 177 and 43.5% of dollars; no
+admitted filing is lost, and MSC Income (−0.49% → 0.00%) and Main Street (−0.04% → 0.00%) move
+closer. Seven filings that were not admitted move further from their totals because candidates
+that name an instrument are now kept rather than guessed: Rand Capital (+9.1% → +33.4%),
+Investcorp Credit Management (+7.5% → +15.1%), Remora Capital (+200% → +300%), Steele Creek
+(+211% → +300%), Prospect Capital (+2.7% → +3.3%), Gladstone Investment (+6.1% → +6.5%) and CION
+(+7.2% → +7.8%). They are passed to triage: their extra lines are instrument-level subtotals the
+data does not mark as such. Ares Capital (+0.08% → +0.38%) and Stellus (+0.19% → +0.48%) stay
+admitted. The cited examples are unchanged: Ivy Hill (SOI row 1781) is still dropped as a
+subtotal and Wittur's schedule line (SOI row 171216) is still kept with its copy dropped.
 
 ## Investigated, no rule: unfunded commitments (negative values)
 
@@ -255,6 +318,10 @@ fallback also picks up "Second Lien - Secured Debt [Member]" (SOI row 21666, $7.
 category subtotal, and the filing moves to +2.01%. The `Investments` tag appears on current
 identified rows of this one filing only.
 
+**Recovering before cleaning does not help either.** If the 34 TCW values are filled in before the
+rules run, `rule_rollforward_copies` removes only 1 of them, because the schedule has no holding
+with the identical value; TCW still moves from +16.72% to +112.46%.
+
 **Conclusion: no recovery rule.** In 2026q2 the custom fair-value tags carry commitments, fee
 adjustments or roll-forward repeats, so recovering them double counts; the alternative-tag
 fallback is evidenced for one row of one filing and would be fitted rather than general. The
@@ -269,11 +336,15 @@ Each filing's schedule also carries the prior period's holdings for comparison.
 never reach the cleaning rules: across the quarter 94,670 of 191,043 SOI rows (49.6%) are
 comparative and are set aside (`reports/period_split.csv`). No cleaning rule is needed.
 
-## Kept on purpose: equity and warrants
+## Kept on purpose, flagged: equity and warrants
 
 Equity, preferred units and warrants are real holdings and count in the filed total, so no rule
-drops them. After cleaning there are 6,284 such holdings in 158 filings ($34.9bn, 6.0% of
-cleaned fair value); 2,594 of them sit in admitted filings ($10.2bn). Example: Main Street
-Capital (adsh 0001396440-26-000073) keeps 185 equity holdings worth $1,251M, such as
-"OMi Topco, LLC | Preferred Member Units" ($79.0M, SOI row 136276), and still reconciles at
-−0.04%. Warrants with a zero value are kept too; they add nothing to the totals.
+drops them. Instead the pipeline flags them: `clean.flag_debt` adds `is_debt` (from
+`clean.is_debt`: a principal or spread, or debt words in the identifier or type), and
+`pipeline.run_baseline` applies it to the cleaned holdings. On 2026q2, 7,858 of 63,049 cleaned
+holdings are flagged `is_debt = False`, worth $51.7bn (8.9% of cleaned fair value), for example
+"Moffitt Holdings, LLC | Preferred Equity" and "Avison Young (Canada) Inc., Class F Common
+Shares | Equity". Example of the effect on admission: Main Street Capital (adsh
+0001396440-26-000073) keeps 185 equity holdings worth $1,251M, such as "OMi Topco, LLC |
+Preferred Member Units" ($79.0M, SOI row 136276), and reconciles at −0.04%. Test:
+`test_debt_flag_marks_equity_and_warrants_without_dropping_them`.
