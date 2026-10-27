@@ -218,3 +218,70 @@ def test_combined_baseline_uses_one_copy_of_repeated_filings():
             assert "soi.tsv" in str(e)
         else:
             raise AssertionError("Missing SOI must not silently shrink coverage")
+
+
+def test_filed_totals_reject_conflicts_and_wrong_contexts():
+    sub = pd.DataFrame({"adsh": ["same", "conflict", "context", "zero", "invalid"],
+                        "period": ["2026-03-31"] * 5})
+    facts = [
+        ("same", 100, "USD", "0", "0", "2026-03-31"),
+        ("same", 100, "USD", "0", "0", "2026-03-31"),
+        ("conflict", 100, "USD", "0", "0", "2026-03-31"),
+        ("conflict", 120, "USD", "0", "0", "2026-03-31"),
+        ("context", 100, "USD", "0", "0", "2026-03-31"),
+        ("context", 900, "EUR", "0", "0", "2026-03-31"),
+        ("context", 800, "USD", "1", "0", "2026-03-31"),
+        ("context", 700, "USD", "0", "1", "2026-03-31"),
+        ("context", 600, "USD", "0", "0", "2025-12-31"),
+        ("zero", 0, "USD", "0", "0", "2026-03-31"),
+        ("invalid", float("inf"), "USD", "0", "0", "2026-03-31"),
+    ]
+    num = pd.DataFrame(facts, columns=["adsh", "value", "uom", "qtrs", "dimn", "ddate"])
+    num["tag"] = reconcile.FV_TAG
+    totals = reconcile.filed_totals(num, sub).set_index("adsh")
+    assert totals.loc["same", "filed_fv"] == 100
+    assert totals.loc["same", "filed_total_candidates"] == 1
+    assert totals.loc["context", "filed_fv"] == 100
+    assert totals.loc["conflict", "filed_total_status"] == "conflicting"
+    assert pd.isna(totals.loc["conflict", "filed_fv"])
+    assert totals.loc["zero", "filed_total_status"] == "nonpositive"
+    assert totals.loc["invalid", "filed_total_status"] == "invalid"
+    assert pd.isna(totals.loc["invalid", "filed_fv"])
+
+
+def test_reconciliation_boundary_missing_values_and_coverage():
+    ids = ["upper", "lower", "outside", "no_total", "zero", "negative",
+           "all_missing", "partial", "infinite", "no_holdings", "no_soi"]
+    sub = pd.DataFrame({"adsh": ids, "name": ids, "cik": ids,
+                        "form": "10-Q", "period": "2026-03-31"})
+    holdings = pd.DataFrame({
+        "adsh": ids[:9] + ["partial"], "identifier": "loan",
+        "fair_value": [101, 99, 101.001, 100, 0, -100, float("nan"), 100,
+                       float("inf"), float("nan")]})
+    filed = pd.DataFrame({"adsh": ids, "filed_fv": [100, 100, 100, float("nan"),
+                          0, -100, 100, 100, 100, 100, 100]})
+    rec = reconcile.reconcile(holdings, filed, sub, .01, soi_adsh=set(ids[:-1]))
+    rows = rec.set_index("adsh")
+    assert set(rows.index) == set(ids[:-1])
+    assert set(rows.index[rows.admitted]) == {"upper", "lower", "partial"}
+    assert rows.loc["outside", "gap_pct"] > .01
+    assert rows.loc["no_holdings", "n_holdings"] == 0
+    assert rows.loc["partial", "missing_fv"] == 1  # retain evidence; no invented zero
+    assert pd.isna(rows.loc["all_missing", "holdings_fv"])
+    for a in ("no_total", "zero", "negative", "all_missing", "infinite", "no_holdings"):
+        assert pd.isna(rows.loc[a, "gap_pct"]), a
+    cov = reconcile.coverage(rec, sub)
+    assert cov["filings_attempted"] == 10
+    assert cov["filings_without_soi_rows"] == 1
+    assert cov["filings_without_soi_adsh"] == ["no_soi"]
+    assert cov["filings_without_usable_filed_total"] == 3
+    assert cov["filed_fv_attempted"] == 700
+    for tol in (-.01, float("nan"), float("inf"), 1):
+        try:
+            reconcile.reconcile(holdings, filed, sub, tol)
+        except ValueError:
+            continue
+        raise AssertionError(f"Invalid tolerance accepted: {tol}")
+    empty = reconcile.reconcile(holdings.iloc[:0], filed, sub, .01, soi_adsh=set())
+    assert empty.empty
+    assert reconcile.coverage(empty, sub)["filings_without_soi_rows"] == len(sub)

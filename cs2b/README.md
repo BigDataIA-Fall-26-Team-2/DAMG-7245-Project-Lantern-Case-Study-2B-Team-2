@@ -81,3 +81,23 @@ combined table loaders and selects consistent filing copies across SUB/SOI/NUM.
 It does not classify periods, clean holdings or reconcile totals. `pipeline.run_baseline`
 coordinates those steps and accepts an explicit rules list, defaulting to the
 existing two starter rules when none is supplied.
+
+
+### Reconciliation safeguards
+
+Filed totals must be undimensioned, USD, instant (`qtrs=0`) facts at the SUB
+period end. Identical repeated values are accepted; conflicting or nonfinite
+values leave the total unresolved and carry `filed_total_status` for review.
+Zero/negative totals cannot support percentage-based admission.
+
+Admission uses the absolute fractional gap and includes the exact configured
+boundary. Missing totals, no holdings, all-missing values and infinite holding
+values produce a blank gap and are not admitted. Partially missing fair values
+remain counted in `missing_fv`; the known-value sum is still compared using the
+handout's tolerance, without inventing values for missing holdings.
+
+Coverage retains every attempted filing. It also identifies SUB filings without
+SOI rows and counts attempts without a usable filed total. Dollar coverage uses
+only known positive filed totals: dollars for unresolved filings are unknown,
+not estimated as zero. These safeguards do not replace filing-level triage or
+human-readable spot checks. Final report/checker integration remains a later batch.

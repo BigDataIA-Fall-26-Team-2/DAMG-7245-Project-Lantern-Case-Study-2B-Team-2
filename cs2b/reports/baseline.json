@@ -16,8 +16,17 @@
   "filings_attempted": 177,
   "filings_admitted": 73,
   "share_of_filings": 0.412,
+  "filings_without_usable_filed_total": 8,
   "filed_fv_attempted": 542175875908.0,
   "filed_fv_admitted": 139945140251.0,
   "share_of_dollars": 0.258,
-  "filings_without_soi_rows": 6
+  "filings_without_soi_rows": 6,
+  "filings_without_soi_adsh": [
+    "0001104659-26-061304",
+    "0001104659-26-062798",
+    "0001193125-26-221935",
+    "0001376474-26-000364",
+    "0001437749-26-014916",
+    "0001437749-26-017006"
+  ]
 }
