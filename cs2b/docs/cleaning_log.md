@@ -173,10 +173,15 @@ reductions, gains and income. The SOI data set carries those rows on the same id
 so each affiliate holding appears twice: once from the schedule (with cost, principal, rate)
 and once from the roll-forward (fair value only).
 
-**Rule.** Drop a holding that has a positive fair value but no cost and no principal, when the
-same filing and period has a holding of the same issuer (identifier text before " | " or ",",
-without a trailing tranche number) with the identical fair value that does carry cost or
-principal. The filed total is not used.
+**Rule.** Drop a holding that has a positive fair value but no cost and no principal only when
+(1) its identifier also carries a roll-forward opening balance, i.e. a comparative-period fair
+value with no cost and no principal (`clean.add_rollforward_evidence` sets `rf_opening`), and
+(2) the same filing and period has a holding of the same issuer (identifier text before " | "
+or ",", without a trailing tranche number) with the identical fair value that does carry cost
+or principal, (3) of a compatible instrument (debt never matches equity; two debt rows that
+both name a form must name the same one, so a revolver is never a copy of a term loan), and
+(4) that holding has not already vouched for another copy. Anything less is ambiguous and the
+row is kept. The filed total is not used.
 
 **Example.** FS KKR Capital, adsh 0001628280-26-033118 (2026_05). Schedule line SOI row 171216,
 "Wittur Holding GmbH | Capital Goods 1", fair value $65.9M, cost $63.5M, principal $58.7M.
@@ -184,8 +189,8 @@ Roll-forward copy "Wittur Holding GmbH 1": SOI row 171222 repeats the $65.9M end
 with no cost or principal, and row 171223 holds the quarter's roll-forward flows (gross
 additions $2.0M, interest income $0.2M); row 171221 holds the prior year's flows. The copy is dropped; the schedule line is kept.
 
-**Rows affected.** 324 current-period rows in 20 filings (252 before the review fixes below; rows the
-subtotal rule now keeps are matched here instead when they are bare copies of a schedule holding).
+**Rows affected.** 319 current-period rows ($6.77bn) in 20 filings (252 before the first review
+fix, 324 after it, 319 after the second; see "Review fixes" below).
 
 **Effect.** 4 newly admitted (Main Street Capital +12.82% → −0.04%, MSC Income Fund
 +4.41% → −0.49%, Monroe Capital Income Plus, Lafayette Square); none harmed and none moved
@@ -198,7 +203,9 @@ it moved HPS Corporate Lending and Crescent Capital BDC slightly further from th
 positive-only version is kept; negative repeated values are left for the unfunded-commitment
 investigation.
 
-**Test.** `test_rollforward_copy_rule_drops_only_bare_twins`.
+**Tests.** `test_rollforward_copy_rule_drops_only_bare_twins`,
+`test_rollforward_evidence_is_an_opening_value_without_cost_or_principal`, and the review
+regression tests below.
 
 ## Review fixes (PR #3, Lokesh)
 
@@ -241,6 +248,40 @@ Investcorp Credit Management (+7.5% → +15.1%), Remora Capital (+200% → +300%
 data does not mark as such. Ares Capital (+0.08% → +0.38%) and Stellus (+0.19% → +0.48%) stay
 admitted. The cited examples are unchanged: Ivy Hill (SOI row 1781) is still dropped as a
 subtotal and Wittur's schedule line (SOI row 171216) is still kept with its copy dropped.
+
+
+### Second review (commit 6fd1844)
+
+Lokesh showed the debt/equity check was still too coarse: with "Acme | First lien term loan"
+($100, with cost and principal) and "Acme | Revolving credit facility" ($100, without), the
+rule deleted the revolver because both are debt. Equal value and the same issuer do not prove
+a copy. Two changes:
+
+- **Roll-forward evidence is now required.** A candidate copy must also carry the
+  roll-forward's opening balance: a comparative-period fair value with no cost and no
+  principal on the same identifier. Schedule lines carry cost or principal in both periods;
+  roll-forward lines report beginning and ending value only. Example: Main Street, adsh
+  0001396440-26-000073 (2026_05), "AAC Holdings, Inc. | Secured Debt 1.1": SOI row 34572 is the
+  opening value ($895K, 2025-12-31), row 34573 the ending value ($940K), neither with cost or
+  principal. Of the 324 rows the 6fd1844 rule dropped, 318 have this evidence. Without the
+  evidence (or without the `rf_opening` column) a bare row is kept.
+- **Debt forms must agree when both are named** (`clean.debt_form`: revolver, delayed draw,
+  term loan, note). A row that names no form ("Secured Debt 1.1") stays compatible, because
+  schedules and roll-forwards often describe the same loan differently (Adapt Laser's
+  roll-forward "Revolving Loan" is the schedule's "Senior Secured First Lien Debt | Maturity 2").
+
+Tests: `test_rollforward_rule_keeps_a_revolver_that_matches_a_term_loan_by_value` (Lokesh's
+example, with and without evidence and without the column) and
+`test_rollforward_evidence_is_an_opening_value_without_cost_or_principal`; both fail on
+6fd1844 and pass now (30 of 30).
+
+**Effect on 2026q2.** Only Prospect Capital changes. Six of its bare term-loan rows have no
+opening balance (e.g. "Aventiv Technologies, LLC, Third Out Super Priority First Lien Term
+Loan", 2026_05 SOI row 41304, $22.7M) and are now kept; one evidenced copy, "Victor Technology,
+LLC" (SOI rows 168821-168822), now takes the counterpart its sibling used to take. Prospect goes
++3.3% → +4.4% and was not admitted either way. Still 90 of 177 filings and 43.5% of dollars; no
+admitted filing changes. Wittur's copies (SOI rows 171222, 171227, 171234) are still dropped.
+362 evidenced bare rows have no same-value schedule twin and are kept.
 
 ## Investigated, no rule: unfunded commitments (negative values)
 

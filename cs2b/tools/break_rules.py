@@ -68,8 +68,16 @@ BREAKS = [
      "                pass\n"),
     ("rule_rollforward_copies", "broken", "the instrument check is removed, so preferred "
      "equity is dropped as a copy of a loan with the same value (review finding P1)",
-     "if _compatible(kind[ix], k):",
-     "if True:"),
+     "if _compatible(kind[ix], k) and _compatible(form[ix], f):",
+     "if _compatible(form[ix], f):"),
+    ("rule_rollforward_copies", "broken", "the debt-form check is removed, so a revolver "
+     "is dropped as a copy of a term loan with the same value (second review finding)",
+     "if _compatible(kind[ix], k) and _compatible(form[ix], f):",
+     "if _compatible(kind[ix], k):"),
+    ("rule_rollforward_copies", "broken", "the roll-forward evidence requirement is removed, "
+     "so any bare row is a candidate copy (second review finding)",
+     "            & h[\"rf_opening\"].fillna(False).astype(bool))",
+     ")"),
     ("rule_rollforward_copies", "broken", "a schedule holding may vouch for any number of "
      "copies, so two bare rows are dropped against one counterpart (review finding P1)",
      "                del pool[n]          # one counterpart per copy\n",
@@ -198,7 +206,10 @@ def main():
           "reviewing PR #3: an unrestricted name prefix in `rule_issuer_subtotals` (P2), and in "
           "`rule_rollforward_copies` matching by issuer and value only, plus every rule seeing "
           "rows an earlier rule had dropped (P1). Each now has a regression test that fails on "
-          "the pre-review code (23 of 28 pass there) and passes after the fix.", ""]
+          "the pre-review code (23 of 28 pass there) and passes after the fix. Two more "
+          "(marked *second review finding*) reproduce Lokesh's second review of 6fd1844: a "
+          "revolver dropped as a copy of a same-value term loan, and bare rows treated as "
+          "copies without roll-forward evidence.", ""]
     L += ["## Known limitations no test covers", "",
           "These are real cases where the rules do not give the right answer, recorded so "
           "nobody mistakes the passing suite for full correctness. Details are in "

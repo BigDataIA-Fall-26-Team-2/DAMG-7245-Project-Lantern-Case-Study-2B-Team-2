@@ -134,37 +134,89 @@ def _issuer_key(identifier: str) -> str:
     return re.sub(r"\s+\d+$", "", s).strip().lower()
 
 
+# Debt forms that name different instruments. A copy and its counterpart
+# that both name a form must name the same one ("revolver" never matches
+# "term loan"); a row naming none ("Secured Debt 1.1") is compatible.
+DEBT_FORMS = [("revolver", r"\brevolv\w*"),
+              ("delayed draw", r"\bdelayed[- ]draw\b|\bddtl\b"),
+              ("term loan", r"\bterm (?:loan|note|debt)\b"),
+              ("note", r"\b(?:notes?|bonds?|debentures?)\b")]
+
+
+def debt_form(identifier) -> str:
+    t = str(identifier or "").lower()
+    for name, pat in DEBT_FORMS:
+        if re.search(pat, t):
+            return name
+    return ""
+
+
+def add_rollforward_evidence(h: pd.DataFrame) -> pd.DataFrame:
+    """Add `rf_opening`: True when the same filing, identifier and
+    subsidiary also has a comparative-period row with a fair value but no
+    cost and no principal. That is the opening balance of the affiliated-
+    investments roll-forward table, which reports beginning and ending fair
+    value only; schedule rows report cost or principal. Call this on all
+    coalesced holdings (current and comparative) before keeping the current
+    rows."""
+    out = h.copy()
+    if out.empty or "is_current" not in out:
+        out["rf_opening"] = False
+        return out
+    sub = (out["subsidiary"] if "subsidiary" in out
+           else pd.Series(None, index=out.index)).fillna("")
+    key = list(zip(out["adsh"], out["identifier"].astype(str).str.strip(),
+                   sub))
+    prior = (~out["is_current"] & out["fair_value"].notna()
+             & out["cost"].isna() & out["principal"].isna())
+    opening = {k for k, p in zip(key, prior) if p}
+    out["rf_opening"] = [k in opening for k in key]
+    out["rf_opening"] &= out["is_current"]
+    return out
+
+
 def rule_rollforward_copies(h: pd.DataFrame):
     """Drop holdings repeated from the affiliated-investments roll-forward
     table. That table restates each affiliate holding's ending fair value
-    beside its additions, reductions and income, so the holding is counted
-    twice. The copy carries a fair value but no cost and no principal; it is
-    dropped only when the same filing and period has a holding of the same
-    issuer, with the identical fair value and a compatible instrument (debt
-    never matches equity), that does carry cost or principal. Each such
-    holding vouches for one copy only. Positive values only: negative values
-    are unfunded commitments."""
+    beside its opening value and flows, so the holding is counted twice.
+
+    A row is dropped only when all of these hold:
+      * it has a positive fair value and no cost or principal;
+      * it has roll-forward evidence (`rf_opening`, from
+        add_rollforward_evidence): its identifier also carries an opening
+        fair value with no cost or principal. Without that column, or without
+        the evidence, the row is kept;
+      * the same filing and period has a holding of the same issuer, with the
+        identical fair value and cost or principal (the schedule line);
+      * the two are compatible instruments: debt never matches equity, and
+        two debt rows that both name a form must name the same one (a
+        revolver is not a copy of a term loan);
+      * that schedule line has not already vouched for another copy.
+    Ambiguous candidates are kept. Negative values are unfunded
+    commitments and are never dropped."""
     why = "affiliate roll-forward copy of a holding already in the schedule"
     drop = pd.Series(False, index=h.index)
-    if h.empty:
+    if h.empty or "rf_opening" not in h:
         return drop, why
     fv = h["fair_value"]
     has_terms = h["cost"].notna() | h["principal"].notna()
-    bare = fv.notna() & (fv > 0) & ~has_terms
+    bare = (fv.notna() & (fv > 0) & ~has_terms
+            & h["rf_opening"].fillna(False).astype(bool))
     full = fv.notna() & has_terms
     if not bare.any() or not full.any():
         return drop, why
     iss = h["identifier"].fillna("").map(_issuer_key)
     kind = h["identifier"].map(instrument_kind)
+    form = h["identifier"].map(debt_form)
     twins = {}
     for ix in h.index[full]:
         twins.setdefault((h.at[ix, "adsh"], h.at[ix, "ddate"], iss[ix],
-                          round(fv[ix])), []).append(kind[ix])
+                          round(fv[ix])), []).append((kind[ix], form[ix]))
     for ix in h.index[bare]:
         key = (h.at[ix, "adsh"], h.at[ix, "ddate"], iss[ix], round(fv[ix]))
         pool = twins.get(key, [])
-        for n, k in enumerate(pool):
-            if _compatible(kind[ix], k):
+        for n, (k, f) in enumerate(pool):
+            if _compatible(kind[ix], k) and _compatible(form[ix], f):
                 drop[ix] = True
                 del pool[n]          # one counterpart per copy
                 break

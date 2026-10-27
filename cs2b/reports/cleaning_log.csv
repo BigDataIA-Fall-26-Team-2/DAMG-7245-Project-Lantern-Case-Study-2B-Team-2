@@ -3,4 +3,4 @@ rule_totals,identifier names a total or subtotal,29,0002037804-26-000010 / 2026_
 rule_cash,cash or money-market line (not labelled a short-term investment),36,0001476765-26-000033 / 2026_05 soi_row 37364
 rule_jv_portfolio,"holding of an unconsolidated JV's portfolio, not the BDC's own",1014,0001628280-26-027688 / 2026_04 soi_row 161
 rule_issuer_subtotals,issuer-level subtotal equal to the sum of its holdings,133,0001628280-26-027688 / 2026_04 soi_row 235
-rule_rollforward_copies,affiliate roll-forward copy of a holding already in the schedule,324,0001628280-26-027688 / 2026_04 soi_row 199
+rule_rollforward_copies,affiliate roll-forward copy of a holding already in the schedule,319,0001628280-26-027688 / 2026_04 soi_row 199

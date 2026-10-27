@@ -11,7 +11,7 @@ def run_baseline(rdir, tolerance, rules=None) -> dict:
     num = load.load_num(rdir, tags=[reconcile.FV_TAG], custom_fv=True)
     canon = holdings.split_periods(mapping.to_canonical(soi, colmap),
                                    sub)
-    h = holdings.coalesce_holdings(canon)
+    h = clean.add_rollforward_evidence(holdings.coalesce_holdings(canon))
     if rules is None:
         rules = clean.RULES
     kept, log = clean.apply_rules(h[h["is_current"]], rules)

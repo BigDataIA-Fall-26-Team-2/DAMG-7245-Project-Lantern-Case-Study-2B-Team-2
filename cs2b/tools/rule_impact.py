@@ -28,7 +28,8 @@ def prepare(P):
     num = pd.concat([load.load_num(d, tags=[reconcile.FV_TAG], custom_fv=True)
                      for d in dirs.values() if combine.has_soi(d)],
                     ignore_index=True)
-    h = holdings.coalesce_holdings(holdings.split_periods(can, sub))
+    h = clean.add_rollforward_evidence(
+        holdings.coalesce_holdings(holdings.split_periods(can, sub)))
     return sub, can, num, h[h["is_current"]]
 
 

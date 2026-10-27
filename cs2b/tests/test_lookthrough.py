@@ -239,6 +239,7 @@ def test_rollforward_copy_rule_drops_only_bare_twins():
         "fair_value": [65.9e6, 65.9e6, 10e6, 9e6, -1e6],
         "cost": [63.5e6, None, 9e6, None, None],
         "principal": [58.7e6, None, 10e6, None, None],
+        "rf_opening": [False, True, False, True, True],
         "source_rows": [str(i) for i in range(5)]})
     drop, _ = clean.rule_rollforward_copies(h)
     assert drop.tolist() == [False, True, False, False, False], drop.tolist()
@@ -279,7 +280,7 @@ def test_rollforward_rule_keeps_a_distinct_instrument_with_the_same_value():
         "adsh": ["A", "A"], "ddate": ["2026-03-31"] * 2,
         "identifier": ["Acme, Inc. | First lien loan", "Acme, Inc. | Preferred equity"],
         "fair_value": [100.0, 100.0], "cost": [98.0, None], "principal": [100.0, None],
-        "source_rows": ["0", "1"]})
+        "rf_opening": [False, True], "source_rows": ["0", "1"]})
     drop, _ = clean.rule_rollforward_copies(h)
     assert drop.tolist() == [False, False], drop.tolist()
 
@@ -292,7 +293,7 @@ def test_rollforward_rule_ignores_a_counterpart_already_dropped_as_jv():
         "identifier": ["Acme, Inc. | First lien loan", "Acme, Inc. | First lien loan"],
         "subsidiary": ["Senior Loan Program [Member]", None],
         "fair_value": [100.0, 100.0], "cost": [98.0, None], "principal": [100.0, None],
-        "source_rows": ["0", "1"]})
+        "rf_opening": [False, True], "source_rows": ["0", "1"]})
     kept, log = clean.apply_rules(h, [clean.rule_jv_portfolio, clean.rule_rollforward_copies])
     assert kept["source_rows"].tolist() == ["1"], kept["source_rows"].tolist()
     assert log["rows_affected"].tolist() == [1, 0]
@@ -305,9 +306,56 @@ def test_rollforward_rule_lets_one_holding_vouch_for_one_copy():
         "identifier": ["Acme, Inc. | Secured debt 1", "Acme, Inc. | Secured debt 1.1",
                        "Acme, Inc. | Secured debt 1.2"],
         "fair_value": [100.0, 100.0, 100.0], "cost": [98.0, None, None],
-        "principal": [100.0, None, None], "source_rows": ["0", "1", "2"]})
+        "principal": [100.0, None, None], "rf_opening": [False, True, True],
+        "source_rows": ["0", "1", "2"]})
     drop, _ = clean.rule_rollforward_copies(h)
     assert drop.tolist() == [False, True, False], drop.tolist()
+
+
+# Regression tests from Lokesh's second review of PR #3 (commit 6fd1844).
+
+def test_rollforward_rule_keeps_a_revolver_that_matches_a_term_loan_by_value():
+    # Lokesh's example: a term loan (with cost/principal) and a revolver
+    # (without), same issuer, both 100. Both are debt, but nothing shows the
+    # revolver is a roll-forward copy, so it is kept. Even with roll-forward
+    # evidence it is kept, because a revolver is not a copy of a term loan.
+    base = {"adsh": ["A", "A"], "ddate": ["2026-03-31"] * 2,
+            "identifier": ["Acme | First lien term loan", "Acme | Revolving credit facility"],
+            "fair_value": [100.0, 100.0], "cost": [98.0, None],
+            "principal": [100.0, None], "source_rows": ["0", "1"]}
+    no_evidence = pd.DataFrame({**base, "rf_opening": [False, False]})
+    drop, _ = clean.rule_rollforward_copies(no_evidence)
+    assert drop.tolist() == [False, False], drop.tolist()
+    with_evidence = pd.DataFrame({**base, "rf_opening": [False, True]})
+    drop, _ = clean.rule_rollforward_copies(with_evidence)
+    assert drop.tolist() == [False, False], drop.tolist()
+    without_column = pd.DataFrame(base)
+    drop, _ = clean.rule_rollforward_copies(without_column)
+    assert drop.tolist() == [False, False], drop.tolist()
+
+
+def test_rollforward_evidence_is_an_opening_value_without_cost_or_principal():
+    # The roll-forward copy "Acme | Secured Debt 1.1" has an opening value
+    # (prior period, no cost or principal); the schedule line "Acme | Secured
+    # Debt 1" has cost in both periods. Only the copy gets rf_opening, and the
+    # rule then drops it.
+    h = pd.DataFrame({
+        "adsh": ["A"] * 4,
+        "ddate": ["2026-03-31", "2025-12-31", "2026-03-31", "2025-12-31"],
+        "is_current": [True, False, True, False],
+        "identifier": ["Acme | Secured Debt 1", "Acme | Secured Debt 1",
+                       "Acme | Secured Debt 1.1", "Acme | Secured Debt 1.1"],
+        "fair_value": [100.0, 95.0, 100.0, 95.0], "cost": [98.0, 97.0, None, None],
+        "principal": [100.0, 100.0, None, None], "source_rows": ["0", "1", "2", "3"]})
+    out = clean.add_rollforward_evidence(h)
+    assert out["rf_opening"].tolist() == [False, False, True, False], out["rf_opening"].tolist()
+    cur = out[out["is_current"]]
+    drop, _ = clean.rule_rollforward_copies(cur)
+    assert drop.tolist() == [False, True], drop.tolist()
+    # The same bare row without an opening value has no roll-forward
+    # evidence: it could be a separate holding, so it is kept.
+    drop, _ = clean.rule_rollforward_copies(cur.assign(rf_opening=False))
+    assert drop.tolist() == [False, False], drop.tolist()
 
 
 def test_issuer_subtotal_rule_needs_a_real_name_boundary():
