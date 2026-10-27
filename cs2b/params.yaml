@@ -16,4 +16,4 @@ outputs:
 triage:
   input: data/triage.csv       # human-reviewed evidence; report generation never edits this
 cleaning:
-  rules: [rule_totals, rule_cash]  # extend only after reviewed Part 2 rules are integrated
+  rules: [rule_totals, rule_cash, rule_jv_portfolio, rule_issuer_subtotals, rule_rollforward_copies]

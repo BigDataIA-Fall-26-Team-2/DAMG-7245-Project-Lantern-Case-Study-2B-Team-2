@@ -1,10 +1,10 @@
 # Triage of non-admitted filings
 
-Filings attempted: 177; admitted: 73 (41.2%).
-Known positive filed fair value attempted: $542,175,875,908; admitted: $139,945,140,251 (25.8%).
+Filings attempted: 177; admitted: 90 (50.8%).
+Known positive filed fair value attempted: $542,175,875,908; admitted: $235,924,621,309 (43.5%).
 Attempts without a usable filed total: 8. Their unknown dollars are not included in the dollar denominator.
-Triage entries incomplete: 104. Outputs are preliminary until cleaning integration and filing-evidence review are complete.
-Cleaning rules used: rule_totals, rule_cash.
+Triage entries incomplete: 87. Outputs are preliminary until filing-evidence review is complete.
+Cleaning rules used: rule_totals, rule_cash, rule_jv_portfolio, rule_issuer_subtotals, rule_rollforward_copies.
 
 Generated from the separate triage input. Edit that input, not this report.
 A reviewed entry records human-supplied evidence; automated checks only assess completeness and stale totals.
@@ -23,20 +23,9 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 ## BLUE OWL CREDIT INCOME CORP. (0001812554-26-000027)
 
 - Status: **INCOMPLETE**
-- Holdings FV: 37,805,515,000; filed FV: 35,500,450,000; gap: +6.493%
+- Holdings FV: 36,839,808,000; filed FV: 35,500,450,000; gap: +3.773%
 - Filed-total status: ok
 - Diagnostic clues (not proven causes): 3 holdings missing fair value; 180 current SOI rows without identifiers; 371 custom fair-value facts in NUM.
-- Category: Not yet documented
-- Evidence: Not yet documented
-- Example: Not yet documented
-- Fix or reason: Not yet documented
-
-## ARES CAPITAL CORP (0001628280-26-027688)
-
-- Status: **INCOMPLETE**
-- Holdings FV: 34,391,800,000; filed FV: 29,499,300,000; gap: +16.585%
-- Filed-total status: ok
-- Diagnostic clues (not proven causes): 3 holdings missing fair value; 444 current SOI rows without identifiers; 84 custom fair-value facts in NUM.
 - Category: Not yet documented
 - Evidence: Not yet documented
 - Example: Not yet documented
@@ -53,45 +42,12 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Example: Not yet documented
 - Fix or reason: Not yet documented
 
-## ARES STRATEGIC INCOME FUND (0001628280-26-034133)
-
-- Status: **INCOMPLETE**
-- Holdings FV: 21,985,744,200; filed FV: 21,332,903,900; gap: +3.060%
-- Filed-total status: ok
-- Diagnostic clues (not proven causes): 1 holdings missing fair value; 387 current SOI rows without identifiers; 18 custom fair-value facts in NUM.
-- Category: Not yet documented
-- Evidence: Not yet documented
-- Example: Not yet documented
-- Fix or reason: Not yet documented
-
 ## BLUE OWL CAPITAL CORP (0001655888-26-000033)
 
 - Status: **INCOMPLETE**
-- Holdings FV: 18,354,514,000; filed FV: 15,344,201,000; gap: +19.619%
+- Holdings FV: 16,956,825,000; filed FV: 15,344,201,000; gap: +10.510%
 - Filed-total status: ok
 - Diagnostic clues (not proven causes): 7 holdings missing fair value; 213 current SOI rows without identifiers; 24 custom fair-value facts in NUM.
-- Category: Not yet documented
-- Evidence: Not yet documented
-- Example: Not yet documented
-- Fix or reason: Not yet documented
-
-## FS KKR CAPITAL CORP (0001628280-26-033118)
-
-- Status: **INCOMPLETE**
-- Holdings FV: 18,107,500,000; filed FV: 12,269,400,000; gap: +47.583%
-- Filed-total status: ok
-- Diagnostic clues (not proven causes): 2 holdings missing fair value; 99 current SOI rows without identifiers; 14 custom fair-value facts in NUM.
-- Category: Not yet documented
-- Evidence: Not yet documented
-- Example: Not yet documented
-- Fix or reason: Not yet documented
-
-## BLUE OWL TECHNOLOGY FINANCE CORP. (0001747777-26-000019)
-
-- Status: **INCOMPLETE**
-- Holdings FV: 15,478,807,000; filed FV: 14,068,239,000; gap: +10.027%
-- Filed-total status: ok
-- Diagnostic clues (not proven causes): 13 holdings missing fair value; 200 current SOI rows without identifiers; 18 custom fair-value facts in NUM.
 - Category: Not yet documented
 - Evidence: Not yet documented
 - Example: Not yet documented
@@ -108,23 +64,23 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Example: Not yet documented
 - Fix or reason: Not yet documented
 
-## PROSPECT CAPITAL CORP (0001287032-26-000164)
+## BLUE OWL TECHNOLOGY FINANCE CORP. (0001747777-26-000019)
 
 - Status: **INCOMPLETE**
-- Holdings FV: 10,166,205,000; filed FV: 6,302,465,000; gap: +61.305%
+- Holdings FV: 14,692,287,000; filed FV: 14,068,239,000; gap: +4.436%
 - Filed-total status: ok
-- Diagnostic clues (not proven causes): 43 holdings missing fair value; 453 current SOI rows without identifiers; 155 custom fair-value facts in NUM.
+- Diagnostic clues (not proven causes): 0 holdings missing fair value; 200 current SOI rows without identifiers; 18 custom fair-value facts in NUM.
 - Category: Not yet documented
 - Evidence: Not yet documented
 - Example: Not yet documented
 - Fix or reason: Not yet documented
 
-## GOLUB CAPITAL BDC, INC. (0001476765-26-000033)
+## FS KKR CAPITAL CORP (0001628280-26-033118)
 
 - Status: **INCOMPLETE**
-- Holdings FV: 8,495,439,000; filed FV: 8,317,245,000; gap: +2.142%
+- Holdings FV: 13,595,600,000; filed FV: 12,269,400,000; gap: +10.809%
 - Filed-total status: ok
-- Diagnostic clues (not proven causes): 3 holdings missing fair value; 208 current SOI rows without identifiers; 17 custom fair-value facts in NUM.
+- Diagnostic clues (not proven causes): 2 holdings missing fair value; 99 current SOI rows without identifiers; 14 custom fair-value facts in NUM.
 - Category: Not yet documented
 - Evidence: Not yet documented
 - Example: Not yet documented
@@ -133,7 +89,7 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 ## ARES CORE INFRASTRUCTURE FUND (0002031750-26-000032)
 
 - Status: **INCOMPLETE**
-- Holdings FV: 7,553,676,000; filed FV: 3,466,654,000; gap: +117.895%
+- Holdings FV: 7,215,247,000; filed FV: 3,466,654,000; gap: +108.133%
 - Filed-total status: ok
 - Diagnostic clues (not proven causes): 9 holdings missing fair value; 76 current SOI rows without identifiers; 1 custom fair-value facts in NUM.
 - Category: Not yet documented
@@ -152,23 +108,12 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Example: Not yet documented
 - Fix or reason: Not yet documented
 
-## MAIN STREET CAPITAL CORP (0001396440-26-000073)
+## PROSPECT CAPITAL CORP (0001287032-26-000164)
 
 - Status: **INCOMPLETE**
-- Holdings FV: 6,404,282,000; filed FV: 5,674,751,000; gap: +12.856%
+- Holdings FV: 6,580,719,000; filed FV: 6,302,465,000; gap: +4.415%
 - Filed-total status: ok
-- Diagnostic clues (not proven causes): 3 holdings missing fair value; 227 current SOI rows without identifiers; 4 custom fair-value facts in NUM.
-- Category: Not yet documented
-- Evidence: Not yet documented
-- Example: Not yet documented
-- Fix or reason: Not yet documented
-
-## MONROE CAPITAL INCOME PLUS CORP (0001742313-26-000026)
-
-- Status: **INCOMPLETE**
-- Holdings FV: 6,130,414,000; filed FV: 5,804,557,000; gap: +5.614%
-- Filed-total status: ok
-- Diagnostic clues (not proven causes): 0 holdings missing fair value; 335 current SOI rows without identifiers; 162 custom fair-value facts in NUM.
+- Diagnostic clues (not proven causes): 43 holdings missing fair value; 453 current SOI rows without identifiers; 155 custom fair-value facts in NUM.
 - Category: Not yet documented
 - Evidence: Not yet documented
 - Example: Not yet documented
@@ -185,21 +130,10 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Example: Not yet documented
 - Fix or reason: Not yet documented
 
-## FRANKLIN BSP CAPITAL CORP (0001825248-26-000017)
-
-- Status: **INCOMPLETE**
-- Holdings FV: 5,541,228,000; filed FV: 4,050,457,000; gap: +36.805%
-- Filed-total status: ok
-- Diagnostic clues (not proven causes): 1 holdings missing fair value; 152 current SOI rows without identifiers; 134 custom fair-value facts in NUM.
-- Category: Not yet documented
-- Evidence: Not yet documented
-- Example: Not yet documented
-- Fix or reason: Not yet documented
-
 ## BARINGS PRIVATE CREDIT CORP (0001859919-26-000041)
 
 - Status: **INCOMPLETE**
-- Holdings FV: 5,462,150,000; filed FV: 5,156,571,000; gap: +5.926%
+- Holdings FV: 5,329,136,000; filed FV: 5,156,571,000; gap: +3.347%
 - Filed-total status: ok
 - Diagnostic clues (not proven causes): 1 holdings missing fair value; 232 current SOI rows without identifiers; 14 custom fair-value facts in NUM.
 - Category: Not yet documented
@@ -207,34 +141,12 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Example: Not yet documented
 - Fix or reason: Not yet documented
 
-## BLUE OWL TECHNOLOGY INCOME CORP. (0001869453-26-000033)
+## FRANKLIN BSP CAPITAL CORP (0001825248-26-000017)
 
 - Status: **INCOMPLETE**
-- Holdings FV: 5,398,824,000; filed FV: 5,217,369,000; gap: +3.478%
+- Holdings FV: 4,729,150,000; filed FV: 4,050,457,000; gap: +16.756%
 - Filed-total status: ok
-- Diagnostic clues (not proven causes): 5 holdings missing fair value; 118 current SOI rows without identifiers; 14 custom fair-value facts in NUM.
-- Category: Not yet documented
-- Evidence: Not yet documented
-- Example: Not yet documented
-- Fix or reason: Not yet documented
-
-## BAIN CAPITAL SPECIALTY FINANCE, INC. (0001193125-26-217068)
-
-- Status: **INCOMPLETE**
-- Holdings FV: 4,781,753,000; filed FV: 2,470,798,000; gap: +93.531%
-- Filed-total status: ok
-- Diagnostic clues (not proven causes): 167 holdings missing fair value; 412 current SOI rows without identifiers; 92 custom fair-value facts in NUM.
-- Category: Not yet documented
-- Evidence: Not yet documented
-- Example: Not yet documented
-- Fix or reason: Not yet documented
-
-## TPG TWIN BROOK CAPITAL INCOME FUND (0001913724-26-000015)
-
-- Status: **INCOMPLETE**
-- Holdings FV: 4,579,623,000; filed FV: 4,481,018,000; gap: +2.201%
-- Filed-total status: ok
-- Diagnostic clues (not proven causes): 0 holdings missing fair value; 97 current SOI rows without identifiers; 7 custom fair-value facts in NUM.
+- Diagnostic clues (not proven causes): 1 holdings missing fair value; 152 current SOI rows without identifiers; 134 custom fair-value facts in NUM.
 - Category: Not yet documented
 - Evidence: Not yet documented
 - Example: Not yet documented
@@ -273,17 +185,6 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Example: Not yet documented
 - Fix or reason: Not yet documented
 
-## NEW MOUNTAIN FINANCE CORP (0001496099-26-000016)
-
-- Status: **INCOMPLETE**
-- Holdings FV: 3,947,906,000; filed FV: 2,313,379,000; gap: +70.655%
-- Filed-total status: ok
-- Diagnostic clues (not proven causes): 15 holdings missing fair value; 192 current SOI rows without identifiers; 7 custom fair-value facts in NUM.
-- Category: Not yet documented
-- Evidence: Not yet documented
-- Example: Not yet documented
-- Fix or reason: Not yet documented
-
 ## SARATOGA INVESTMENT CORP. (0001213900-26-052176)
 
 - Status: **INCOMPLETE**
@@ -298,7 +199,7 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 ## CARLYLE SECURED LENDING, INC. (0001544206-26-000033)
 
 - Status: **INCOMPLETE**
-- Holdings FV: 3,545,164,000; filed FV: 2,277,105,000; gap: +55.687%
+- Holdings FV: 3,420,271,000; filed FV: 2,277,105,000; gap: +50.203%
 - Filed-total status: ok
 - Diagnostic clues (not proven causes): 0 holdings missing fair value; 250 current SOI rows without identifiers; 206 custom fair-value facts in NUM.
 - Category: Not yet documented
@@ -323,17 +224,6 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Holdings FV: 3,336,688,000; filed FV: 2,678,325,000; gap: +24.581%
 - Filed-total status: ok
 - Diagnostic clues (not proven causes): 0 holdings missing fair value; 49 current SOI rows without identifiers; 12 custom fair-value facts in NUM.
-- Category: Not yet documented
-- Evidence: Not yet documented
-- Example: Not yet documented
-- Fix or reason: Not yet documented
-
-## OAKTREE SPECIALTY LENDING CORP (0001414932-26-000012)
-
-- Status: **INCOMPLETE**
-- Holdings FV: 3,314,987,000; filed FV: 2,766,367,000; gap: +19.832%
-- Filed-total status: ok
-- Diagnostic clues (not proven causes): 8 holdings missing fair value; 147 current SOI rows without identifiers; 34 custom fair-value facts in NUM.
 - Category: Not yet documented
 - Evidence: Not yet documented
 - Example: Not yet documented
@@ -375,7 +265,7 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 ## TRINITY CAPITAL INC. (0001193125-26-207620)
 
 - Status: **INCOMPLETE**
-- Holdings FV: 2,647,266,000; filed FV: 2,483,554,000; gap: +6.592%
+- Holdings FV: 2,647,074,000; filed FV: 2,483,554,000; gap: +6.584%
 - Filed-total status: ok
 - Diagnostic clues (not proven causes): 58 holdings missing fair value; 259 current SOI rows without identifiers; 63 custom fair-value facts in NUM.
 - Category: Not yet documented
@@ -405,34 +295,12 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Example: Not yet documented
 - Fix or reason: Not yet documented
 
-## CION INVESTMENT CORP (0001534254-26-000006)
-
-- Status: **INCOMPLETE**
-- Holdings FV: 2,476,072,000; filed FV: 1,799,474,000; gap: +37.600%
-- Filed-total status: ok
-- Diagnostic clues (not proven causes): 37 holdings missing fair value; 60 current SOI rows without identifiers; 7 custom fair-value facts in NUM.
-- Category: Not yet documented
-- Evidence: Not yet documented
-- Example: Not yet documented
-- Fix or reason: Not yet documented
-
 ## BARINGS BDC, INC. (0001379785-26-000022)
 
 - Status: **INCOMPLETE**
 - Holdings FV: 2,465,524,000; filed FV: 2,369,989,000; gap: +4.031%
 - Filed-total status: ok
 - Diagnostic clues (not proven causes): 0 holdings missing fair value; 230 current SOI rows without identifiers; 21 custom fair-value facts in NUM.
-- Category: Not yet documented
-- Evidence: Not yet documented
-- Example: Not yet documented
-- Fix or reason: Not yet documented
-
-## NEW MOUNTAIN PRIVATE CREDIT FUND (0002037804-26-000010)
-
-- Status: **INCOMPLETE**
-- Holdings FV: 2,303,451,000; filed FV: 1,984,275,000; gap: +16.085%
-- Filed-total status: ok
-- Diagnostic clues (not proven causes): 11 holdings missing fair value; 187 current SOI rows without identifiers; 6 custom fair-value facts in NUM.
 - Category: Not yet documented
 - Evidence: Not yet documented
 - Example: Not yet documented
@@ -460,12 +328,12 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Example: Not yet documented
 - Fix or reason: Not yet documented
 
-## BAIN CAPITAL PRIVATE CREDIT (0001193125-26-224183)
+## CION INVESTMENT CORP (0001534254-26-000006)
 
 - Status: **INCOMPLETE**
-- Holdings FV: 2,221,596,000; filed FV: 1,815,082,000; gap: +22.396%
+- Holdings FV: 1,939,858,000; filed FV: 1,799,474,000; gap: +7.801%
 - Filed-total status: ok
-- Diagnostic clues (not proven causes): 43 holdings missing fair value; 201 current SOI rows without identifiers; 86 custom fair-value facts in NUM.
+- Diagnostic clues (not proven causes): 37 holdings missing fair value; 60 current SOI rows without identifiers; 7 custom fair-value facts in NUM.
 - Category: Not yet documented
 - Evidence: Not yet documented
 - Example: Not yet documented
@@ -559,39 +427,6 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Example: Not yet documented
 - Fix or reason: Not yet documented
 
-## AGL PRIVATE CREDIT INCOME FUND (0001193125-26-214378)
-
-- Status: **INCOMPLETE**
-- Holdings FV: 1,510,429,000; filed FV: 1,249,444,000; gap: +20.888%
-- Filed-total status: ok
-- Diagnostic clues (not proven causes): 62 holdings missing fair value; 77 current SOI rows without identifiers; 40 custom fair-value facts in NUM.
-- Category: Not yet documented
-- Evidence: Not yet documented
-- Example: Not yet documented
-- Fix or reason: Not yet documented
-
-## MSC INCOME FUND, INC. (0001535778-26-000048)
-
-- Status: **INCOMPLETE**
-- Holdings FV: 1,436,420,000; filed FV: 1,369,202,000; gap: +4.909%
-- Filed-total status: ok
-- Diagnostic clues (not proven causes): 3 holdings missing fair value; 172 current SOI rows without identifiers; 4 custom fair-value facts in NUM.
-- Category: Not yet documented
-- Evidence: Not yet documented
-- Example: Not yet documented
-- Fix or reason: Not yet documented
-
-## GLADSTONE INVESTMENT CORPORATIONDE (0001321741-26-000011)
-
-- Status: **INCOMPLETE**
-- Holdings FV: 1,431,998,000; filed FV: 1,309,248,000; gap: +9.376%
-- Filed-total status: ok
-- Diagnostic clues (not proven causes): 1 holdings missing fair value; 83 current SOI rows without identifiers; 16 custom fair-value facts in NUM.
-- Category: Not yet documented
-- Evidence: Not yet documented
-- Example: Not yet documented
-- Fix or reason: Not yet documented
-
 ## BLACKROCK TCP CAPITAL CORP. (0001193125-26-210632)
 
 - Status: **INCOMPLETE**
@@ -603,12 +438,23 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Example: Not yet documented
 - Fix or reason: Not yet documented
 
+## GLADSTONE INVESTMENT CORPORATIONDE (0001321741-26-000011)
+
+- Status: **INCOMPLETE**
+- Holdings FV: 1,393,891,000; filed FV: 1,309,248,000; gap: +6.465%
+- Filed-total status: ok
+- Diagnostic clues (not proven causes): 1 holdings missing fair value; 83 current SOI rows without identifiers; 16 custom fair-value facts in NUM.
+- Category: Not yet documented
+- Evidence: Not yet documented
+- Example: Not yet documented
+- Fix or reason: Not yet documented
+
 ## LORD ABBETT PRIVATE CREDIT FUND (0000930413-26-001612)
 
 - Status: **INCOMPLETE**
 - Holdings FV: 1,361,933,000; filed FV: 1,413,006,000; gap: -3.614%
 - Filed-total status: ok
-- Diagnostic clues (not proven causes): 5 holdings missing fair value; 650 current SOI rows without identifiers; 0 custom fair-value facts in NUM.
+- Diagnostic clues (not proven causes): 4 holdings missing fair value; 650 current SOI rows without identifiers; 0 custom fair-value facts in NUM.
 - Category: Not yet documented
 - Evidence: Not yet documented
 - Example: Not yet documented
@@ -625,12 +471,12 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Example: Not yet documented
 - Fix or reason: Not yet documented
 
-## OXFORD SQUARE CAPITAL CORP. (0001213900-26-050934)
+## AGL PRIVATE CREDIT INCOME FUND (0001193125-26-214378)
 
 - Status: **INCOMPLETE**
-- Holdings FV: 1,226,594,734; filed FV: n/a; gap: n/a
-- Filed-total status: missing
-- Diagnostic clues (not proven causes): 11 holdings missing fair value; 1 current SOI rows without identifiers; 18 custom fair-value facts in NUM.
+- Holdings FV: 1,278,898,000; filed FV: 1,249,444,000; gap: +2.357%
+- Filed-total status: ok
+- Diagnostic clues (not proven causes): 62 holdings missing fair value; 77 current SOI rows without identifiers; 40 custom fair-value facts in NUM.
 - Category: Not yet documented
 - Evidence: Not yet documented
 - Example: Not yet documented
@@ -647,34 +493,23 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Example: Not yet documented
 - Fix or reason: Not yet documented
 
+## OXFORD SQUARE CAPITAL CORP. (0001213900-26-050934)
+
+- Status: **INCOMPLETE**
+- Holdings FV: 1,185,957,650; filed FV: n/a; gap: n/a
+- Filed-total status: missing
+- Diagnostic clues (not proven causes): 11 holdings missing fair value; 1 current SOI rows without identifiers; 18 custom fair-value facts in NUM.
+- Category: Not yet documented
+- Evidence: Not yet documented
+- Example: Not yet documented
+- Fix or reason: Not yet documented
+
 ## APOLLO ORIGINATION II (UL) CAPITAL TRUST (0001193125-26-221829)
 
 - Status: **INCOMPLETE**
 - Holdings FV: 1,168,495,000; filed FV: 640,752,000; gap: +82.363%
 - Filed-total status: ok
 - Diagnostic clues (not proven causes): 0 holdings missing fair value; 192 current SOI rows without identifiers; 19 custom fair-value facts in NUM.
-- Category: Not yet documented
-- Evidence: Not yet documented
-- Example: Not yet documented
-- Fix or reason: Not yet documented
-
-## PALMER SQUARE CAPITAL BDC INC. (0001193125-26-207523)
-
-- Status: **INCOMPLETE**
-- Holdings FV: 1,131,265,118; filed FV: 1,154,636,534; gap: -2.024%
-- Filed-total status: ok
-- Diagnostic clues (not proven causes): 40 holdings missing fair value; 64 current SOI rows without identifiers; 2 custom fair-value facts in NUM.
-- Category: Not yet documented
-- Evidence: Not yet documented
-- Example: Not yet documented
-- Fix or reason: Not yet documented
-
-## PHENIXFIN CORP (0001213900-26-052253)
-
-- Status: **INCOMPLETE**
-- Holdings FV: 1,127,887,071; filed FV: n/a; gap: n/a
-- Filed-total status: missing
-- Diagnostic clues (not proven causes): 4 holdings missing fair value; 70 current SOI rows without identifiers; 30 custom fair-value facts in NUM.
 - Category: Not yet documented
 - Evidence: Not yet documented
 - Example: Not yet documented
@@ -702,10 +537,21 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Example: Not yet documented
 - Fix or reason: Not yet documented
 
+## PHENIXFIN CORP (0001213900-26-052253)
+
+- Status: **INCOMPLETE**
+- Holdings FV: 961,077,772; filed FV: n/a; gap: n/a
+- Filed-total status: missing
+- Diagnostic clues (not proven causes): 4 holdings missing fair value; 70 current SOI rows without identifiers; 30 custom fair-value facts in NUM.
+- Category: Not yet documented
+- Evidence: Not yet documented
+- Example: Not yet documented
+- Fix or reason: Not yet documented
+
 ## BLUE OWL CAPITAL CORP II (0001655887-26-000013)
 
 - Status: **INCOMPLETE**
-- Holdings FV: 959,742,000; filed FV: 874,745,000; gap: +9.717%
+- Holdings FV: 946,739,000; filed FV: 874,745,000; gap: +8.230%
 - Filed-total status: ok
 - Diagnostic clues (not proven causes): 0 holdings missing fair value; 134 current SOI rows without identifiers; 193 custom fair-value facts in NUM.
 - Category: Not yet documented
@@ -746,39 +592,6 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Example: Not yet documented
 - Fix or reason: Not yet documented
 
-## LAFAYETTE SQUARE USA, INC. (0001628280-26-032846)
-
-- Status: **INCOMPLETE**
-- Holdings FV: 886,429,000; filed FV: 822,060,000; gap: +7.830%
-- Filed-total status: ok
-- Diagnostic clues (not proven causes): 0 holdings missing fair value; 119 current SOI rows without identifiers; 18 custom fair-value facts in NUM.
-- Category: Not yet documented
-- Evidence: Not yet documented
-- Example: Not yet documented
-- Fix or reason: Not yet documented
-
-## TCW DIRECT LENDING VII LLC (0001193125-26-221880)
-
-- Status: **INCOMPLETE**
-- Holdings FV: 875,762,086; filed FV: 657,323,982; gap: +33.231%
-- Filed-total status: ok
-- Diagnostic clues (not proven causes): 16 holdings missing fair value; 27 current SOI rows without identifiers; 60 custom fair-value facts in NUM.
-- Category: Not yet documented
-- Evidence: Not yet documented
-- Example: Not yet documented
-- Fix or reason: Not yet documented
-
-## TCW DIRECT LENDING VII LLC (0001193125-26-141887)
-
-- Status: **INCOMPLETE**
-- Holdings FV: 860,917,114; filed FV: 645,193,114; gap: +33.436%
-- Filed-total status: ok
-- Diagnostic clues (not proven causes): 18 holdings missing fair value; 27 current SOI rows without identifiers; 64 custom fair-value facts in NUM.
-- Category: Not yet documented
-- Evidence: Not yet documented
-- Example: Not yet documented
-- Fix or reason: Not yet documented
-
 ## PHILLIP STREET BDC LLC (0001193125-26-219873)
 
 - Status: **INCOMPLETE**
@@ -793,7 +606,7 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 ## GLADSTONE CAPITAL CORP (0001143513-26-000009)
 
 - Status: **INCOMPLETE**
-- Holdings FV: 832,531,000; filed FV: 906,844,000; gap: -8.195%
+- Holdings FV: 853,848,000; filed FV: 906,844,000; gap: -5.844%
 - Filed-total status: ok
 - Diagnostic clues (not proven causes): 1 holdings missing fair value; 93 current SOI rows without identifiers; 25 custom fair-value facts in NUM.
 - Category: Not yet documented
@@ -812,12 +625,12 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Example: Not yet documented
 - Fix or reason: Not yet documented
 
-## TRIPLEPOINT VENTURE GROWTH BDC CORP. (0001580345-26-000021)
+## TCW DIRECT LENDING VII LLC (0001193125-26-221880)
 
 - Status: **INCOMPLETE**
-- Holdings FV: 763,269,000; filed FV: 785,635,000; gap: -2.847%
+- Holdings FV: 766,543,034; filed FV: 657,323,982; gap: +16.616%
 - Filed-total status: ok
-- Diagnostic clues (not proven causes): 0 holdings missing fair value; 159 current SOI rows without identifiers; 41 custom fair-value facts in NUM.
+- Diagnostic clues (not proven causes): 16 holdings missing fair value; 27 current SOI rows without identifiers; 60 custom fair-value facts in NUM.
 - Category: Not yet documented
 - Evidence: Not yet documented
 - Example: Not yet documented
@@ -829,6 +642,17 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Holdings FV: 756,889,000; filed FV: 476,888,000; gap: +58.714%
 - Filed-total status: ok
 - Diagnostic clues (not proven causes): 41 holdings missing fair value; 90 current SOI rows without identifiers; 95 custom fair-value facts in NUM.
+- Category: Not yet documented
+- Evidence: Not yet documented
+- Example: Not yet documented
+- Fix or reason: Not yet documented
+
+## TCW DIRECT LENDING VII LLC (0001193125-26-141887)
+
+- Status: **INCOMPLETE**
+- Holdings FV: 753,055,114; filed FV: 645,193,114; gap: +16.718%
+- Filed-total status: ok
+- Diagnostic clues (not proven causes): 18 holdings missing fair value; 27 current SOI rows without identifiers; 64 custom fair-value facts in NUM.
 - Category: Not yet documented
 - Evidence: Not yet documented
 - Example: Not yet documented
@@ -867,17 +691,6 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Example: Not yet documented
 - Fix or reason: Not yet documented
 
-## MUZINICH CORPORATE LENDING INCOME FUND, INC. (0001213900-26-055932)
-
-- Status: **INCOMPLETE**
-- Holdings FV: 568,562,430; filed FV: n/a; gap: n/a
-- Filed-total status: missing
-- Diagnostic clues (not proven causes): 0 holdings missing fair value; 38 current SOI rows without identifiers; 0 custom fair-value facts in NUM.
-- Category: Not yet documented
-- Evidence: Not yet documented
-- Example: Not yet documented
-- Fix or reason: Not yet documented
-
 ## TCW STAR DIRECT LENDING LLC (0001193125-26-221949)
 
 - Status: **INCOMPLETE**
@@ -900,23 +713,23 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Example: Not yet documented
 - Fix or reason: Not yet documented
 
+## MUZINICH CORPORATE LENDING INCOME FUND, INC. (0001213900-26-055932)
+
+- Status: **INCOMPLETE**
+- Holdings FV: 532,329,646; filed FV: n/a; gap: n/a
+- Filed-total status: missing
+- Diagnostic clues (not proven causes): 0 holdings missing fair value; 38 current SOI rows without identifiers; 0 custom fair-value facts in NUM.
+- Category: Not yet documented
+- Evidence: Not yet documented
+- Example: Not yet documented
+- Fix or reason: Not yet documented
+
 ## TCW DIRECT LENDING LLC (0001193125-26-140703)
 
 - Status: **INCOMPLETE**
 - Holdings FV: 500,302,915; filed FV: 263,724,095; gap: +89.707%
 - Filed-total status: ok
 - Diagnostic clues (not proven causes): 0 holdings missing fair value; 19 current SOI rows without identifiers; 75 custom fair-value facts in NUM.
-- Category: Not yet documented
-- Evidence: Not yet documented
-- Example: Not yet documented
-- Fix or reason: Not yet documented
-
-## ADVANCED FLOWER CAPITAL INC. (0001628280-26-031692)
-
-- Status: **INCOMPLETE**
-- Holdings FV: 480,358,258; filed FV: 279,237,624; gap: +72.025%
-- Filed-total status: ok
-- Diagnostic clues (not proven causes): 0 holdings missing fair value; 12 current SOI rows without identifiers; 16 custom fair-value facts in NUM.
 - Category: Not yet documented
 - Evidence: Not yet documented
 - Example: Not yet documented
@@ -966,6 +779,17 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Example: Not yet documented
 - Fix or reason: Not yet documented
 
+## TRIPLEPOINT PRIVATE VENTURE CREDIT INC. (0001792509-26-000017)
+
+- Status: **INCOMPLETE**
+- Holdings FV: 394,176,000; filed FV: 385,098,000; gap: +2.357%
+- Filed-total status: ok
+- Diagnostic clues (not proven causes): 0 holdings missing fair value; 196 current SOI rows without identifiers; 54 custom fair-value facts in NUM.
+- Category: Not yet documented
+- Evidence: Not yet documented
+- Example: Not yet documented
+- Fix or reason: Not yet documented
+
 ## GOLUB CAPITAL PRIVATE INCOME FUND I (0002082559-26-000051)
 
 - Status: **INCOMPLETE**
@@ -993,7 +817,7 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Status: **INCOMPLETE**
 - Holdings FV: 359,908,000; filed FV: 381,516,000; gap: -5.664%
 - Filed-total status: ok
-- Diagnostic clues (not proven causes): 75 holdings missing fair value; 410 current SOI rows without identifiers; 0 custom fair-value facts in NUM.
+- Diagnostic clues (not proven causes): 73 holdings missing fair value; 410 current SOI rows without identifiers; 0 custom fair-value facts in NUM.
 - Category: Not yet documented
 - Evidence: Not yet documented
 - Example: Not yet documented
@@ -1005,17 +829,6 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Holdings FV: 316,954,000; filed FV: n/a; gap: n/a
 - Filed-total status: missing
 - Diagnostic clues (not proven causes): 0 holdings missing fair value; 35 current SOI rows without identifiers; 7 custom fair-value facts in NUM.
-- Category: Not yet documented
-- Evidence: Not yet documented
-- Example: Not yet documented
-- Fix or reason: Not yet documented
-
-## GREAT ELM CAPITAL CORP. (0001193125-26-204228)
-
-- Status: **INCOMPLETE**
-- Holdings FV: 267,163,000; filed FV: 276,763,000; gap: -3.469%
-- Filed-total status: ok
-- Diagnostic clues (not proven causes): 14 holdings missing fair value; 47 current SOI rows without identifiers; 13 custom fair-value facts in NUM.
 - Category: Not yet documented
 - Evidence: Not yet documented
 - Example: Not yet documented
@@ -1065,23 +878,23 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Example: Not yet documented
 - Fix or reason: Not yet documented
 
-## RAND CAPITAL CORP (0001193125-26-207688)
-
-- Status: **INCOMPLETE**
-- Holdings FV: 76,521,051; filed FV: 51,543,064; gap: +48.460%
-- Filed-total status: ok
-- Diagnostic clues (not proven causes): 46 holdings missing fair value; 44 current SOI rows without identifiers; 15 custom fair-value facts in NUM.
-- Category: Not yet documented
-- Evidence: Not yet documented
-- Example: Not yet documented
-- Fix or reason: Not yet documented
-
 ## NEXPOINT CAPITAL, INC. (0001193125-26-223911)
 
 - Status: **INCOMPLETE**
 - Holdings FV: 72,848,492; filed FV: 36,753,538; gap: +98.208%
 - Filed-total status: ok
 - Diagnostic clues (not proven causes): 0 holdings missing fair value; 28 current SOI rows without identifiers; 32 custom fair-value facts in NUM.
+- Category: Not yet documented
+- Evidence: Not yet documented
+- Example: Not yet documented
+- Fix or reason: Not yet documented
+
+## RAND CAPITAL CORP (0001193125-26-207688)
+
+- Status: **INCOMPLETE**
+- Holdings FV: 68,752,836; filed FV: 51,543,064; gap: +33.389%
+- Filed-total status: ok
+- Diagnostic clues (not proven causes): 46 holdings missing fair value; 44 current SOI rows without identifiers; 15 custom fair-value facts in NUM.
 - Category: Not yet documented
 - Evidence: Not yet documented
 - Example: Not yet documented
@@ -1098,23 +911,23 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Example: Not yet documented
 - Fix or reason: Not yet documented
 
-## PRINCETON CAPITAL CORP (0001213900-26-057750)
-
-- Status: **INCOMPLETE**
-- Holdings FV: 24,154,474; filed FV: 13,906,408; gap: +73.693%
-- Filed-total status: ok
-- Diagnostic clues (not proven causes): 25 holdings missing fair value; 27 current SOI rows without identifiers; 0 custom fair-value facts in NUM.
-- Category: Not yet documented
-- Evidence: Not yet documented
-- Example: Not yet documented
-- Fix or reason: Not yet documented
-
 ## HANCOCK PARK CORPORATE INCOME, INC. (0001661306-26-000036)
 
 - Status: **INCOMPLETE**
 - Holdings FV: 23,892,336; filed FV: 24,826,470; gap: -3.763%
 - Filed-total status: ok
 - Diagnostic clues (not proven causes): 0 holdings missing fair value; 89 current SOI rows without identifiers; 28 custom fair-value facts in NUM.
+- Category: Not yet documented
+- Evidence: Not yet documented
+- Example: Not yet documented
+- Fix or reason: Not yet documented
+
+## PRINCETON CAPITAL CORP (0001213900-26-057750)
+
+- Status: **INCOMPLETE**
+- Holdings FV: 12,077,237; filed FV: 13,906,408; gap: -13.153%
+- Filed-total status: ok
+- Diagnostic clues (not proven causes): 25 holdings missing fair value; 27 current SOI rows without identifiers; 0 custom fair-value facts in NUM.
 - Category: Not yet documented
 - Evidence: Not yet documented
 - Example: Not yet documented

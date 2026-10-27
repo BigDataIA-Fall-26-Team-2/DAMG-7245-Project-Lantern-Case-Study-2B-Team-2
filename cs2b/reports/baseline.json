@@ -8,18 +8,21 @@
   "tolerance": 0.01,
   "rules": [
     "rule_totals",
-    "rule_cash"
+    "rule_cash",
+    "rule_jv_portfolio",
+    "rule_issuer_subtotals",
+    "rule_rollforward_copies"
   ],
   "filings_in_sub": 183,
   "soi_rows": 191043,
   "current_holdings_before_cleaning": 64762,
   "filings_attempted": 177,
-  "filings_admitted": 73,
-  "share_of_filings": 0.412,
+  "filings_admitted": 90,
+  "share_of_filings": 0.508,
   "filings_without_usable_filed_total": 8,
   "filed_fv_attempted": 542175875908.0,
-  "filed_fv_admitted": 139945140251.0,
-  "share_of_dollars": 0.258,
+  "filed_fv_admitted": 235924621309.0,
+  "share_of_dollars": 0.435,
   "filings_without_soi_rows": 6,
   "filings_without_soi_adsh": [
     "0001104659-26-061304",

@@ -8,7 +8,7 @@ def configured_rules(params: dict) -> list:
     Names must refer to rule_* functions exported by clean.py. This lets Part 2
     supply implementations without duplicating their logic in the orchestrator.
     """
-    names = params.get("cleaning", {}).get("rules", ["rule_totals", "rule_cash"])
+    names = params.get("cleaning", {}).get("rules", [rule.__name__ for rule in clean.RULES])
     if not isinstance(names, list) or not names or any(not isinstance(n, str) for n in names):
         raise ValueError("cleaning.rules must be a non-empty list of rule names")
     if len(set(names)) != len(names):
@@ -32,10 +32,11 @@ def run_baseline(rdir, tolerance, rules=None) -> dict:
     inputs = combine.load_inputs(rdir, num_tags=[reconcile.FV_TAG], custom_fv=True)
     sub, num = inputs["sub"], inputs["num"]
     canon = holdings.split_periods(inputs["canon"], sub)
-    h = holdings.coalesce_holdings(canon)
+    h = clean.add_rollforward_evidence(holdings.coalesce_holdings(canon))
     if rules is None:
-        rules = [clean.rule_totals, clean.rule_cash]
+        rules = clean.RULES
     kept, log = clean.apply_rules(h[h["is_current"]], rules)
+    kept = clean.flag_debt(kept)
     filed = reconcile.filed_totals(num, sub)
     rec = reconcile.reconcile(kept, filed, sub, tolerance,
                               soi_adsh=set(inputs["soi"]["adsh"]))

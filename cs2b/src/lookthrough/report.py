@@ -8,7 +8,7 @@ from . import paths, reconcile
 
 PANEL_COLS = ["adsh", "cik", "name", "period", "identifier", "investment_type", "industry", "affiliation",
               "principal", "cost", "fair_value", "interest_rate", "spread", "pik_rate", "maturity",
-              "pct_net_assets", "source_rows", "n_rows", "n_conflicts", "release", "subsidiary"]
+              "pct_net_assets", "source_rows", "n_rows", "n_conflicts", "release", "subsidiary", "is_debt"]
 COVERAGE_COLS = ["adsh", "name", "n_holdings", "holdings_fv", "filed_fv", "gap_pct",
                  "admitted", "triage_category"]
 TRIAGE_COLS = ["adsh", "triage_category", "evidence", "example", "fix_or_reason",
@@ -119,7 +119,7 @@ def write_outputs(kept: pd.DataFrame, rec: pd.DataFrame, diag: pd.DataFrame,
         f"Attempts without a usable filed total: {metrics['filings_without_usable_filed_total']}. "
         "Their unknown dollars are not included in the dollar denominator.",
         f"Triage entries incomplete: {len(incomplete)}. "
-        "Outputs are preliminary until cleaning integration and filing-evidence review are complete.",
+        "Outputs are preliminary until filing-evidence review is complete.",
         f"Cleaning rules used: {', '.join(metrics['cleaning_rules'])}.",
     ]
     lines = ["# Coverage report", "", *headline, ""]

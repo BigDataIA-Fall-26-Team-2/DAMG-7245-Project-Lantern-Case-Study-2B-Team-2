@@ -70,7 +70,7 @@ current filings fails rather than silently reducing coverage. An entirely empty
 selection fails with a diagnostic rather than producing a misleading baseline.
 
 Outputs are `reports/baseline.json`, `reports/baseline_reconciliation.csv`, and
-`reports/baseline_diagnostics.csv`. They use the ordered `cleaning.rules` selection (currently the two starter rules) and
+`reports/baseline_diagnostics.csv`. They use the ordered `cleaning.rules` selection (the five reviewed Part 2 rules) and
 are not the final panel or completed triage. The existing single-directory
 `run_baseline` API remains available for the starter notebooks and smoke tool.
 The original notebooks and smoke tool still use one directory. The self-check
@@ -80,7 +80,7 @@ Input loading is centralized in `combine.load_inputs`, which reuses the existing
 combined table loaders and selects consistent filing copies across SUB/SOI/NUM.
 It does not classify periods, clean holdings or reconcile totals. `pipeline.run_baseline`
 coordinates those steps and accepts an explicit rules list, defaulting to the
-existing two starter rules when none is supplied.
+five rules in `clean.RULES` when none is supplied.
 
 
 ### Reconciliation safeguards
@@ -100,7 +100,7 @@ Coverage retains every attempted filing. It also identifies SUB filings without
 SOI rows and counts attempts without a usable filed total. Dollar coverage uses
 only known positive filed totals: dollars for unresolved filings are unknown,
 not estimated as zero. These safeguards do not replace filing-level triage or
-human-readable spot checks. Final cleaning integration and evidence review remain pending.
+human-readable spot checks. Cleaning integration is complete; filing-level evidence review remains pending.
 
 
 ### Generate the preliminary panel and reports
@@ -109,16 +109,20 @@ human-readable spot checks. Final cleaning integration and evidence review remai
 python tools/baseline.py --write-outputs
 ```
 
-This uses the configured cleaning rules, currently the two starter rules. It produces
+This uses the configured cleaning rules, the five reviewed Part 2 rules. It produces
 `outputs/panel/holdings.parquet`, `reports/coverage.csv`, `reports/coverage.json`,
 `reports/coverage.md`, `reports/triage.md`, and `reports/cleaning_log.csv`.
-The panel retains `release` and semicolon-separated `source_rows`, includes only
+The panel retains `is_debt`, `release` and semicolon-separated `source_rows`, includes only
 current holdings of admitted filings, and is checked against admitted totals
 before being written. Parquet support is required; there is no silent CSV fallback.
 The CSV uses the eight handout columns. JSON and Markdown use the same coverage
 calculation, including attempted filings without usable totals and the separate
-list of SUB filings without SOI rows. Final DVC tracking and stage integration
-are still pending; generating these outputs does not publish them to S3.
+list of SUB filings without SOI rows. The panel is DVC-tracked by
+`outputs/panel.dvc`; restore the committed artifact with `dvc pull outputs/panel.dvc`.
+After intentional regeneration, run `dvc add outputs/panel` and
+`dvc push outputs/panel.dvc`, then commit the updated pointer with the reports.
+Generating reports alone does not publish them to S3. Part 5's `dvc repro` stage
+integration remains separate team work.
 
 Human triage belongs in the Git-tracked CSV configured by `triage.input`
 (default `data/triage.csv`), not in generated reports. The supplied file is an
@@ -144,8 +148,7 @@ These are completeness checks, not automated verification of human claims; chang
 in holdings that leave totals unchanged still require human review. Entries for
 admitted filings remain saved but their coverage category is blank.
 
-The self-check supports the configured releases, but final cleaning integration
-and triage review remain pending. Preliminary reports are not a finished submission.
+The self-check supports the configured releases; triage review remains pending. Preliminary reports are not a finished submission.
 
 
 ### Rule selection and multi-release validation
@@ -153,9 +156,11 @@ and triage review remain pending. Preliminary reports are not a finished submiss
 `cleaning.rules` in `params.yaml` lists the `rule_*` functions to run, in order.
 The command resolves every name before processing data; a missing, duplicate,
 empty or invalid selection is an error. There is no fallback that silently skips
-an unavailable Part 2 rule. The current selection is `rule_totals`, `rule_cash`.
-After the corrected cleaning PR is integrated and reviewed, extend that list to
-include its JV, issuer-subtotal and roll-forward rules in their approved order.
+an unavailable Part 2 rule. The selection is `rule_totals`, `rule_cash`, `rule_jv_portfolio`,
+`rule_issuer_subtotals`, `rule_rollforward_copies`, in that order.
+The pipeline adds roll-forward opening-balance evidence before filtering to current
+holdings, then applies the rules and adds the debt flag. `tools/rule_impact.py`
+uses the same input selection and configured rules.
 The low-level `run_baseline(..., rules=...)` interface remains available to notebooks
 and tools; callers using parameters should pass `pipeline.configured_rules(params)`.
 
@@ -178,3 +183,16 @@ explanation, example and matching totals. It remains a structural checker, not a
 replacement for opening filings and evaluating the claims. Incomplete real-data triage
 is expected to fail until those investigations are performed; do not relabel drafts
 as reviewed merely to pass the checker.
+
+
+### Integrated Part 3 run (2026-10-27)
+
+With PR #3 merged, all five rules admit 90 of 177 attempted filings (50.8%)
+and cover $235,924,621,309 of $542,175,875,908 known filed dollars (43.5%).
+The panel contains 34,755 holdings with 37,648 raw SOI row references, retaining
+3,493 holdings flagged as non-debt. Eight attempts lack a usable filed total;
+six SUB filings have no SOI rows and are reported separately.
+
+The 87 excluded filings still require evidence-backed triage. No entries have
+been falsely marked reviewed to pass acceptance. This is a preliminary artifact;
+the triage acceptance check remains failing until those investigations are complete.
