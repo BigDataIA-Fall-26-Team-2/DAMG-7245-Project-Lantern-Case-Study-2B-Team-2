@@ -1,0 +1,23 @@
+{
+  "releases": [
+    "2026_04",
+    "2026_05",
+    "2026_06"
+  ],
+  "use_fixture": false,
+  "tolerance": 0.01,
+  "rules": [
+    "rule_totals",
+    "rule_cash"
+  ],
+  "filings_in_sub": 183,
+  "soi_rows": 191043,
+  "current_holdings_before_cleaning": 64762,
+  "filings_attempted": 177,
+  "filings_admitted": 73,
+  "share_of_filings": 0.412,
+  "filed_fv_attempted": 542175875908.0,
+  "filed_fv_admitted": 139945140251.0,
+  "share_of_dollars": 0.258,
+  "filings_without_soi_rows": 6
+}

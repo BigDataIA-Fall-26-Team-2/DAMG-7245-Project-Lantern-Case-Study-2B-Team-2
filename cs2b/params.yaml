@@ -1,5 +1,5 @@
 # Lab 2B / Case Study 2B parameters. Every notebook and script reads this file.
-release: "2026_05"            # one month for now; becomes "2026q2" once the combine step exists
+release: "2026_05"            # fallback for single-release tools
 releases: ["2026_04", "2026_05", "2026_06"]   # Team 2 quarter 2026q2, three monthly SEC ZIPs
 data:
   use_fixture: false           # real data

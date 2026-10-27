@@ -172,3 +172,49 @@ def test_checker_catches_a_silently_dropped_filing():
         cov[~cov["name"].str.contains("FOXTROT")].to_csv(root / "reports" / "coverage.csv", index=False)
         failed = [n for n, ok, _ in check.run_checks(root) if not ok]
         assert failed == ["every filing with SOI rows is in coverage.csv (none dropped)"], failed
+
+
+def test_release_selection_is_explicit_and_fixture_is_isolated():
+    p = {**P, "data": {**P["data"], "use_fixture": False},
+         "release": "2026_05", "releases": ["2026_04", "2026_05"]}
+    assert list(paths.release_dirs(p, ROOT)) == ["2026_04", "2026_05"]
+    del p["releases"]
+    assert list(paths.release_dirs(p, ROOT)) == ["2026_05"]
+    for invalid in ([], "2026_05", ["2026_05", "2026_05"], ["../raw"], ["2026_13"]):
+        p["releases"] = invalid
+        try:
+            paths.release_dirs(p, ROOT)
+        except ValueError:
+            continue
+        raise AssertionError(f"Invalid selection accepted: {invalid}")
+    p["data"]["use_fixture"] = True
+    assert paths.release_dirs(p, ROOT) == {paths.FIXTURE_RELEASE: RDIR}
+
+
+def test_combined_baseline_uses_one_copy_of_repeated_filings():
+    with tempfile.TemporaryDirectory() as t:
+        earlier, later = Path(t) / "earlier", Path(t) / "later"
+        shutil.copytree(RDIR, earlier)
+        shutil.copytree(RDIR, later)
+        # A stale earlier copy must not contribute SOI values or NUM totals.
+        for relative, columns in (("soi.tsv", [mapping.PRESET["fair_value"]]),
+                                  ("datasets/num.tsv", ["value"])):
+            frame = pd.read_csv(earlier / relative, sep="\t", dtype=str)
+            for c in columns:
+                frame[c] = pd.to_numeric(frame[c], errors="coerce") * 2
+            frame.to_csv(earlier / relative, sep="\t", index=False)
+        b = pipeline.run_baseline({"2026_04": earlier, "2026_05": later}, 0.01)
+        single = pipeline.run_baseline(RDIR, 0.01)
+        configured_single = pipeline.run_baseline({"2026_05": later}, 0.01)
+        pd.testing.assert_frame_equal(configured_single["rec"], single["rec"])
+        pd.testing.assert_frame_equal(b["rec"], single["rec"])
+        assert set(b["kept"]["release"]) == {"2026_05"}
+        assert set(b["num"]["release"]) == {"2026_05"}
+        assert len(b["soi"]) == len(single["soi"])
+        (later / "soi.tsv").unlink()
+        try:
+            pipeline.run_baseline({"2026_05": later}, 0.01)
+        except FileNotFoundError as e:
+            assert "soi.tsv" in str(e)
+        else:
+            raise AssertionError("Missing SOI must not silently shrink coverage")
