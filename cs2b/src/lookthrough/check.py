@@ -1,72 +1,134 @@
-"""Self-check for Case Study 2B outputs. The grader runs the same checks.
+"""Validate Part 3 outputs against the configured releases and saved triage.
 
-Usage:  python -m lookthrough.check            (from the repository root, with src/ on PYTHONPATH)
+Run from cs2b: PYTHONPATH=src python -m lookthrough.check
+The ten checks retain the starter's intent, with multi-release provenance and
+explicit missing-value checks. This is not human verification of filing evidence.
 """
+import re
 import sys
 
+import numpy as np
 import pandas as pd
 
-from . import load, mapping, paths, reconcile, tables
+from . import combine, paths, reconcile, report, tables
+
+
+def _numbers_match(actual, expected, atol):
+    """Compare numeric arrays, allowing missing only when both sides are missing."""
+    return np.isclose(np.asarray(actual, dtype=float), np.asarray(expected, dtype=float),
+                      rtol=0, atol=atol, equal_nan=True)
 
 
 def run_checks(root=None, sample=25) -> list:
     root = paths.repo_root(root)
-    P = paths.load_params(root)
-    rdir = paths.release_dir(P, root)
-    tol = float(P["reconcile"]["tolerance"])
-    sub = load.load_sub(rdir)
-    tag = load.load_tag(rdir)
-    header = load.soi_header(rdir)
-    fv_cols = mapping.map_soi_columns(header, tag).get("fair_value", [])
-    soi = load.load_soi(rdir, usecols=["adsh"] + fv_cols)
-    num = load.load_num(rdir, tags=[reconcile.FV_TAG])
-    filed = reconcile.filed_totals(num, sub).set_index("adsh")["filed_fv"]
-    hold = tables.load_table(root / P["outputs"]["panel"] / "holdings")
-    cov = pd.read_csv(root / P["outputs"]["reports"] / "coverage.csv", dtype={"adsh": str})
+    params = paths.load_params(root)
+    dirs = paths.release_dirs(params, root)
+    tol = float(params["reconcile"]["tolerance"])
+    inputs = combine.load_inputs(dirs, num_tags=[reconcile.FV_TAG])
+    sub, soi = inputs["sub"], inputs["canon"]
+    filed = reconcile.filed_totals(inputs["num"], sub).set_index("adsh")["filed_fv"]
+    hold = tables.load_table(root / params["outputs"]["panel"] / "holdings")
+    cov = pd.read_csv(root / params["outputs"]["reports"] / "coverage.csv", dtype={"adsh": str})
     res = []
 
     def chk(name, ok, detail=""):
         res.append((name, bool(ok), detail))
 
-    need = ["adsh", "identifier", "fair_value", "source_rows"]
-    chk("holdings has the required columns", all(c in hold for c in need), str([c for c in need if c not in hold]))
-    need_c = ["adsh", "holdings_fv", "filed_fv", "gap_pct", "admitted"]
-    chk("coverage.csv has the required columns", all(c in cov for c in need_c), str([c for c in need_c if c not in cov]))
+    need = ["adsh", "cik", "name", "period", "identifier", "fair_value", "source_rows"]
+    if len(dirs) > 1:
+        need.append("release")
+    chk("holdings has the required columns", all(c in hold for c in need),
+        str([c for c in need if c not in hold]))
+    need_c = report.COVERAGE_COLS
+    chk("coverage.csv has the required columns", all(c in cov for c in need_c),
+        str([c for c in need_c if c not in cov]))
     if not all(c in hold for c in need) or not all(c in cov for c in need_c):
         return res
-    cov["admitted"] = cov["admitted"].astype(str).str.lower().isin(["true", "1"])
+    if "release" not in hold:
+        hold["release"] = next(iter(dirs))  # legacy single-release panel
+    boolean_text = cov["admitted"].astype(str).str.lower()
+    valid_boolean = boolean_text.isin(["true", "false", "1", "0"])
+    cov["admitted"] = boolean_text.isin(["true", "1"])
     expected = set(soi["adsh"]) & set(sub["adsh"])
-    dropped = sorted(expected - set(cov["adsh"]))
-    chk("every filing with SOI rows is in coverage.csv (none dropped)", not dropped,
-        f"{len(dropped)} missing, e.g. {dropped[:3]}")
-    bad = [a for a, v in zip(cov["adsh"], cov["filed_fv"]) if a in filed and abs(filed[a] - v) > 1.0]
-    chk("filed totals match NUM", not bad, f"{len(bad)} mismatched")
-    sums = hold.groupby("adsh")["fair_value"].sum()
+    dropped, extra = expected - set(cov["adsh"]), set(cov["adsh"]) - expected
+    chk("every filing with SOI rows is in coverage.csv (none dropped)",
+        not dropped and not extra and not cov["adsh"].duplicated().any(),
+        f"{len(dropped)} missing, {len(extra)} unexpected; duplicate rows: {cov['adsh'].duplicated().sum()}")
+    target_totals = cov["adsh"].map(filed)
+    total_ok = _numbers_match(cov["filed_fv"], target_totals, 1.0)
+    chk("filed totals match NUM", total_ok.all(), f"{int((~total_ok).sum())} mismatched")
     adm = cov[cov["admitted"]]
-    bad = [a for a, v in zip(adm["adsh"], adm["holdings_fv"]) if abs(sums.get(a, 0.0) - v) > 1.0]
-    chk("holdings sum to the reported holdings_fv", not bad, f"{len(bad)} mismatched")
-    gap_ok = ((cov["holdings_fv"] - cov["filed_fv"]) / cov["filed_fv"] - cov["gap_pct"]).abs().fillna(0).le(1e-6)
+    sums = hold.groupby("adsh")["fair_value"].sum(min_count=1)
+    counts = hold.groupby("adsh").size()
+    sum_ok = _numbers_match(adm["adsh"].map(sums), adm["holdings_fv"], 1.0)
+    count_ok = adm["adsh"].map(counts).eq(adm["n_holdings"])
+    chk("holdings sum to the reported holdings_fv", sum_ok.all() and count_ok.all(),
+        f"{int((~sum_ok).sum())} sum mismatches; {int((~count_ok).sum())} count mismatches")
+    usable = (np.isfinite(cov["filed_fv"]) & cov["filed_fv"].gt(0)
+              & np.isfinite(cov["holdings_fv"]) & cov["n_holdings"].gt(0))
+    expected_gap = pd.Series(float("nan"), index=cov.index)
+    expected_gap.loc[usable] = ((cov.loc[usable, "holdings_fv"] - cov.loc[usable, "filed_fv"])
+                                / cov.loc[usable, "filed_fv"])
+    gap_ok = _numbers_match(cov["gap_pct"], expected_gap, 1e-12)
     chk("gap_pct is computed correctly", gap_ok.all(), f"{int((~gap_ok).sum())} wrong")
-    adm_ok = (cov["gap_pct"].abs().le(tol + 1e-9) == cov["admitted"]) | cov["filed_fv"].isna()
-    chk(f"admission follows the tolerance ({tol:.2%})", adm_ok.all(), f"{int((~adm_ok).sum())} inconsistent")
-    cats = cov.loc[~cov["admitted"], "triage_category"].fillna("") if "triage_category" in cov else pd.Series(["missing column"])
+    # Use the freshly computed gap, not a potentially edited output gap.
+    expected_admission = usable & expected_gap.abs().le(tol)
+    admission_ok = expected_admission.eq(cov["admitted"]) & valid_boolean
+    chk(f"admission follows the tolerance ({tol:.2%})", admission_ok.all(),
+        f"{int((~admission_ok).sum())} inconsistent")
+    cats = cov.loc[~cov["admitted"], "triage_category"].fillna("")
     bad_cat = sorted(set(cats) - set(reconcile.TRIAGE))
-    chk("every excluded filing has a valid triage_category", not bad_cat,
-        f"found {bad_cat}; allowed: {', '.join(reconcile.TRIAGE)}")
-    chk("holdings contain admitted filings only", set(hold["adsh"]) <= set(adm["adsh"]),
-        str(sorted(set(hold["adsh"]) - set(adm["adsh"])))[:120])
-    soi_idx = soi.set_index("soi_row")
-    s = hold.sample(min(sample, len(hold)), random_state=7) if len(hold) else hold
+    triage_errors = []
+    try:
+        triage = report.load_triage(root / params.get("triage", {}).get("input", "data/triage.csv"))
+        for row in cov.loc[~cov["admitted"]].itertuples():
+            if row.adsh not in triage.index:
+                triage_errors.append(row.adsh)
+                continue
+            note = triage.loc[row.adsh]
+            complete = (note["review_status"] == "reviewed"
+                        and all(note[c] for c in ("triage_category", "evidence", "example", "fix_or_reason"))
+                        and note["triage_category"] == row.triage_category)
+            current = [row.holdings_fv, row.filed_fv]
+            reviewed = [note["reviewed_holdings_fv"], note["reviewed_filed_fv"]]
+            if not complete or not _numbers_match(current, reviewed, .01).all():
+                triage_errors.append(row.adsh)
+    except ValueError as error:
+        triage_errors.append(str(error))
+    blank_admitted = cov.loc[cov["admitted"], "triage_category"].fillna("").eq("").all()
+    chk("every excluded filing has a valid triage_category", not bad_cat and not triage_errors and blank_admitted,
+        f"invalid categories: {bad_cat}; incomplete/stale evidence: {len(triage_errors)}")
+    admitted_ids = set(adm["adsh"])
+    chk("holdings contain admitted filings only", set(hold["adsh"]) <= admitted_ids,
+        str(sorted(set(hold["adsh"]) - admitted_ids))[:120])
+    # Source row numbers restart in every release. Resolve both parts of the key,
+    # and verify filing and period as well as the value on the sampled source rows.
+    soi_idx = soi.set_index(["release", "soi_row"])
+    periods = sub.set_index("adsh")["period"]
+    sampled = hold.sample(min(sample, len(hold)), random_state=7) if len(hold) else hold
     fails = 0
-    for r in s.itertuples():
-        ids = [int(x) for x in str(r.source_rows).split(";") if x.strip().isdigit()]
-        ok = bool(ids) and all(i in soi_idx.index and soi_idx.at[i, "adsh"] == r.adsh for i in ids)
-        if ok and pd.notna(r.fair_value):
-            vals = pd.concat([pd.to_numeric(soi_idx.loc[ids, c], errors="coerce") for c in fv_cols]) \
-                if fv_cols else pd.Series(dtype=float)
-            ok = (vals - r.fair_value).abs().le(0.5).any() or vals.isna().all()
+    for row in sampled.itertuples():
+        text = str(row.source_rows)
+        if not re.fullmatch(r"\d+(;\d+)*", text):
+            fails += 1
+            continue
+        keys = [(row.release, int(value)) for value in text.split(";")]
+        ok = all(key in soi_idx.index for key in keys)
+        if ok:
+            source = soi_idx.loc[keys]
+            ok = (source["adsh"].eq(row.adsh).all()
+                  and row.period == periods.get(row.adsh)
+                  and source["ddate"].eq(row.period).all())
+            values = source["fair_value"]
+            if pd.notna(row.fair_value):
+                # A recovered NUM value requires a separate evidenced validation
+                # path before admission; missing source values alone are not proof.
+                ok = ok and (values - row.fair_value).abs().le(.5).any()
+            else:
+                ok = ok and values.isna().all()
         fails += not ok
-    chk(f"provenance: sampled rows trace to their SOI rows ({len(s)} sampled)", fails == 0, f"{fails} failed")
+    chk(f"provenance: sampled rows trace to their SOI rows ({len(sampled)} sampled)",
+        fails == 0, f"{fails} failed")
     return res
 
 

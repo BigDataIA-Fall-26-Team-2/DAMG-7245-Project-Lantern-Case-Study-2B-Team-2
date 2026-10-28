@@ -11,23 +11,17 @@ reports/cleaning_log.csv (rule, artifact, rows affected, example).
 import sys
 from pathlib import Path
 
-import pandas as pd
-
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from lookthrough import clean, combine, holdings, load, paths, reconcile  # noqa: E402
+from lookthrough import clean, combine, holdings, paths, pipeline, reconcile  # noqa: E402
 
 RULES = clean.RULES
 
 
 def prepare(P):
     dirs = combine.release_dirs(P, ROOT)
-    sub = combine.load_sub_all(dirs)
-    can = combine.load_soi_all(dirs)
-    can = can[can["adsh"].isin(sub["adsh"])]
-    num = pd.concat([load.load_num(d, tags=[reconcile.FV_TAG], custom_fv=True)
-                     for d in dirs.values() if combine.has_soi(d)],
-                    ignore_index=True)
+    inputs = combine.load_inputs(dirs, num_tags=[reconcile.FV_TAG], custom_fv=True)
+    sub, can, num = inputs["sub"], inputs["canon"], inputs["num"]
     h = clean.add_rollforward_evidence(
         holdings.coalesce_holdings(holdings.split_periods(can, sub)))
     return sub, can, num, h[h["is_current"]]
@@ -41,13 +35,14 @@ def run(cur, sub, num, soi_adsh, rules, tol):
 
 
 def summary(rec):
-    tot = rec["filed_fv"].sum()
-    adm = rec.loc[rec["admitted"], "filed_fv"].sum()
-    return int(rec["admitted"].sum()), len(rec), adm / tot
+    coverage = reconcile.coverage(rec)
+    return (coverage["filings_admitted"], coverage["filings_attempted"],
+            coverage["share_of_dollars"])
 
 
 if __name__ == "__main__":
     P = paths.load_params(ROOT)
+    RULES = pipeline.configured_rules(P)
     tol = P["reconcile"]["tolerance"]
     sub, can, num, cur = prepare(P)
     ids = set(can["adsh"])
