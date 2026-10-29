@@ -33,6 +33,13 @@ BREAKS = [
      "filer-aware rule falls back to the starter behaviour (Palmer Square, Great Elm fail again)",
      "_matches(h, CASH) & ~_matches(h, SHORT_TERM_INV)",
      "_matches(h, CASH)"),
+    ("rule_commitment_rows", "removed", "the rule drops nothing",
+     "return t.str.contains(COMMITMENT_ROW, regex=True) & ~terms, why",
+     "return pd.Series(False, index=h.index), why"),
+    ("rule_commitment_rows", "broken", "the no-cost/no-principal guard is removed, so a "
+     "row carrying principal is dropped as a commitment",
+     "return t.str.contains(COMMITMENT_ROW, regex=True) & ~terms, why",
+     "return t.str.contains(COMMITMENT_ROW, regex=True), why"),
     ("rule_jv_portfolio", "removed", "the rule drops nothing",
      "return (h[\"subsidiary\"].notna(),",
      "return (pd.Series(False, index=h.index),"),

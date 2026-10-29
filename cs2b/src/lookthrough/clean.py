@@ -40,6 +40,26 @@ def rule_cash(h: pd.DataFrame):
             "cash or money-market line (not labelled a short-term investment)")
 
 
+COMMITMENT_ROW = (r"(?i)\bcommitment type\b.*\bcommitment expiration date\b")
+
+
+def rule_commitment_rows(h: pd.DataFrame):
+    """Drop rows from the unfunded-commitments table. Some filers tag each
+    undrawn commitment on the identifier axis ("... Commitment Type Revolver
+    Commitment Expiration Date 07/28/2031"), with a fair value of zero or a
+    small negative and no cost or principal. They are not holdings: the
+    funded part of the same loan is already in the schedule. A row is
+    dropped only if its identifier names both the commitment type and the
+    expiration date and it carries no cost and no principal."""
+    why = "unfunded-commitment table row, not a holding"
+    t = h["identifier"].fillna("").astype(str)
+    terms = pd.Series(False, index=h.index)
+    for c in ("cost", "principal"):
+        if c in h:
+            terms |= h[c].notna()
+    return t.str.contains(COMMITMENT_ROW, regex=True) & ~terms, why
+
+
 def rule_jv_portfolio(h: pd.DataFrame):
     """Rows tagged with a `subsidiary` (the Investment Company,
     Nonconsolidated Subsidiary Axis) list the portfolio of an
@@ -267,5 +287,5 @@ def is_debt(h: pd.DataFrame) -> pd.Series:
 
 # The rules the pipeline applies, in order. tools/rule_impact.py,
 # tools/break_rules.py and pipeline.run_baseline all use this one list.
-RULES = [rule_totals, rule_cash, rule_jv_portfolio, rule_issuer_subtotals,
-         rule_rollforward_copies]
+RULES = [rule_totals, rule_cash, rule_commitment_rows, rule_jv_portfolio,
+         rule_issuer_subtotals, rule_rollforward_copies]
