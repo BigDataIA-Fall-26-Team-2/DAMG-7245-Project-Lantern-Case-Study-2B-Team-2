@@ -7,7 +7,7 @@ Mapping is by XBRL tag via `mapping.map_soi_columns`, using labels from the TAG 
 |---|---|---|---|---|
 | fair_value | InvestmentOwnedAtFairValue | `Investment Owned, Fair Value`; `Initial fair value of Investment` | float, USD | The us-gaap/2026 version of this tag carries the label "Initial fair value of Investment", and nearly all values sit in that column (May: 150,672 rows; April: 4,177 of 4,378); no row fills both. April's own TAG table lists only the older label, so per-month mapping found 0 April fair values. Fixed in `combine.load_tag_all`, which merges all months' TAG tables before mapping. |
 | cost | InvestmentOwnedAtCost | `Investment Owned, Cost`; `Adjusted cost basis` | float, USD | Same label issue as fair_value (us-gaap/2026 label "Adjusted cost basis"); same fix. |
-| principal | InvestmentOwnedBalancePrincipalAmount | `Investment Owned, Balance, Principal Amount` | float, USD | Filled on 52% of May rows. `Investment Owned, Face Amount` (unmapped) is a possible fallback, TBD. |
+| principal | InvestmentOwnedBalancePrincipalAmount | `Investment Owned, Balance, Principal Amount` | float, USD | Filled on 52% of May rows. Stored without a currency: non-dollar principal (for example £ or €) appears as a plain number (see `reports/dependency_check.md`). `Investment Owned, Face Amount` is not used as a fallback (see below). |
 | interest_rate | InvestmentInterestRate | `Investment Interest Rate` | float, decimal | Median 0.087 (8.7%). Max 8.0, so some filers may report in percent units. Flag for cleaning. |
 | spread | InvestmentBasisSpreadVariableRate | `Investment, Basis Spread, Variable Rate` | float, decimal | Median 0.05. Max 10.0, same units concern. |
 | maturity | InvestmentMaturityDate | `Investment Maturity Date` | date | Already ISO (YYYY-MM-DD) in May; normalized by `load.norm_date`. |
@@ -48,20 +48,22 @@ No filing is flagged as amended. April contains one 10-K/A (Equus Total Return, 
 
 ## Unmapped columns we reviewed
 
-| Column | Needed? | Why |
-|---|---|---|
-| `qtrs` | TBD | Duration of the fact; may help separate current from comparative rows. |
-| `filed` | No (metadata) | Filing date; already in SUB. |
-| `Investment, Issuer Name Axis` | Maybe | Fallback identifier where Identifier Axis is blank. |
-| `Investment Owned, Face Amount` | Maybe | Possible principal fallback. |
-| `Cash equivalents`, `Weighted Average Rate Domestic Deposit, Money Market` | For cleaning | Cash and money-market artifact (Part 2). |
-| `Investment, Issuer Affiliation [Extensible Enumeration]` | Maybe | Affiliation fallback; affiliation stretch goal. |
+Decisions are based on current-period rows (ddate = period end) in our release: 2,178 in 2026_04 and 94,195 in 2026_05.
 
-The other unmapped columns (derivatives, income, cash-flow lines; 239 in May, 30 in April) are not holdings fields.
+| Column | Needed? | Evidence and decision |
+|---|---|---|
+| `qtrs` | No | Duration of the fact in quarters. Mostly 0 (point-in-time), but 1–4 on 84 current rows in 2026_04 and 10,700 in 2026_05 (values over a period, such as income or roll-forward activity). Not needed to separate current from comparative rows: `split_periods` uses ddate = period end. Rows with qtrs > 0 are period values, which may help cleaning; we did not check whether they carry fair values. |
+| `filed` | No | Filing date; already in SUB. |
+| `Investment, Issuer Name Axis` | Not used; flagged | 4,032 current rows have no identifier but do have an issuer name (390 of 501 in 2026_04; 3,642 of 22,486 in 2026_05). `coalesce_holdings` drops rows without an identifier, so these may be holdings lost to a custom axis. A candidate fallback identifier; its effect on coverage was not measured. |
+| `Investment Owned, Face Amount` | No | Fills a missing principal on only 407 current rows in 2026_05 and none in 2026_04. Principal is not used in reconciliation. |
+| `Cash equivalents`, `Weighted Average Rate Domestic Deposit, Money Market` | No | `Cash equivalents` is filled on only 69 current rows. Cash and money-market lines are handled in cleaning (`rule_cash`). |
+| `Investment, Issuer Affiliation [Extensible Enumeration]` | No (for reconciliation) | Fills affiliation on 1,061 current rows in 2026_05 that lack the affiliation axis, none in 2026_04. Not used in reconciliation; useful for the affiliation stretch goal. |
+
+The other unmapped columns (derivatives, income, cash-flow lines; 239 in 2026_05, 30 in 2026_04) are not holdings fields.
 
 ## Holdings and conflicts (current period, 2026q2)
 
-Current rows: 96,373. Rows without an identifier: 22,987 (dropped by `coalesce_holdings`; mostly candidates for totals and custom axes, handled in cleaning).
+Current rows: 96,373. Rows without an identifier: 22,987 (dropped by `coalesce_holdings`; mostly candidates for totals and custom axes, handled in cleaning; 4,032 of them carry an issuer name, see above).
 
 **Key.** A holding is filing + date + identifier + `subsidiary`. `subsidiary` is the `Investment Company, Nonconsolidated Subsidiary Axis`: 24 filings (17 rows in 2026_04, 3,048 in 2026_05) list the portfolios of unconsolidated joint ventures, so the same loan appears once per JV. Example: Oaktree Specialty Lending, adsh 0001414932-26-000012, AI Aqua Merger Sub first lien term loan at SOI rows 33570 (OCSI Glick JV LLC, fair value $1.744M) and 33799 (SLF JV I, $5.194M). Without `subsidiary` in the key these were merged as one holding and one value was discarded.
 
