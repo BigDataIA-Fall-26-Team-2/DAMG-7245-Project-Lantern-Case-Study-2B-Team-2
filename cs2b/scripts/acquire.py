@@ -1,4 +1,9 @@
-import datetime as dt
+"""Stage 1 (acquire): verify data/raw against data/manifest.json.
+
+Never downloads and never writes to data/raw (DVC owns data/raw through
+data/raw.dvc). To download a release from scratch, use tools/download_release.py.
+The pipeline runs the real release only, so it stops if data.use_fixture is true.
+"""
 import json
 import sys
 from pathlib import Path
@@ -8,27 +13,20 @@ sys.path.insert(0, str(ROOT / "src"))
 from lookthrough import acquire, paths
 
 P = paths.load_params(ROOT)
-raw = ROOT / P["data"]["raw_dir"]
-base = P["sec"]["base_url"]
+if P["data"].get("use_fixture"):
+    sys.exit("acquire: data.use_fixture is true. The dvc.yaml pipeline runs the "
+             "real release only; set data.use_fixture: false (use the notebooks "
+             "or tools/smoke_real.py for the fixture).")
 
-rows = []
-for rel in P["releases"]:
-    z = raw / f"{rel}_bdc.zip"
-    if not z.exists():
-        z = acquire.download_release(rel, raw, P["sec"]["user_agent"], base)
-    acquire.unzip_release(z, raw, rel)
-    rows.append({
-        "path": z.resolve().relative_to(ROOT.resolve()).as_posix(),
-        "url": acquire.release_url(rel, base),
-        "bytes": z.stat().st_size,
-        "sha256": acquire.sha256_file(z),
-        "recorded": dt.date.today().isoformat(),
-    })
+manifest = ROOT / "data" / "manifest.json"
+entries = json.loads(manifest.read_text())
+bad = acquire.verify_manifest(manifest, root=ROOT)
 
-mpath = ROOT / "data" / "manifest.json"
-mpath.write_text(json.dumps(rows, indent=2))
-bad = acquire.verify_manifest(mpath, root=ROOT)
-
-for r in rows:
-    print(r["path"], r["bytes"], r["sha256"])
-print("mismatches:", len(bad))
+reports = ROOT / P["outputs"]["reports"]
+reports.mkdir(parents=True, exist_ok=True)
+(reports / "manifest_check.json").write_text(
+    json.dumps({"files_checked": len(entries), "mismatches": bad},
+               indent=2, default=str) + "\n")
+print(f"manifest: {len(entries)} files checked, {len(bad)} mismatches")
+if bad:
+    sys.exit(1)

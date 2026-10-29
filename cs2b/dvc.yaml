@@ -1,0 +1,109 @@
+# Case Study 2B pipeline: dvc pull && dvc repro rebuilds the panel and reports.
+# Each stage calls existing functions in src/lookthrough/ in the same order as
+# pipeline.run_baseline; no logic lives in the stage scripts.
+#
+# Paths come from params.yaml through ${...} templating, so DVC tracks the
+# same files the scripts read and write. The pipeline runs the real release
+# only: acquire and parse stop with an error if data.use_fixture is true.
+#
+# Release selection: this pipeline requires an explicit `releases` list in
+# params.yaml, even for one release (for example releases: ["2026_05"]),
+# because DVC requires every tracked parameter to exist. The single `release`
+# fallback in paths.release_dirs is for notebooks and tools, not this pipeline.
+stages:
+  acquire:
+    cmd: python scripts/acquire.py
+    deps:
+      - scripts/acquire.py
+      - src/lookthrough/acquire.py
+      - data/manifest.json
+      - ${data.raw_dir}
+    params:
+      - data.use_fixture
+      - data.raw_dir
+      - outputs.reports
+    outs:
+      - ${outputs.reports}/manifest_check.json:
+          cache: false
+
+  parse:
+    cmd: python scripts/parse.py
+    deps:
+      - scripts/parse.py
+      - src/lookthrough/combine.py
+      - src/lookthrough/load.py
+      - src/lookthrough/mapping.py
+      - src/lookthrough/holdings.py
+      - src/lookthrough/paths.py
+      - ${outputs.reports}/manifest_check.json
+      - ${data.raw_dir}
+    params:
+      - release
+      - releases
+      - data.raw_dir
+      - data.use_fixture
+      - data.fixture_dir
+    outs:
+      - outputs/work/sub.parquet
+      - outputs/work/num.parquet
+      - outputs/work/canon.parquet
+      - outputs/work/holdings.parquet
+
+  clean:
+    cmd: python scripts/clean.py
+    deps:
+      - scripts/clean.py
+      - src/lookthrough/clean.py
+      - src/lookthrough/pipeline.py
+      - outputs/work/holdings.parquet
+    params:
+      - cleaning.rules
+    outs:
+      - outputs/work/kept.parquet
+      - outputs/work/log.parquet
+
+  reconcile:
+    cmd: python scripts/reconcile.py
+    deps:
+      - scripts/reconcile.py
+      - src/lookthrough/reconcile.py
+      - outputs/work/kept.parquet
+      - outputs/work/sub.parquet
+      - outputs/work/num.parquet
+      - outputs/work/canon.parquet
+    params:
+      - reconcile.tolerance
+    outs:
+      - outputs/work/rec.parquet
+      - outputs/work/diag.parquet
+
+  report:
+    cmd: python scripts/report.py
+    deps:
+      - scripts/report.py
+      - src/lookthrough/report.py
+      - src/lookthrough/reconcile.py
+      - src/lookthrough/tables.py
+      - ${triage.input}
+      - outputs/work/kept.parquet
+      - outputs/work/rec.parquet
+      - outputs/work/diag.parquet
+      - outputs/work/log.parquet
+      - outputs/work/sub.parquet
+    params:
+      - outputs
+      - triage.input
+      - reconcile.tolerance
+    outs:
+      - ${outputs.panel}
+      - ${outputs.reports}/coverage.csv:
+          cache: false
+      - ${outputs.reports}/coverage.md:
+          cache: false
+      - ${outputs.reports}/triage.md:
+          cache: false
+      - ${outputs.reports}/cleaning_log.csv:
+          cache: false
+    metrics:
+      - ${outputs.reports}/coverage.json:
+          cache: false
