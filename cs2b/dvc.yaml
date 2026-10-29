@@ -1,6 +1,10 @@
 # Case Study 2B pipeline: dvc pull && dvc repro rebuilds the panel and reports.
 # Each stage calls existing functions in src/lookthrough/ in the same order as
 # pipeline.run_baseline; no logic lives in the stage scripts.
+#
+# Paths come from params.yaml through ${...} templating, so DVC tracks the
+# same files the scripts read and write. The pipeline runs the real release
+# only: acquire and parse stop with an error if data.use_fixture is true.
 stages:
   acquire:
     cmd: python scripts/acquire.py
@@ -8,9 +12,13 @@ stages:
       - scripts/acquire.py
       - src/lookthrough/acquire.py
       - data/manifest.json
-      - data/raw
+      - ${data.raw_dir}
+    params:
+      - data.use_fixture
+      - data.raw_dir
+      - outputs.reports
     outs:
-      - reports/manifest_check.json:
+      - ${outputs.reports}/manifest_check.json:
           cache: false
 
   parse:
@@ -22,11 +30,14 @@ stages:
       - src/lookthrough/mapping.py
       - src/lookthrough/holdings.py
       - src/lookthrough/paths.py
-      - reports/manifest_check.json
-      - data/raw
+      - ${outputs.reports}/manifest_check.json
+      - ${data.raw_dir}
     params:
+      - release
       - releases
       - data.raw_dir
+      - data.use_fixture
+      - data.fixture_dir
     outs:
       - outputs/work/sub.parquet
       - outputs/work/num.parquet
@@ -68,7 +79,7 @@ stages:
       - src/lookthrough/report.py
       - src/lookthrough/reconcile.py
       - src/lookthrough/tables.py
-      - data/triage.csv
+      - ${triage.input}
       - outputs/work/kept.parquet
       - outputs/work/rec.parquet
       - outputs/work/diag.parquet
@@ -77,16 +88,17 @@ stages:
     params:
       - outputs
       - triage.input
+      - reconcile.tolerance
     outs:
-      - outputs/panel
-      - reports/coverage.csv:
+      - ${outputs.panel}
+      - ${outputs.reports}/coverage.csv:
           cache: false
-      - reports/coverage.md:
+      - ${outputs.reports}/coverage.md:
           cache: false
-      - reports/triage.md:
+      - ${outputs.reports}/triage.md:
           cache: false
-      - reports/cleaning_log.csv:
+      - ${outputs.reports}/cleaning_log.csv:
           cache: false
     metrics:
-      - reports/coverage.json:
+      - ${outputs.reports}/coverage.json:
           cache: false

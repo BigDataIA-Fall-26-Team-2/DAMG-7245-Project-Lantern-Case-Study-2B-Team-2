@@ -14,12 +14,17 @@ stages:
       nfiles: 33
     - path: scripts/acquire.py
       hash: md5
-      md5: 2d73fb1efd945a9576c6ce416afc2baf
-      size: 803
+      md5: e29c1d3fd5e5af1f74c36058bc27e4d3
+      size: 1237
     - path: src/lookthrough/acquire.py
       hash: md5
       md5: 8d684220e1df1371b7ce94fe2854f87e
       size: 3192
+    params:
+      params.yaml:
+        data.raw_dir: data/raw
+        data.use_fixture: false
+        outputs.reports: reports
     outs:
     - path: reports/manifest_check.json
       hash: md5
@@ -39,8 +44,8 @@ stages:
       size: 45
     - path: scripts/parse.py
       hash: md5
-      md5: 1cd6e08fda0fe2e305162d9ff866fd9d
-      size: 1108
+      md5: de56bfc9752917cd2cb7a9dd3c986c46
+      size: 1369
     - path: src/lookthrough/combine.py
       hash: md5
       md5: 4e8e7586b9e8ea27a4789283988480e9
@@ -63,7 +68,10 @@ stages:
       size: 2141
     params:
       params.yaml:
+        data.fixture_dir: data/fixture
         data.raw_dir: data/raw
+        data.use_fixture: false
+        release: '2026_05'
         releases:
         - '2026_04'
         - '2026_05'
@@ -208,6 +216,7 @@ stages:
         outputs:
           panel: outputs/panel
           reports: reports
+        reconcile.tolerance: 0.01
         triage.input: data/triage.csv
     outs:
     - path: outputs/panel

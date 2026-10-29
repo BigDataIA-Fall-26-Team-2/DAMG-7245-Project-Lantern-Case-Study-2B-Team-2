@@ -3,6 +3,7 @@
 Load every release listed in params.yaml, split current from comparative rows,
 and coalesce one row per holding. No cleaning happens here. Writes the
 intermediate tables the later stages read, under outputs/work/.
+The pipeline runs the real release only, so it stops if data.use_fixture is true.
 """
 import sys
 from pathlib import Path
@@ -12,6 +13,10 @@ sys.path.insert(0, str(ROOT / "src"))
 from lookthrough import combine, holdings, paths, reconcile
 
 P = paths.load_params(ROOT)
+if P["data"].get("use_fixture"):
+    sys.exit("parse: data.use_fixture is true. The dvc.yaml pipeline runs the "
+             "real release only; set data.use_fixture: false.")
+
 work = ROOT / "outputs" / "work"
 work.mkdir(parents=True, exist_ok=True)
 

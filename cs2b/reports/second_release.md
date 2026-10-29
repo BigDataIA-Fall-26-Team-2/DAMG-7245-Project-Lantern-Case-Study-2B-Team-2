@@ -66,10 +66,11 @@ Largest BDCs admitted in 2026_08 but not in 2026q2 (gap in 2026q2):
 
 - **Half of the switches are near-misses at the 1% tolerance.** 4 of the 8 largest losses (Golub, TPG Twin Brook, Kayne Anderson, T Series) and 4 of the 8 largest gains (Jefferies, Runway, Commonwealth, Senior Credit) have gaps between 1% and 2.1% in the other release. Coverage near the boundary moves from quarter to quarter without any change in the rules.
 - **The larger gaps point to artifacts the rules do not yet catch in 2026_08**: Blue Owl Technology Income (+25.8%), New Mountain Finance (+14.2%, a joint-venture filer in 2026q2), TCW Direct Lending VIII (+11.0%) and Overland Advantage (−6.6%). We did not investigate these; they are the first places to look if the rules are extended to 2026_08.
-- **Star Mountain's +300% in 2026q2** is far larger than any cleaning artifact and is more likely a units or scale problem in that filing's data; also not investigated.
+- **Star Mountain's +300% in 2026q2** was investigated afterwards by the team (Part 3 follow-up): its schedule repeats classification summaries (nested subtotals). Removing the evidenced nested summaries takes the holdings sum from $1,528,038,452 to $382,009,613, which matches the reported total. That fix is on a later branch; the figures in this report use the five-rule baseline, where Star Mountain is still excluded.
 - **Triage was not done for 2026_08.** All excluded 2026_08 filings show the placeholder `to_triage`, as expected: triage is a human review of our main release only.
 
 ## Limits
 
 - 2026_08 is not tracked in the team's DVC remote. To reproduce, follow the three steps above in a fresh clone.
 - BDCs were matched by name; a renamed fund would appear as two different BDCs.
+- All 2026q2 figures use the five-rule baseline. A later Part 3 follow-up raises 2026q2 admissions (to 94 filings, per the team); this report has not been refreshed against that final panel.
