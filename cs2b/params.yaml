@@ -1,6 +1,6 @@
 # Lab 2B / Case Study 2B parameters. Every notebook and script reads this file.
-release: "2026_05"            # fallback for single-release tools
-releases: ["2026_04", "2026_05", "2026_06"]   # Team 2 quarter 2026q2, three monthly SEC ZIPs
+release: "2026_05"            # fallback for notebooks and tools only; the dvc.yaml pipeline reads releases
+releases: ["2026_04", "2026_05", "2026_06"]   # required by the dvc.yaml pipeline, even for one release (e.g. ["2026_05"]); Team 2 quarter 2026q2
 data:
   use_fixture: false           # real data
   raw_dir: data/raw

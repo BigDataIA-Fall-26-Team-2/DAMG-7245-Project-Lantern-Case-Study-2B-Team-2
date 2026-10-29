@@ -5,6 +5,11 @@
 # Paths come from params.yaml through ${...} templating, so DVC tracks the
 # same files the scripts read and write. The pipeline runs the real release
 # only: acquire and parse stop with an error if data.use_fixture is true.
+#
+# Release selection: this pipeline requires an explicit `releases` list in
+# params.yaml, even for one release (for example releases: ["2026_05"]),
+# because DVC requires every tracked parameter to exist. The single `release`
+# fallback in paths.release_dirs is for notebooks and tools, not this pipeline.
 stages:
   acquire:
     cmd: python scripts/acquire.py

@@ -44,8 +44,8 @@ stages:
       size: 45
     - path: scripts/parse.py
       hash: md5
-      md5: de56bfc9752917cd2cb7a9dd3c986c46
-      size: 1369
+      md5: b9ae8e014a34729e59c15611325f8732
+      size: 1826
     - path: src/lookthrough/combine.py
       hash: md5
       md5: 4e8e7586b9e8ea27a4789283988480e9
