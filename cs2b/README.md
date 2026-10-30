@@ -100,7 +100,7 @@ Coverage retains every attempted filing. It also identifies SUB filings without
 SOI rows and counts attempts without a usable filed total. Dollar coverage uses
 only known positive filed totals: dollars for unresolved filings are unknown,
 not estimated as zero. These safeguards do not replace filing-level triage or
-human-readable spot checks. Cleaning integration and exclusion-decision evidence review are complete; 64 underlying causes remain unresolved.
+human-readable spot checks. Cleaning integration and exclusion-decision evidence review are complete; 63 underlying causes remain unresolved.
 
 
 ### Generate the panel and reports
@@ -153,7 +153,7 @@ These are completeness checks, not automated verification of human claims; chang
 in holdings that leave totals unchanged still require human review. Entries for
 admitted filings remain saved but their coverage category is blank.
 
-The self-check supports the configured releases; triage review remains pending. Preliminary reports are not a finished submission.
+All 76 current exclusion decisions have reviewed evidence. This does not mean every root cause is resolved; 63 remain categorized as `other`. See the current submission-readiness section below.
 
 
 ### Rule selection and multi-release validation
@@ -161,8 +161,9 @@ The self-check supports the configured releases; triage review remains pending. 
 `cleaning.rules` in `params.yaml` lists the `rule_*` functions to run, in order.
 The command resolves every name before processing data; a missing, duplicate,
 empty or invalid selection is an error. There is no fallback that silently skips
-an unavailable Part 2 rule. The selection is `rule_totals`, `rule_cash`, `rule_jv_portfolio`,
-`rule_issuer_subtotals`, `rule_rollforward_copies`, in that order.
+an unavailable Part 2 rule. The current selection is `rule_source_disclosures`, `rule_totals`, `rule_cash`,
+`rule_commitment_rows`, `rule_jv_portfolio`, `rule_issuer_subtotals`, and
+`rule_rollforward_copies`, in that order.
 The pipeline adds roll-forward opening-balance evidence before filtering to current
 holdings, then applies the rules and adds the debt flag. `tools/rule_impact.py`
 uses the same input selection and configured rules.
@@ -234,7 +235,7 @@ Prospect Floating Rate: 97 → 101 admitted. Before integrating PR #41, the othe
 retained holding values were unchanged by the source-evidence extension. The four recovered notes retain their
 pre-fix evidence as history in `data/triage_recovered.csv`. Of the 76 current exclusions,
 all 76 exclusion decisions now have reviewed dataset evidence (2026-10-30 audit);
-64 underlying causes remain unresolved and explicitly categorized as `other`.
+63 underlying causes remain unresolved and explicitly categorized as `other`.
 The new snapshots and rebuilt artifacts were uploaded on 2026-10-29 with
 `AWS_PROFILE=lantern dvc push`; DVC reported the cache and remote in sync.
 A fresh clone still needs authorized AWS credentials to restore them.
@@ -256,10 +257,10 @@ values are in the generated coverage and triage reports.
   shared team document. [Part 3 section](docs/codelab_part3.md) contains the
   walkthrough and commands, published to the codelab on 2026-10-29.
 - PR #42 snapshot `17ecff2`: 49/49 tests pass, all 25 deliberate rule breaks
-  caught, 9/10 structural checks pass. The remaining failure is incomplete
-  evidence review for 76 exclusions. Rule freeze does not constitute triage sign-off.
+  caught, 9/10 structural checks pass. That historical snapshot failed the triage check; the current reviewed inputs
+  supersede it. Rule freeze alone does not constitute triage sign-off.
 
-The main-release results above are current for that snapshot. The second-release
+The PR #42 test counts above are historical; current validation is recorded below. The second-release
 report describes an earlier five-rule experiment; its timings and sample results
 are historical. The economics report now uses the deployed AWS inventory and explicitly
 separates observed resources from runtime assumptions. Review the evidence and current totals before promoting any triage
@@ -270,7 +271,7 @@ entry to `reviewed`. Do not change status just to make acceptance pass.
 
 The panel still admits **101/177 filings**. All **76 exclusion decisions** have
 reviewed evidence with current totals. Categories: 8 `no_filed_total`, 3
-`no_identified_holdings`, 1 `unfunded_commitments`, and 64 `other`. For those 64,
+`no_identified_holdings`, 1 `unfunded_commitments`, 1 `restated_copies` (TCW), and 63 `other`. For those 63,
 the source-to-panel discrepancy is independently verified, but its underlying
 cause remains unresolved. Review completion is not a claim that those causes
 were identified or the filings recovered. The notes say so explicitly.
@@ -290,12 +291,14 @@ are not submission outputs. Use `dvc repro` for the multi-release pipeline.
 
 The app and sampling script share the same deterministic sampler. New unreviewed draws
 never replace the frozen hand-check evidence. The app uses one backend worker with
-in-memory runs; a restart or cache eviction requires reloading the session. Uploads
-and refresh are shared across users: coordinate those actions during the demo.
+in-memory runs; a restart or cache eviction requires reloading the session. Shared-data mutations (upload, fetch, delete and refresh) are disabled unless
+`LANTERN_ADMIN_TOKEN` is configured, and then require an administrator API key.
+The public Streamlit UI does not expose these controls. See app/README.md.
 
-Before the final `cs2b-submission` tag, merge the readiness PR, rerun the checks, and
-review the unresolved-cause limitation explicitly. Do not treat the older `Submission`
-tag as the final version. See `reports/economics.md` for the deployed-resource budget.
+Before retargeting `cs2b-submission`, merge the final fixes, add the demo-video
+link below, and validate that exact commit. The existing remote tag was observed
+at `a738aca`, before PR #50, and is not the reviewed final version. Do not use the
+older `Submission` tag as a substitute. See `reports/economics.md` for the deployed-resource budget.
 
 
 ## Stretch-goal evidence
@@ -312,4 +315,16 @@ tag as the final version. See `reports/economics.md` for the deployed-resource b
 - Issue draft: `reports/issue_draft.md` is already merged from Guna's PR #49.
   It is a draft for after grading; no external issue has been posted.
 
-Final branch validation: **57/57 tests and 10/10 self-checks pass**. The checker is unchanged. This verifies the stated structural and evidence-completeness checks, not resolution of all underlying causes.
+Previous merged-main validation: **57/57 tests and 10/10 self-checks passed**. Final-fix validation is recorded below. The checker is unchanged. This verifies the stated structural and evidence-completeness checks, not resolution of all underlying causes.
+
+
+## Final submission handoff
+
+- [Live application](http://100.49.157.253/)
+- [Swagger API documentation](http://100.49.157.253/docs)
+- **Demo video (maximum 5 minutes): pending recording and link.** Add the real video URL here before retargeting `cs2b-submission`; the app URL is not the video deliverable.
+- TCW's evidence is now categorized as `restated_copies`; admissions and holding values are unchanged. There are 63 unresolved `other` exclusions.
+- The app withholds debt-share estimates and labels its debt filter as heuristic because equity unit counts can populate principal.
+- Economics distinguishes measured laptop timing, hosting charges and explicitly assumed manual effort/history-wide scale.
+
+After all final changes and the video link are merged: fetch main, check out the exact intended commit in a fresh clone, configure authorized AWS access, run `dvc pull`, `dvc repro`, `python tests/run_tests.py` and `PYTHONPATH=src python -m lookthrough.check`. Inspect the outputs, then retarget `cs2b-submission` to that verified commit and update EC2 to the same commit. The tag is deliberately not moved by this branch.

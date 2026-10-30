@@ -923,6 +923,8 @@ def test_app_exports_evidence_and_marks_stale_triage_without_quoting_prices():
         assert all(row['price'] is None for row in loans['loans'])
         assert all(row['principal'] is None for row in loans['by_fund'])
         assert engine.loans(rid, price_hi=90)['count'] == 0
+        assert engine.overview(rid)['debt_share'] is None
+        assert 'unverified' in engine.overview(rid)['debt_status']
         assert 'source_document_sha256' in pd.read_csv(io.StringIO(engine.loans_csv(rid)))
     finally:
         engine._runs.pop(rid, None)
@@ -1032,3 +1034,38 @@ def test_affiliation_source_requires_standard_unambiguous_labels():
         result = affiliation.source_members(kept,{'r':root})
         assert result.iloc[0] == member
         assert result.iloc[1:].isna().all()
+
+
+def test_admin_routes_require_configured_key_before_mutation():
+    from unittest.mock import patch
+    from fastapi.testclient import TestClient
+    sys.path.insert(0, str(ROOT))
+    from app import api
+    # No lifespan context: this routing test must not start real-data warmup.
+    client = TestClient(api.app)
+    routes = [
+        ('POST', '/refresh', {}, 'refresh'),
+        ('POST', '/releases/fetch', {'json': {'release': '2026_08'}}, 'add_from_sec'),
+        ('DELETE', '/releases/2026_08', {}, 'remove_release'),
+        ('POST', '/releases/upload', {'data': {'release': '2026_08'},
+         'files': {'file': ('release.zip', b'test', 'application/zip')}}, 'add_upload'),
+    ]
+    for method, path, payload, function in routes:
+        with patch.object(api.engine, function, return_value={'ok': True}) as mutate, \
+             patch.object(api.engine, 'warm_up'):
+            with patch.dict('os.environ', {'LANTERN_ADMIN_TOKEN': ''}):
+                assert client.request(method, path, **payload).status_code == 403
+                mutate.assert_not_called()
+            with patch.dict('os.environ', {'LANTERN_ADMIN_TOKEN': 'test-only-key'}):
+                for headers in ({}, {'X-Lantern-Admin-Key': 'wrong'}):
+                    assert client.request(method, path, headers=headers, **payload).status_code == 401
+                mutate.assert_not_called()
+                response = client.request(method, path,
+                    headers={'X-Lantern-Admin-Key': 'test-only-key'}, **payload)
+                assert response.status_code == 200
+                mutate.assert_called_once()
+    assert client.get('/health').status_code == 200
+    assert client.get('/openapi.json').status_code == 200
+    schema = client.get('/openapi.json').json()
+    assert schema['paths']['/refresh']['post']['security']
+    assert not schema['paths']['/runs']['post'].get('security')

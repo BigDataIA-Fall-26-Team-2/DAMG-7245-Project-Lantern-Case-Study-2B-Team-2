@@ -32,18 +32,18 @@ The three filings were chosen to cover different cases: a clean 10-Q, a filer th
 - **Filing:** "Total Debt & Equity Investments" = **$645,193,114** (Consolidated Schedule of Investments as of December 31, 2025, page F-7). As with Steel City, "Total Investments" ($1,198,298,004) adds Cash Equivalents ($9,351,973) and a U.S. Treasury Bill ($543,752,917).
 - **Difference:** +$215,724,000 (+33.44%).
 - **Cause:** footnote (4) to the schedule is a roll-forward table of the filer's non-controlled affiliated investments (fair value at December 31, 2024, additions, reductions, fair value at December 31, 2025). Its rows carry the same fair-value tag, so they appear in SOI as extra holdings. "Total Non-Controlled Affiliated Investments" at December 31, 2025 = **$107,862,000** in the filing.
-  - Our parsed affiliate section has 31 holdings totalling $215,724,000: the subtotal row "Non-Controlled Affiliated Investments" (SOI rows 2269;2270, $107,862,000) plus 30 repeated holdings ($107,862,000).
+  - Our parsed affiliate section has 31 holdings totalling $215,724,000: the subtotal row "Non-Controlled Affiliated Investments" (SOI rows 2269;2270, $107,862,000) plus 12 valued non-controlled affiliate rows ($107,862,000) and 18 controlled-affiliate rows without mapped fair values (including a category heading). These 30 rows must not all be described as verified duplicate holdings.
   - Example: RL Investor Holdings (fka Red Lobster Management) Term Loan appears at SOI rows 1001;1002 (main schedule) and 2243;2244 (footnote), both $56,324,391, release 2026_04. The footnote shows the same $56,324,391.
   - Excluding the affiliate section leaves exactly $645,193,114.
-- **Holding count:** the filing's MD&A states 59 total investments (42 debt, 17 equity) as of December 31, 2025. We parse 90; after cleaning 89; 89 − 30 repeated footnote holdings = **59**, exactly the filing's count.
-- **After cleaning:** 89 holdings, $753,055,114, +16.72%, not admitted. The remaining gap is exactly $107,862,000, the 30 repeated footnote holdings. Cleaning removed the subtotal row but not the repeated holdings.
+- **Holding count:** the filing's MD&A reports 59 investments. We parse 90 and retain 89 after cleaning. The arithmetic 89 − 30 = 59 is only a diagnostic: it does not independently prove that all 30 affiliate-section rows should be deleted.
+- **After cleaning:** 89 rows, $753,055,114, +16.72%, not admitted. The 12 valued non-controlled affiliate rows sum to the full $107,862,000 excess; 18 other retained rows have missing fair values. RL Investor is a source-confirmed repeat. No new production rule is applied from this aggregate comparison.
 - **Without the April fix** in `combine.load_tag_all`, this filing would have had no fair values at all (April's TAG table lacks the us-gaap/2026 label; see `schema.md`).
-- **Conclusion:** parsing is correct; the difference is the affiliated-investments footnote counted as holdings. A rule that drops the footnote's repeated rows would reconcile this filing exactly (triage category: `restated_copies`).
+- **Conclusion:** repeated affiliate disclosures explain the numeric excess (`restated_copies` in data/triage.csv). A candidate removal would make the totals agree, but a general cleaning rule still needs validated instrument/context links and review of missing-value rows. TCW remains excluded.
 
 ## Summary
 
-In all three filings our parsed fair values match the filing line by line once known artifacts are accounted for. No difference comes from parsing or column mapping:
+The three comparisons explain the observed aggregate differences; they do not establish that every parsed field or every missing value is correct:
 
 - Clean filing: exact.
 - Joint-venture portfolios (24 filings use the subsidiary axis): explained and handled by cleaning.
-- Affiliated-investments footnote repeated as holdings: explained exactly; one filing still needs a cleaning rule.
+- Affiliated-investments footnote: the numeric excess is explained, but the filing stays excluded pending a safely generalized correction.

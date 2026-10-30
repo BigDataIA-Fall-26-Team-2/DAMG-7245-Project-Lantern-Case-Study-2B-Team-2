@@ -57,17 +57,22 @@ include a NAT gateway, load balancer, domain, or paid monitoring.
 
 ## Five-line task economics
 
-A completed task here means one filing admitted after reconciliation, not a
-manually verified investment decision. Current outputs: **177 attempted, 101
+For the handout, cost per task is reported per filing processed; cost per admitted
+filing is an additional measure, not a manually verified investment decision. Current outputs: **177 attempted, 101
 admitted, 76 excluded**, with **44.4% of known filed dollars covered**.
 
 | Line | Defensible interpretation |
 |---|---|
-| Cost per completed task | Runtime allocation only: a hypothetical 1/2/4-minute run costs $0.00168/$0.00336/$0.00672 including EC2 and IP, or $0.0000166/$0.0000333/$0.0000665 per admitted filing at 101 admissions. These are ×0.5/×1/×2 runtime scenarios, **not measured EC2 timings**. If this is the only batch in an always-on month, allocating the full $76.77 costs about **$0.76 per admitted filing**, plus variable charges. |
-| Latency | Current seven-rule EC2 end-to-end time is not benchmarked. PR #48 reports a 9.7-second final seven-rule laptop run on an Apple M3 Pro (18 GB): acquire 0.38 s, parse 5.23 s, clean 2.34 s, reconcile 1.20 s, report 0.55 s. This is a teammate-reported laptop measurement, not a measured EC2 runtime. The optional affiliation stage added here is outside that timing. Measure a forced run separately from a no-change `dvc repro`, excluding or explicitly including `dvc pull`. |
-| Human effort | Triage and sample review still require evidence inspection: 76 exclusion decisions reviewed; 64 still have unresolved underlying mechanisms. For planning only, 5/10/20 minutes of further investigation per unresolved case means 5.3/10.7/21.3 hours. No analyst-hour saving or dollar saving has been measured. Hard cases can exceed this range. |
+| Cost per completed task | Runtime allocation only: a hypothetical 1/2/4-minute run costs $0.00168/$0.00336/$0.00672 including EC2 and IP, or $0.0000095/$0.0000190/$0.0000380 per attempted filing at 177 attempts ($0.0000166/$0.0000333/$0.0000665 per admitted filing at 101 admissions). These are ×0.5/×1/×2 runtime scenarios, **not measured EC2 timings**. If this is the only batch in an always-on month, allocating the full $76.77 costs about **$0.76 per admitted filing**, plus variable charges. |
+| Latency | Measured by Shravya on an Apple M3 Pro laptop (18 GB): **9.7 seconds** for the five core stages with seven cleaning rules; acquire 0.38 s, parse 5.23 s, clean 2.34 s, reconcile 1.20 s, report 0.55 s. This is **0.053 s per SUB filing** (9.7/183), or **0.055 s per attempted filing** (9.7/177). Stage timings used `/usr/bin/time -p dvc repro --force -s <stage>`; exclude the initial DVC download and the subsequently added affiliation stage. EC2 runtime has not been benchmarked. |
+| Human time replaced (assumption) | Assume **1 analyst hour per filing** to rebuild and reconcile manually. For the 101 admitted filings, ×0.5/×1/×2 gives **50.5/101/202 analyst hours per quarter** of gross manual effort potentially displaced. This is a planning assumption, not measured net savings: review, maintenance and all excluded filings still require human effort. For the 63 unresolved exclusions, a separate assumed 5/10/20 minutes of further investigation each adds 5.25/10.5/21 hours. |
 | Quality | 101/177 admitted (57.1%), $240.917B/$542.176B known filed fair value (44.4%); 8 attempts lack a usable total and their unknown dollars are outside that denominator. Frozen sample: 19/20 matches; the exception is an equity quantity represented as principal. Reconciliation passing does not establish every field's correctness. |
-| Scale | More releases increase parsing time, memory and retained DVC versions. Do not extrapolate linearly to all SEC history without a benchmark. At unchanged request counts, doubling this prefix's bytes adds only about $0.016/month; changing EC2 size or uptime dominates this small storage cost. The app retains runs in one process; concurrent-use capacity has not been load-tested. |
+| Scale (estimate) | The SEC list checked 2026-10-30 has **22 ZIPs from 2022 Q4 through September 2026**, totaling approximately 478.57 listed MB, versus 40.23 listed MB for our April–June inputs. Assuming runtime scales linearly with compressed bytes on the same laptop: **9.7 × 478.57/40.23 ≈ 115 seconds** for all listed releases. Assuming EC2 takes 3× that time gives **346 seconds (5.8 minutes)** and **$0.0097 compute + IPv4 allocation**, at $0.10076/hour; storage, downloads, requests and human review are additional. This is an extrapolation, not a measured historical rerun or an upper bound; formats, filing mix and memory needs may differ. |
+
+The earlier ~80-second estimate used a smaller ~340 MB inventory. The current
+22-file inventory includes July–September 2026 and replaces that estimate. SEC
+listed sizes are used consistently for the ratio; ZIP bytes are only a workload
+proxy. The optional affiliation stage is excluded from the timing projection.
 
 ## Build versus buy
 
@@ -93,6 +98,9 @@ frozen deployment's outputs just to benchmark it. Actual billed spend requires
 Cost Explorer or the AWS bill; it was not queried in this review.
 
 ## References
+
+- [SEC BDC release inventory and ZIP sizes](https://www.sec.gov/data-research/sec-markets-data/bdc-data-sets), checked 2026-10-30.
+- Laptop measurement: Shravya, 2026-10-30; recorded in commit `63e5cd1`.
 
 - [AWS EC2 On-Demand pricing](https://aws.amazon.com/ec2/pricing/on-demand/)
 - [AWS public us-east-1 EC2 price catalog (CSV)](https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/current/us-east-1/index.csv)

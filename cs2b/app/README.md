@@ -22,3 +22,18 @@ Review safeguards:
 - Principal currency/units are not verified (some amounts are equity quantities).
   Prices, aggregated principal and the price-based watch list are withheld until
   that evidence is available. Fair values remain USD; raw principal is not labelled USD.
+
+
+Administrative endpoints (`POST /refresh`, `POST /releases/upload`,
+`POST /releases/fetch`, `DELETE /releases/{release}`) are disabled by default.
+To enable them for a trusted operator, set `LANTERN_ADMIN_TOKEN` in the backend
+process environment and send the same value in `X-Lantern-Admin-Key`. Swagger's
+Authorize button supports this header. Missing/wrong keys are rejected before
+mutating shared state. Never commit the token or embed it in the public frontend.
+Use HTTPS or an SSH tunnel to the backend for token-bearing requests; do not send
+administrator credentials to the public HTTP address. The public UI exposes
+existing releases and pipeline runs, not shared-data administration.
+
+Debt-share figures are withheld. The optional likely-debt filter remains a
+heuristic and can include equity; original panel fields and fair values are
+preserved for reproducibility.

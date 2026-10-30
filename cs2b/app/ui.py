@@ -181,16 +181,7 @@ with st.sidebar:
     mode = st.radio("Mode", ["🧭 How it's built", "🔎 Explore the loans"], key="mode",
                     label_visibility="collapsed")
 
-    def do_refresh():
-        call("POST", "/refresh")
-        st.cache_data.clear()
-        for k in ("baseline", "base_fil", "run", "fil"):
-            ss.pop(k, None)
-        if ss.get("step", 1) > 1:
-            ss.pending = ss.step  # rerun with the same settings and come back to this step
-
-    st.button("↻ Refresh data", on_click=do_refresh, use_container_width=True,
-              help="Reload the files on disk, for example after dvc pull or adding a month.")
+    st.caption("Shared data is managed by the team. Reload this page to start a new session.")
 
 
 def ensure_runs():
@@ -404,7 +395,7 @@ if mode.startswith("🔎"):
             col.button(word, on_click=set_q, args=(word,), use_container_width=True)
         with st.expander("Filters"):
             f1, f2 = st.columns(2)
-            debt_only = f1.toggle("Loans only (no equity)")
+            debt_only = f1.toggle("Likely debt (heuristic; may include equity)")
             include_all = f2.toggle("Include funds whose totals don't match (less reliable)",
                                     help="Off: only loans we could check against the fund's own total. "
                                          "On: also the others, marked 'In final list: no'.")
@@ -477,7 +468,8 @@ if mode.startswith("🔎"):
         a.metric("Loans in the final list", f"{ov['loans']:,}")
         b.metric("Funds", f"{ov['funds']}")
         c.metric("Total value", money(ov["fair_value"]))
-        d.metric("In loans (the rest is company shares)", f"{ov['debt_share']:.0%}")
+        d.metric("Debt share", "Not verified")
+        st.caption("Debt classification is provisional: some equity unit counts appear as principal. No verified debt/equity share is shown.")
         l, r = st.columns(2)
         for col, key, field, title in [(l, "industries", "industry", "Biggest industries"),
                                        (r, "funds_top", "name", "Biggest funds")]:
@@ -572,63 +564,7 @@ if ss.step == 1:
                     "Downloaded from": man["url"]}), hide_index=True, use_container_width=True,
                     column_config={"Downloaded from": st.column_config.LinkColumn(display_text="SEC link")})
             st.caption("The files live in S3 through DVC, not in GitHub. `dvc pull` restores them.")
-        with st.expander("➕ Add another month"):
-            st.caption("Any SEC BDC data set works, from the SEC page above. Added files are saved only "
-                       "on this computer, in data/uploads, with their fingerprint. They go to the S3 bucket "
-                       "only when you run: dvc add data/uploads, commit data/uploads.dvc, then dvc push.")
-            up_tab, sec_tab, rm_tab = st.tabs(["Upload a ZIP", "Download from the SEC", "Remove an added month"])
-            with up_tab:
-                files = st.file_uploader("SEC BDC ZIP files (one or several)", type=["zip"],
-                                         accept_multiple_files=True)
-                names = []
-                for f in files or []:
-                    m = RELEASE_RE.search(f.name)
-                    names.append(st.text_input(f"Month name for {f.name}", value=m.group(0) if m else "",
-                                               placeholder="2026_08", key=f"up_name_{f.name}",
-                                               help="Like 2026_08 for a month or 2025q4 for a quarter."))
-                if files and st.button(f"Add {len(files)} file{'s' if len(files) > 1 else ''}"):
-                    added, failed = [], []
-                    with st.spinner("Checking and unpacking"):
-                        for f, name in zip(files, names):
-                            try:
-                                r = requests.post(f"{API}/releases/upload", data={"release": name},
-                                                  files={"file": (f.name, f.getvalue(), "application/zip")},
-                                                  timeout=TIMEOUT)
-                            except requests.ConnectionError:
-                                failed.append(f"{f.name}: backend not reachable")
-                                continue
-                            if r.status_code < 400:
-                                added.append(r.json()["release"])
-                            else:
-                                try:
-                                    why = r.json().get("detail", r.text)
-                                except ValueError:
-                                    why = r.text[:300]
-                                failed.append(f"{f.name}: {why}")
-                    for msg in failed:
-                        st.error(msg)
-                    if added:
-                        ss.add_rel = added
-                        if not failed:
-                            st.rerun()
-            with sec_tab:
-                name2 = st.text_input("Month to download", placeholder="2026_08", key="sec_name",
-                                      help="Fetched from the SEC page with our name and email, as the SEC requires.")
-                if st.button("Download and add", disabled=not name2):
-                    with st.spinner(f"Downloading {name2} from the SEC"):
-                        e = call("POST", "/releases/fetch", json={"release": name2})
-                    ss.add_rel = [e["release"]]
-                    st.rerun()
-            with rm_tab:
-                added = [r["release"] for r in rel_info if r["removable"]]
-                if not added:
-                    st.caption("No added months yet.")
-                else:
-                    gone = st.selectbox("Added month", added)
-                    if st.button("Remove it"):
-                        call("DELETE", f"/releases/{gone}")
-                        ss.drop_rel = gone
-                        st.rerun()
+        st.caption("To add or remove releases, ask the team administrator. Existing releases remain available above.")
         st.button("Read these files →", type="primary", on_click=run_then, args=(2,))
     st.stop()
 done_row(1, f"{len(run['settings']['releases'])} monthly SEC files "
