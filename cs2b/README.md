@@ -1,18 +1,147 @@
-# Project Lantern — Case Study 2B (Team 2)
+# Project Lantern: Case Study 2B (Team 2)
 
-DAMG 7245, Fall 2026. Companion to the Tool Tutorial Part 2B deck, the BDC Primer and Case Study 2B.
+DAMG 7245, Fall 2026. A reproducible pipeline that turns the SEC's BDC data sets for 2026q2 into one reconciled holdings panel: every holding of every admitted filing, traceable to its filing and SOI rows, reconciled to the BDC's own reported total within 1%, and honest about what it covers.
 
-## Setup (10 minutes)
-Copy this folder into your team's Case Study 1 repository as `cs2b/`, and run everything from inside it.
+- **Demo video (maximum 5 minutes):** ADD LINK BEFORE TAGGING
+- **Live application:** http://100.49.157.253/
+- **Swagger API documentation:** http://100.49.157.253/docs
+- **Codelab:** https://docs.google.com/document/d/1GLzlaeA_w7YedAElnZQFLLQcgpPO9HXLntwK72rK4Ck/edit
+- **Submission:** tag `cs2b-submission`
+
+**Team:** Sai Guna Vardhan Vudatala (Part 0, Part 4, app), Shravya Ushake (Part 1, Part 5), Dhruvi Mehta (Part 2), Sai Lokesh Reddy Nandavarapu (Part 3).
+
+## Results
+
+- **101 of 177** attempted filings admitted (57.1%), covering **$240.9B of $542.2B** known filed fair value (**44.4%**). A filing is admitted when |our sum − its own filed total| / its filed total ≤ 1%.
+- **34,670 holdings** in the panel, with 38,053 SOI source-row references.
+- **76 excluded filings**, each with reviewed exclusion evidence: 8 `no_filed_total`, 3 `no_identified_holdings`, 1 `unfunded_commitments`, 1 `restated_copies` (TCW), 63 `other` (discrepancy verified, cause unresolved, kept excluded).
+- **19 of 20** sampled holdings match the filings by hand (Part 4).
+- **58/58 tests** and **10/10 self-checks** pass.
+
+## Architecture
+
+What the system is made of, and where each part runs.
+
+```mermaid
+flowchart LR
+    U["User's browser"]
+
+    subgraph EC2["Server (EC2)"]
+        UI["Frontend<br/>Streamlit, app/ui.py<br/>port 8501"]
+        API["Backend<br/>FastAPI, app/api.py + engine.py<br/>port 8000, Swagger /docs"]
+        PKG["Pipeline code<br/>src/lookthrough<br/>parse, clean, reconcile, report"]
+        DISK[("Local disk<br/>data/raw, outputs/work,<br/>reports, data/uploads")]
+    end
+
+    S3[("AWS S3 bucket<br/>DVC remote")]
+    GH["GitHub repo<br/>code, dvc.yaml, .dvc pointers"]
+    SECW["SEC website<br/>BDC data sets"]
+
+    U -->|"opens the app"| UI
+    UI -->|"HTTP requests"| API
+    API -->|"calls the same functions as dvc repro"| PKG
+    PKG -->|"reads files"| DISK
+    DISK <-->|"dvc pull / dvc push"| S3
+    GH -->|"git clone / git pull"| EC2
+    API -->|"admin only: download from the SEC"| SECW
 ```
+
+## Pipeline
+
+What happens to the data, step by step, with the numbers for 2026q2.
+
+```mermaid
+%%{init: {"flowchart": {"wrappingWidth": 220, "nodeSpacing": 30, "rankSpacing": 40}}}%%
+flowchart LR
+    SEC["SEC ZIPs<br/>Apr, May, Jun 2026"]
+
+    subgraph PIPE["dvc repro"]
+        direction LR
+        A["1 Acquire<br/>3 files, 0 mismatches"]
+        P["2 Parse<br/>64,762 holdings"]
+        C["3 Clean, 7 rules<br/>60,637 kept"]
+        R["4 Reconcile, ±1%<br/>101 of 177 pass"]
+        O["5 Report<br/>34,670 in panel"]
+        A --> P --> C --> R --> O
+    end
+
+    S3[("S3 via DVC")]
+    TRI["triage.csv<br/>76 reviewed"]
+    CHK{"self-check<br/>10/10"}
+    SPOT["hand check<br/>19 of 20"]
+    APP["App<br/>FastAPI + Streamlit"]
+
+    SEC --> A
+    S3 -. pull .-> A
+    O -. push .-> S3
+    TRI --> O
+    O --> CHK
+    O --> SPOT
+    P -. outputs/work .-> APP
+```
+
+## Reproduce from a fresh clone
+
+```bash
+git clone https://github.com/BigDataIA-Fall-26-Team-2/DAMG-7245-Project-Lantern-Case-Study-2B-Team-2.git
+cd DAMG-7245-Project-Lantern-Case-Study-2B-Team-2
+git checkout cs2b-submission
 cd cs2b
 python -m venv .venv && source .venv/bin/activate      # Python 3.10 or later
 pip install -r requirements.txt
-jupyter lab                                             # open notebooks/00_setup.ipynb
+AWS_PROFILE=lantern dvc pull
+dvc repro
+dvc metrics show
+python tests/run_tests.py
+PYTHONPATH=src python -m lookthrough.check
 ```
-Then set `sec.user_agent` (your name and email) and your team's `release` in `params.yaml`.
 
-## Work through, in order
+The DVC bucket is private, so `dvc pull` needs an authorized AWS identity: `AWS_PROFILE=<profile> dvc pull`, or `dvc remote modify --local storage profile <name>` once. The TA accepted demonstrating the reproduction from the team's configured environment. The committed configuration uses real data (`data.use_fixture: false`) for the three assigned monthly releases; the bundled synthetic fixture is only for tests.
+
+## Run the app
+
+```bash
+cd cs2b
+uvicorn app.api:app --port 8000      # backend, Swagger at http://127.0.0.1:8000/docs
+streamlit run app/ui.py              # frontend, second terminal
+```
+
+"How it's built" walks through the pipeline step by step, with the cleaning rules and tolerance as settings. "Explore the loans" searches one company across every fund and shows every fund report with its triage reason. Runs happen in memory and never write to `outputs/` or `reports/`. Shared-data changes (upload, fetch, delete, refresh) are disabled unless `LANTERN_ADMIN_TOKEN` is configured, and then need an administrator API key. Details in `app/README.md`.
+
+## Deliverables by Part
+
+- **Part 0, acquisition and provenance:** `params.yaml`, `data/manifest.json`, `data/raw.dvc`, `tools/download_release.py`, `scripts/acquire.py`
+- **Part 1, parsing and schema:** `docs/schema.md`, `reports/agreement.md`, `reports/period_split.csv`
+- **Part 2, cleaning:** rules in `src/lookthrough/clean.py`, `reports/cleaning_log.csv`, `docs/cleaning_log.md`, tests in `tests/`
+- **Part 3, reconciliation and coverage:** `outputs/panel/holdings.parquet` (DVC), `reports/coverage.csv`, `reports/coverage.md`, `reports/coverage.json`, `reports/triage.md`, input `data/triage.csv`, audit `reports/triage_review_audit.csv`
+- **Part 4, dependency check:** `reports/spot_check.csv`, `reports/dependency_check.md`, sampler `scripts/spot_check_sample.py`
+- **Part 5, pipeline and economics:** `dvc.yaml`, `dvc.lock`, `scripts/`, `reports/tests_that_fail.md`, `reports/economics.md`
+- **AI engineering logs:** `docs/ai_engineering_log_*.md`
+
+## Known limitations
+
+- Principal is stored without its currency (some loans are in GBP or EUR), and some filers tag equity unit counts as principal, so prices computed from principal are not reliable. The app withholds prices and debt-share estimates for this reason. Fair values are not affected.
+- 63 excluded filings keep the category `other`: the discrepancy is verified, the underlying cause is not proven.
+- The bucket is private: a clone needs authorized AWS credentials to pull the data.
+
+---
+
+# Technical notes
+
+## Checks
+```
+python tests/run_tests.py                 # or: pytest -q
+python tools/run_notebooks.py             # runs notebooks in an isolated temporary copy (retained for inspection)
+PYTHONPATH=src python -m lookthrough.check   # Case Study 2B self-check on your outputs
+python tools/smoke_real.py <release> "Name email"   # baseline on any real release (needs network)
+```
+
+## Layout
+`src/lookthrough/` helpers (paths, acquire, load, mapping, holdings, clean, reconcile, pipeline, report, tables, check);
+`data/fixture/` the synthetic release (rebuild with `python tools/make_fixture.py`); `data/raw/` the three releases (DVC, never Git);
+`outputs/panel/` the reconciled panel; `reports/` coverage, triage, cleaning log, spot checks; `docs/` schema and pipeline notes; `app/` the FastAPI backend and Streamlit frontend.
+
+## Teaching notebooks
 | Notebook | Step |
 |---|---|
 | 00_setup | Environment, parameters, tests |
@@ -25,24 +154,7 @@ Then set `sec.user_agent` (your name and email) and your team's `release` in `pa
 | 07_verify_dependency | Spot-check against the filings; optional EdgarTools comparison |
 | 08_pipeline_and_economics | Tests that fail, timing, unit economics, DVC pipeline |
 
-The committed configuration uses **real data** (`data.use_fixture: false`) for the three assigned monthly releases. Run `dvc pull` to restore inputs and `dvc repro` to regenerate submission outputs. The bundled synthetic fixture is for tests; teaching notebooks are separate demonstrations.
-
-## Checks
-```
-python tests/run_tests.py                 # or: pytest -q
-python tools/run_notebooks.py             # runs notebooks in an isolated temporary copy (retained for inspection)
-PYTHONPATH=src python -m lookthrough.check   # Case Study 2B self-check on your outputs
-python tools/smoke_real.py <release> "Name email"   # baseline on any real release (needs network)
-```
-
-## Layout
-`src/lookthrough/` helpers (paths, acquire, load, mapping, holdings, clean, reconcile, pipeline, report, tables, check);
-`data/fixture/` the synthetic release (rebuild with `python tools/make_fixture.py`); `data/raw/` your release (DVC, never Git);
-`outputs/panel/` the reconciled panel; `reports/` coverage, triage, cleaning log, spot checks; `docs/` schema and pipeline notes.
-
-## Data
-Public data only: the SEC BDC data sets (https://www.sec.gov/data-research/sec-markets-data/bdc-data-sets) and the SEC BDC readme (https://www.sec.gov/files/bdc_readme.pdf). Fixture data is synthetic.
-
+The notebooks are the starter kit's single-release demonstrations, not submission outputs. Use `dvc repro` for the multi-release pipeline.
 
 ## Configured input scope and Part 3 baseline
 
@@ -82,7 +194,6 @@ It does not classify periods, clean holdings or reconcile totals. `pipeline.run_
 coordinates those steps and accepts an explicit rules list, defaulting to the
 seven rules in `clean.RULES` when none is supplied.
 
-
 ### Reconciliation safeguards
 
 Filed totals must be undimensioned, USD, instant (`qtrs=0`) facts at the SUB
@@ -101,7 +212,6 @@ SOI rows and counts attempts without a usable filed total. Dollar coverage uses
 only known positive filed totals: dollars for unresolved filings are unknown,
 not estimated as zero. These safeguards do not replace filing-level triage or
 human-readable spot checks. Cleaning integration and exclusion-decision evidence review are complete; 63 underlying causes remain unresolved.
-
 
 ### Generate the panel and reports
 
@@ -128,9 +238,10 @@ pipeline outputs. Generating reports alone does not publish them to S3.
 `python tools/baseline.py` and `python tools/rule_impact.py` regenerate the
 supplementary baseline and rule-impact reports after an intentional rule change.
 
+### Triage input
 
 Human triage belongs in the Git-tracked CSV configured by `triage.input`
-(default `data/triage.csv`), not in generated reports. The file contains reviewed current exclusion decisions; recovered filings’ historical notes are in `data/triage_recovered.csv`.
+(default `data/triage.csv`), not in generated reports. The file contains reviewed current exclusion decisions; recovered filings' historical notes are in `data/triage_recovered.csv`.
 No real filing has been falsely marked reviewed to satisfy acceptance.
 
 Each input row contains:
@@ -153,8 +264,7 @@ These are completeness checks, not automated verification of human claims; chang
 in holdings that leave totals unchanged still require human review. Entries for
 admitted filings remain saved but their coverage category is blank.
 
-All 76 current exclusion decisions have reviewed evidence. This does not mean every root cause is resolved; 63 remain categorized as `other`. See the current submission-readiness section below.
-
+All 76 current exclusion decisions have reviewed evidence. This does not mean every root cause is resolved; 63 remain categorized as `other`. See the submission-readiness section below.
 
 ### Rule selection and multi-release validation
 
@@ -190,7 +300,6 @@ replacement for opening filings and evaluating the claims. Incomplete real-data 
 is expected to fail until those investigations are performed; do not relabel drafts
 as reviewed merely to pass the checker.
 
-
 ### Integrated Part 3 run (2026-10-29)
 
 With PR #3 merged and the source-evidence extension, seven rules admit 101 of 177 attempted filings (57.1%)
@@ -202,7 +311,6 @@ six SUB filings have no SOI rows and are reported separately.
 At this 2026-10-29 snapshot, all 76 exclusions still required evidence review and
 the triage check failed. The 2026-10-30 audit below supersedes that status; it does
 not change the admitted panel or claim that every underlying cause is known.
-
 
 The local triage follow-up extends `rule_totals` to exact net-assets labels,
 spaced subtotals and classification-only nested summaries. The explicit category
@@ -240,7 +348,7 @@ The new snapshots and rebuilt artifacts were uploaded on 2026-10-29 with
 `AWS_PROFILE=lantern dvc push`; DVC reported the cache and remote in sync.
 A fresh clone still needs authorized AWS credentials to restore them.
 
-PR #41's unfunded-commitment rule is integrated in this branch. The combined
+PR #41's unfunded-commitment rule is integrated. The combined
 seven-rule run still admits 101 filings with 44.4% dollar coverage, and removes
 2,357 commitment rows from the cleaned candidate holdings. The admitted panel
 contains 34,670 holdings and 38,053 source-row references. The pre-review triage
@@ -262,12 +370,11 @@ values are in the generated coverage and triage reports.
 
 The PR #42 test counts above are historical; current validation is recorded below. The second-release
 report describes an earlier five-rule experiment; its timings and sample results
-are historical. The economics report now uses the deployed AWS inventory and explicitly
+are historical. The economics report uses the deployed AWS inventory and explicitly
 separates observed resources from runtime assumptions. Review the evidence and current totals before promoting any triage
 entry to `reviewed`. Do not change status just to make acceptance pass.
 
-
-## Submission readiness — 2026-10-30
+## Submission readiness (2026-10-30)
 
 The panel still admits **101/177 filings**. All **76 exclusion decisions** have
 reviewed evidence with current totals. Categories: 8 `no_filed_total`, 3
@@ -295,15 +402,13 @@ in-memory runs; a restart or cache eviction requires reloading the session. Shar
 `LANTERN_ADMIN_TOKEN` is configured, and then require an administrator API key.
 The public Streamlit UI does not expose these controls. See app/README.md.
 
-Before retargeting `cs2b-submission`, merge the final fixes, add the demo-video
-link below, and validate that exact commit. The existing remote tag was observed
-at `a738aca`, before PR #50, and is not the reviewed final version. Do not use the
-older `Submission` tag as a substitute. See `reports/economics.md` for the deployed-resource budget.
+TCW's evidence is categorized as `restated_copies`; admissions and holding values are unchanged. The app withholds debt-share estimates and labels its debt filter as heuristic because equity unit counts can populate principal. Economics distinguishes measured laptop timing, hosting charges and explicitly assumed manual effort and history-wide scale; see `reports/economics.md`.
 
+Validation of the final version: **58/58 tests and 10/10 self-checks pass**. The checker is unchanged. This verifies the stated structural and evidence-completeness checks, not resolution of all underlying causes.
 
 ## Stretch-goal evidence
 
-- Second release: `reports/second_release.md` records the unchanged earlier five-rule run.
+- Second release: `reports/second_release.md` records the unchanged earlier five-rule run (89 of 169 filings, 40.5% of dollars on 2026_08).
 - Affiliation reconciliation: `dvc repro affiliation` writes `reports/affiliation.csv`
   and `.md`. Only explicit standard source classifications and unique current
   USD category totals are compared. Unknown classification prevents a pass;
@@ -312,19 +417,8 @@ older `Submission` tag as a substitute. See `reports/economics.md` for the deplo
   and counterfactual run in `reports/custom_tag_recovery.md`. 34 missing values
   match candidate facts, but neither affected filing becomes admitted. No safe
   production recovery or completed custom-tag bonus is claimed.
-- Issue draft: `reports/issue_draft.md` is already merged from Guna's PR #49.
-  It is a draft for after grading; no external issue has been posted.
+- Issue draft: `reports/issue_draft.md` documents five issues (Guna: principal currency, equity units; Dhruvi: roll-forward rows, commitment rows, generic-tag fair values). It is a draft for after grading; no external issue has been posted.
 
-Previous merged-main validation: **57/57 tests and 10/10 self-checks passed**. Final-fix validation is recorded below. The checker is unchanged. This verifies the stated structural and evidence-completeness checks, not resolution of all underlying causes.
+## Data
 
-
-## Final submission handoff
-
-- [Live application](http://100.49.157.253/)
-- [Swagger API documentation](http://100.49.157.253/docs)
-- **Demo video (maximum 5 minutes): pending recording and link.** Add the real video URL here before retargeting `cs2b-submission`; the app URL is not the video deliverable.
-- TCW's evidence is now categorized as `restated_copies`; admissions and holding values are unchanged. There are 63 unresolved `other` exclusions.
-- The app withholds debt-share estimates and labels its debt filter as heuristic because equity unit counts can populate principal.
-- Economics distinguishes measured laptop timing, hosting charges and explicitly assumed manual effort/history-wide scale.
-
-After all final changes and the video link are merged: fetch main, check out the exact intended commit in a fresh clone, configure authorized AWS access, run `dvc pull`, `dvc repro`, `python tests/run_tests.py` and `PYTHONPATH=src python -m lookthrough.check`. Inspect the outputs, then retarget `cs2b-submission` to that verified commit and update EC2 to the same commit. The tag is deliberately not moved by this branch.
+Public data only: the SEC BDC data sets (https://www.sec.gov/data-research/sec-markets-data/bdc-data-sets) and the SEC BDC readme (https://www.sec.gov/files/bdc_readme.pdf). Fixture data is synthetic.
