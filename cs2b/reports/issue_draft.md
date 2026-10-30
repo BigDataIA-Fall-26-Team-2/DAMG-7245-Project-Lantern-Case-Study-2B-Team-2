@@ -36,6 +36,54 @@ What would help: a note in the readme that the principal tag can hold quantities
 
 How to reproduce: open soi.tsv of release 2026_05 at the rows above and compare with the schedule of investments in the filing.
 
+## Issue 3: affiliate roll-forward rows appear in soi.tsv as holdings
+
+Author: Dhruvi
+To: SEC Division of Economic and Risk Analysis, BDC data sets team
+Data set: BDC data sets, release 2026_05 (soi.tsv)
+
+What we found: many filers add a roll-forward table for affiliated and controlled investments (opening value, purchases, sales, closing value). soi.tsv loads these rows as if they were schedule holdings, with nothing that marks them apart. The same loan then appears twice, so summing soi.tsv overstates the filing.
+
+Evidence:
+1. FS KKR Capital Corp., Wittur: schedule row 171216 and its roll-forward copy, row 171222, carry the same holding and value. Full adsh and release are in docs/cleaning_log.md (rule_rollforward_copies).
+2. Across our quarter, 319 copy rows in 20 filings. Removing them moved Main Street Capital from +12.82% to -0.04% against its filed total.
+
+What would help: a flag or separate axis in soi.tsv for roll-forward table rows, or a note in the readme that these tables are included.
+
+How to reproduce: open soi.tsv at the rows above and compare with the schedule of investments and the affiliate roll-forward table in the filing.
+
+## Issue 4: unfunded-commitment table rows appear in soi.tsv as holdings
+
+Author: Dhruvi
+To: SEC Division of Economic and Risk Analysis, BDC data sets team
+Data set: BDC data sets, release 2026_05 (soi.tsv)
+
+What we found: rows from the unfunded-commitments table are loaded into soi.tsv as holdings. Their identifier holds "Commitment Type" and "Commitment Expiration Date", and they have no cost or principal. These are promises to lend, not loans, so they should not be counted with the schedule.
+
+Evidence:
+1. T Series Middle Market Loan Fund, release 2026_05, SOI row 97935: Cerity Partners Revolver, Commitment Expiration Date 07/28/2031, no fair value or principal. In the filing this line is only in the unfunded commitments table. Found in Guna's spot check (reports/dependency_check.md).
+2. Across our quarter, 2,357 such rows in 11 filings. Full adsh list is in docs/cleaning_log.md (rule_commitment_rows).
+
+What would help: a flag in soi.tsv for rows that come from the commitments table, or a readme note that they are included.
+
+How to reproduce: open soi.tsv of release 2026_05 at row 97935 and compare with the filing's schedule and its unfunded commitments table.
+
+## Issue 5: fair value reported under a generic tag is missing from soi.tsv
+
+Author: Dhruvi
+To: SEC Division of Economic and Risk Analysis, BDC data sets team
+Data set: BDC data sets, release 2026_05 (soi.tsv, num.tsv)
+
+What we found: soi.tsv fills fair value only from the standard fair-value tag. When a filer reports a holding's value under the generic Investments tag instead, the fair-value column is empty, and the filing looks short of its own reported total.
+
+Evidence:
+1. Lord Abbett Private Credit Fund S, release 2026_05, SOI row 17151 (its joint-venture investment). The filing is short by exactly this holding, $21.608M (a -5.66% gap). Details in docs/cleaning_log.md (custom-tag recovery).
+2. We did not add a general fallback: across the quarter, 3,488 custom-tagged facts were commitments, fee adjustments and roll-forward balances, and recovering them double-counted (TCW Direct Lending VII moved from +16.7% to +112%).
+
+What would help: a readme note listing which tags feed the fair-value column, or a column naming the source tag for each value.
+
+How to reproduce: open soi.tsv of release 2026_05 at row 17151, then look up the same holding in num.tsv.
+
 ## Template for a new issue
 
 Copy from here, give it the next number, and fill every line.
