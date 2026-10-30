@@ -458,18 +458,10 @@ def sample(rid: str, n_largest=5, n_random=5, per_filing=2, seed=7) -> list:
     panel = r["kept"][r["kept"]["adsh"].isin(ok)]
     if panel.empty:
         return []
-    size = panel.groupby("adsh")["fair_value"].sum().sort_values(ascending=False)
-    others = size.index[n_largest:].to_series()
-    chosen = list(size.index[:n_largest]) + list(
-        others.sample(min(n_random, len(others)), random_state=seed))
-    picks = []
-    for a in chosen:
-        g = panel[panel["adsh"] == a].sort_values("fair_value", ascending=False)
-        picks.append(g.head(1))
-        rest = g.iloc[1:]
-        if per_filing > 1 and len(rest):
-            picks.append(rest.sample(min(per_filing - 1, len(rest)), random_state=seed))
-    return records(pd.concat(picks)[SAMPLE_COLS])
+    from lookthrough.sampling import select_sample
+    picked = select_sample(panel, seed=seed, n_largest=n_largest,
+                           n_random=n_random, per_filing=per_filing)
+    return records(picked[SAMPLE_COLS])
 
 
 def reviewed_spot_checks() -> list:

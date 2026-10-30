@@ -1,4 +1,4 @@
-# Lab 2B starter kit: Look-Through (SEC BDC data sets)
+# Project Lantern — Case Study 2B (Team 2)
 
 DAMG 7245, Fall 2026. Companion to the Tool Tutorial Part 2B deck, the BDC Primer and Case Study 2B.
 
@@ -25,12 +25,12 @@ Then set `sec.user_agent` (your name and email) and your team's `release` in `pa
 | 07_verify_dependency | Spot-check against the filings; optional EdgarTools comparison |
 | 08_pipeline_and_economics | Tests that fail, timing, unit economics, DVC pipeline |
 
-You start in **fixture mode** (`data.use_fixture: true`): a synthetic release in the SEC's layout, with fictional BDCs, so everything runs offline. Notebook 02 switches you to your real release.
+The committed configuration uses **real data** (`data.use_fixture: false`) for the three assigned monthly releases. Run `dvc pull` to restore inputs and `dvc repro` to regenerate submission outputs. The bundled synthetic fixture is for tests; teaching notebooks are separate demonstrations.
 
 ## Checks
 ```
 python tests/run_tests.py                 # or: pytest -q
-python tools/run_notebooks.py             # runs every notebook's code in order
+python tools/run_notebooks.py             # runs notebooks in an isolated temporary copy (retained for inspection)
 PYTHONPATH=src python -m lookthrough.check   # Case Study 2B self-check on your outputs
 python tools/smoke_real.py <release> "Name email"   # baseline on any real release (needs network)
 ```
@@ -80,7 +80,7 @@ Input loading is centralized in `combine.load_inputs`, which reuses the existing
 combined table loaders and selects consistent filing copies across SUB/SOI/NUM.
 It does not classify periods, clean holdings or reconcile totals. `pipeline.run_baseline`
 coordinates those steps and accepts an explicit rules list, defaulting to the
-five rules in `clean.RULES` when none is supplied.
+seven rules in `clean.RULES` when none is supplied.
 
 
 ### Reconciliation safeguards
@@ -232,7 +232,8 @@ holdings panel for annotated retained rows.
 The local rerun recovers AGL, TriplePoint Private Venture, Chicago Atlantic and
 Prospect Floating Rate: 97 → 101 admitted. Before integrating PR #41, the other 173 filing results and all
 retained holding values were unchanged by the source-evidence extension. The four recovered notes retain their
-pre-fix evidence as history; the remaining 76 exclusions still have draft triage.
+pre-fix evidence as history in `data/triage_recovered.csv`. Of the 76 current exclusions,
+11 now have reviewed evidence and 65 remain draft (2026-10-30 audit).
 The new snapshots and rebuilt artifacts were uploaded on 2026-10-29 with
 `AWS_PROFILE=lantern dvc push`; DVC reported the cache and remote in sync.
 A fresh clone still needs authorized AWS credentials to restore them.
@@ -258,7 +259,32 @@ coverage and triage reports. No draft has been promoted to reviewed.
   evidence review for 76 exclusions. Rule freeze does not constitute triage sign-off.
 
 The main-release results above are current for that snapshot. The second-release
-and economics reports describe earlier five-rule experiments; their timings,
-sample results and cost assumptions are not fresh measurements of the seven-rule
-pipeline. Review the evidence and current totals before promoting any triage
+report describes an earlier five-rule experiment; its timings and sample results
+are historical. The economics report now uses the deployed AWS inventory and explicitly
+separates observed resources from runtime assumptions. Review the evidence and current totals before promoting any triage
 entry to `reviewed`. Do not change status just to make acceptance pass.
+
+
+## Submission readiness — 2026-10-30
+
+The panel still admits **101/177 filings**. Of the 76 exclusions, **11 have reviewed,
+current evidence** (8 missing required NUM totals; 3 without recognized identifiers).
+The other **65 remain draft**; the preliminary warning and failing triage self-check
+remain intentional. An unresolved gap is not proof of a particular cleaning error.
+Eleven notes for filings now admitted were moved to `data/triage_recovered.csv` as
+historical evidence; only current exclusions remain in `data/triage.csv`.
+
+`tools/run_notebooks.py` copies the project to a retained system temporary directory,
+excluding the virtual environment and DVC cache. It needs roughly another workspace's
+worth of disk space. All teaching writes happen there. Writing notebooks also refuse
+direct execution outside that scratch workspace. Their single-release starter results
+are not submission outputs. Use `dvc repro` for the multi-release pipeline.
+
+The app and sampling script share the same deterministic sampler. New unreviewed draws
+never replace the frozen hand-check evidence. The app uses one backend worker with
+in-memory runs; a restart or cache eviction requires reloading the session. Uploads
+and refresh are shared across users: coordinate those actions during the demo.
+
+Before the final `cs2b-submission` tag, merge the readiness PR, rerun the checks, and
+review the remaining triage limitation explicitly. Do not treat the older `Submission`
+tag as the final version. See `reports/economics.md` for the deployed-resource budget.

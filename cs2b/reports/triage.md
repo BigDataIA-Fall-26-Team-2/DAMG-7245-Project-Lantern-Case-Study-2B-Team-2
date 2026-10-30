@@ -3,7 +3,7 @@
 Filings attempted: 177; admitted: 101 (57.1%).
 Known positive filed fair value attempted: $542,175,875,908; admitted: $240,917,454,804 (44.4%).
 Attempts without a usable filed total: 8. Their unknown dollars are not included in the dollar denominator.
-Triage entries incomplete: 76. Outputs are preliminary until filing-evidence review is complete.
+Triage entries incomplete: 65. Outputs are preliminary until filing-evidence review is complete.
 Cleaning rules used: rule_source_disclosures, rule_totals, rule_cash, rule_commitment_rows, rule_jv_portfolio, rule_issuer_subtotals, rule_rollforward_copies.
 
 Generated from the separate triage input. Edit that input, not this report.
@@ -473,14 +473,14 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 
 ## OXFORD SQUARE CAPITAL CORP. (0001213900-26-050934)
 
-- Status: **INCOMPLETE**
+- Status: **COMPLETE**
 - Holdings FV: 1,185,957,650; filed FV: n/a; gap: n/a
 - Filed-total status: missing
 - Diagnostic clues (not proven causes): 11 holdings missing fair value; 1 current SOI rows without identifiers; 18 custom fair-value facts in NUM.
 - Category: no_filed_total
-- Evidence: 2026-03-31: retained sum $1,185,957,650.00; required filed total unavailable. 87 retained holdings; 11 missing fair values. Source: https://www.sec.gov/ix?doc=/Archives/edgar/data/1259429/000121390026050934/ea0287152-01_10q.htm NUM has no InvestmentOwnedAtFairValue fact for that date with dimn=0, qtrs=0 and USD.
-- Example: 2026_05/datasets/num.tsv: zero qualifying reference facts for 0001213900-26-050934; reporting date verified in datasets/sub.tsv. Other observed tags: InvestmentsFairValueDisclosure=235,400,000 USD.
-- Fix or reason: Required reference absent from the supplied extract. Part 3 specifies this exact total; alternative tags cannot be substituted automatically. Keep excluded with a blank gap. This does not claim that the visible filing has no investment total.
+- Evidence: Audit 2026-10-30: data/raw/2026_05_bdc/datasets/num.tsv has zero facts for adsh=0001213900-26-050934, tag=InvestmentOwnedAtFairValue, dimn=0, qtrs=0, uom=USD, normalized ddate=2026-03-31 (SUB period).
+- Example: Current retained holdings sum: $1,185,957,650.00; qualifying NUM reference total: absent.
+- Fix or reason: Excluded because the required reference total is absent from the SEC dataset under the configured tag/date/unit filters. This does not establish that the human-readable filing lacks a total. A source-verified alternative mapping is needed before comparison; do not substitute the holdings sum as the reference.
 
 ## AUDAX PRIVATE CREDIT FUND, LLC (0001193125-26-219711)
 
@@ -495,14 +495,14 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 
 ## PHENIXFIN CORP (0001213900-26-052253)
 
-- Status: **INCOMPLETE**
+- Status: **COMPLETE**
 - Holdings FV: 961,077,772; filed FV: n/a; gap: n/a
 - Filed-total status: missing
 - Diagnostic clues (not proven causes): 4 holdings missing fair value; 70 current SOI rows without identifiers; 30 custom fair-value facts in NUM.
 - Category: no_filed_total
-- Evidence: 2026-03-31: retained sum $961,077,772.00; required filed total unavailable. 94 retained holdings; 4 missing fair values. Source: https://www.sec.gov/ix?doc=/Archives/edgar/data/1490349/000121390026052253/ea0287259-10q_phenixfin.htm NUM has no InvestmentOwnedAtFairValue fact for that date with dimn=0, qtrs=0 and USD.
-- Example: 2026_05/datasets/num.tsv: zero qualifying reference facts for 0001213900-26-052253; reporting date verified in datasets/sub.tsv. Other observed tags: InvestmentsFairValueDisclosure=295,810,691 USD.
-- Fix or reason: Required reference absent from the supplied extract. Part 3 specifies this exact total; alternative tags cannot be substituted automatically. Keep excluded with a blank gap. This does not claim that the visible filing has no investment total.
+- Evidence: Audit 2026-10-30: data/raw/2026_05_bdc/datasets/num.tsv has zero facts for adsh=0001213900-26-052253, tag=InvestmentOwnedAtFairValue, dimn=0, qtrs=0, uom=USD, normalized ddate=2026-03-31 (SUB period).
+- Example: Current retained holdings sum: $961,077,772.00; qualifying NUM reference total: absent.
+- Fix or reason: Excluded because the required reference total is absent from the SEC dataset under the configured tag/date/unit filters. This does not establish that the human-readable filing lacks a total. A source-verified alternative mapping is needed before comparison; do not substitute the holdings sum as the reference.
 
 ## BLUE OWL CAPITAL CORP II (0001655887-26-000013)
 
@@ -594,14 +594,14 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 
 ## MUZINICH BDC, INC. (0001213900-26-056043)
 
-- Status: **INCOMPLETE**
+- Status: **COMPLETE**
 - Holdings FV: 687,019,982; filed FV: n/a; gap: n/a
 - Filed-total status: missing
 - Diagnostic clues (not proven causes): 14 holdings missing fair value; 42 current SOI rows without identifiers; 15 custom fair-value facts in NUM.
 - Category: no_filed_total
-- Evidence: 2026-03-31: retained sum $687,019,982.00; required filed total unavailable. 61 retained holdings; 14 missing fair values. Source: https://www.sec.gov/ix?doc=/Archives/edgar/data/1779523/000121390026056043/ea0290179-10q_muzinich.htm NUM has no InvestmentOwnedAtFairValue fact for that date with dimn=0, qtrs=0 and USD.
-- Example: 2026_05/datasets/num.tsv: zero qualifying reference facts for 0001213900-26-056043; reporting date verified in datasets/sub.tsv.
-- Fix or reason: Required reference absent from the supplied extract. Part 3 specifies this exact total; alternative tags cannot be substituted automatically. Keep excluded with a blank gap. This does not claim that the visible filing has no investment total.
+- Evidence: Audit 2026-10-30: data/raw/2026_05_bdc/datasets/num.tsv has zero facts for adsh=0001213900-26-056043, tag=InvestmentOwnedAtFairValue, dimn=0, qtrs=0, uom=USD, normalized ddate=2026-03-31 (SUB period).
+- Example: Current retained holdings sum: $687,019,982.00; qualifying NUM reference total: absent.
+- Fix or reason: Excluded because the required reference total is absent from the SEC dataset under the configured tag/date/unit filters. This does not establish that the human-readable filing lacks a total. A source-verified alternative mapping is needed before comparison; do not substitute the holdings sum as the reference.
 
 ## VARAGON CAPITAL CORP (0001193125-26-219643)
 
@@ -638,14 +638,14 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 
 ## FIRST EAGLE PRIVATE CREDIT FUND (0001193125-26-224182)
 
-- Status: **INCOMPLETE**
+- Status: **COMPLETE**
 - Holdings FV: 534,681,000; filed FV: n/a; gap: n/a
 - Filed-total status: missing
 - Diagnostic clues (not proven causes): 15 holdings missing fair value; 87 current SOI rows without identifiers; 112 custom fair-value facts in NUM.
 - Category: no_filed_total
-- Evidence: 2026-03-31: retained sum $534,681,000.00; required filed total unavailable. 181 retained holdings; 15 missing fair values. Source: https://www.sec.gov/ix?doc=/Archives/edgar/data/1890107/000119312526224182/ck0001890107-20260331.htm NUM has no InvestmentOwnedAtFairValue fact for that date with dimn=0, qtrs=0 and USD.
-- Example: 2026_05/datasets/num.tsv: zero qualifying reference facts for 0001193125-26-224182; reporting date verified in datasets/sub.tsv. Other observed tags: InvestmentsFairValueDisclosure=537,259,000 USD.
-- Fix or reason: Required reference absent from the supplied extract. Part 3 specifies this exact total; alternative tags cannot be substituted automatically. Keep excluded with a blank gap. This does not claim that the visible filing has no investment total.
+- Evidence: Audit 2026-10-30: data/raw/2026_05_bdc/datasets/num.tsv has zero facts for adsh=0001193125-26-224182, tag=InvestmentOwnedAtFairValue, dimn=0, qtrs=0, uom=USD, normalized ddate=2026-03-31 (SUB period).
+- Example: Current retained holdings sum: $534,681,000.00; qualifying NUM reference total: absent.
+- Fix or reason: Excluded because the required reference total is absent from the SEC dataset under the configured tag/date/unit filters. This does not establish that the human-readable filing lacks a total. A source-verified alternative mapping is needed before comparison; do not substitute the holdings sum as the reference.
 
 ## TCW DIRECT LENDING LLC (0001193125-26-140703)
 
@@ -715,25 +715,25 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 
 ## MUZINICH CORPORATE LENDING INCOME FUND, INC. (0001213900-26-055932)
 
-- Status: **INCOMPLETE**
+- Status: **COMPLETE**
 - Holdings FV: 338,014,292; filed FV: n/a; gap: n/a
 - Filed-total status: missing
 - Diagnostic clues (not proven causes): 0 holdings missing fair value; 38 current SOI rows without identifiers; 0 custom fair-value facts in NUM.
 - Category: no_filed_total
-- Evidence: 2026-03-31: retained sum $338,014,292.00; required filed total unavailable. 102 retained holdings; 0 missing fair values. Source: https://www.sec.gov/ix?doc=/Archives/edgar/data/1985375/000121390026055932/ea0290181-10q_muzinich.htm NUM has no InvestmentOwnedAtFairValue fact for that date with dimn=0, qtrs=0 and USD.
-- Example: 2026_05/datasets/num.tsv: zero qualifying reference facts for 0001213900-26-055932; reporting date verified in datasets/sub.tsv. Other observed tags: InvestmentsFairValueDisclosure=97,440,535 USD.
-- Fix or reason: Required reference absent from the supplied extract. Part 3 specifies this exact total; alternative tags cannot be substituted automatically. Keep excluded with a blank gap. This does not claim that the visible filing has no investment total.
+- Evidence: Audit 2026-10-30: data/raw/2026_05_bdc/datasets/num.tsv has zero facts for adsh=0001213900-26-055932, tag=InvestmentOwnedAtFairValue, dimn=0, qtrs=0, uom=USD, normalized ddate=2026-03-31 (SUB period).
+- Example: Current retained holdings sum: $338,014,292.00; qualifying NUM reference total: absent.
+- Fix or reason: Excluded because the required reference total is absent from the SEC dataset under the configured tag/date/unit filters. This does not establish that the human-readable filing lacks a total. A source-verified alternative mapping is needed before comparison; do not substitute the holdings sum as the reference.
 
 ## KAYNE DL 2021, INC. (0001193125-26-216809)
 
-- Status: **INCOMPLETE**
+- Status: **COMPLETE**
 - Holdings FV: 316,954,000; filed FV: n/a; gap: n/a
 - Filed-total status: missing
 - Diagnostic clues (not proven causes): 0 holdings missing fair value; 35 current SOI rows without identifiers; 7 custom fair-value facts in NUM.
 - Category: no_filed_total
-- Evidence: 2026-03-31: retained sum $316,954,000.00; required filed total unavailable. 225 retained holdings; 0 missing fair values. Source: https://www.sec.gov/ix?doc=/Archives/edgar/data/1850787/000119312526216809/ck0001850787-20260331.htm NUM has no InvestmentOwnedAtFairValue fact for that date with dimn=0, qtrs=0 and USD.
-- Example: 2026_05/datasets/num.tsv: zero qualifying reference facts for 0001193125-26-216809; reporting date verified in datasets/sub.tsv. Other observed tags: InvestmentsFairValueDisclosure=353,406,000 USD; LongTermInvestments=315,786,000 USD.
-- Fix or reason: Required reference absent from the supplied extract. Part 3 specifies this exact total; alternative tags cannot be substituted automatically. Keep excluded with a blank gap. This does not claim that the visible filing has no investment total.
+- Evidence: Audit 2026-10-30: data/raw/2026_05_bdc/datasets/num.tsv has zero facts for adsh=0001193125-26-216809, tag=InvestmentOwnedAtFairValue, dimn=0, qtrs=0, uom=USD, normalized ddate=2026-03-31 (SUB period).
+- Example: Current retained holdings sum: $316,954,000.00; qualifying NUM reference total: absent.
+- Fix or reason: Excluded because the required reference total is absent from the SEC dataset under the configured tag/date/unit filters. This does not establish that the human-readable filing lacks a total. A source-verified alternative mapping is needed before comparison; do not substitute the holdings sum as the reference.
 
 ## GOLUB CAPITAL PRIVATE INCOME FUND S (0002082557-26-000031)
 
@@ -748,14 +748,14 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 
 ## SCP PRIVATE CREDIT INCOME BDC LLC (0001193125-26-206308)
 
-- Status: **INCOMPLETE**
+- Status: **COMPLETE**
 - Holdings FV: 179,475,000; filed FV: n/a; gap: n/a
 - Filed-total status: missing
 - Diagnostic clues (not proven causes): 0 holdings missing fair value; 30 current SOI rows without identifiers; 10 custom fair-value facts in NUM.
 - Category: no_filed_total
-- Evidence: 2026-03-31: retained sum $179,475,000.00; required filed total unavailable. 24 retained holdings; 0 missing fair values. Source: https://www.sec.gov/ix?doc=/Archives/edgar/data/1743415/000119312526206308/ck0001743415-20260331.htm NUM has no InvestmentOwnedAtFairValue fact for that date with dimn=0, qtrs=0 and USD.
-- Example: 2026_05/datasets/num.tsv: zero qualifying reference facts for 0001193125-26-206308; reporting date verified in datasets/sub.tsv. Other observed tags: InvestmentOwnedAndCashEquivalentsFairValue=239,313,000 USD.
-- Fix or reason: Required reference absent from the supplied extract. Part 3 specifies this exact total; alternative tags cannot be substituted automatically. Keep excluded with a blank gap. This does not claim that the visible filing has no investment total.
+- Evidence: Audit 2026-10-30: data/raw/2026_05_bdc/datasets/num.tsv has zero facts for adsh=0001193125-26-206308, tag=InvestmentOwnedAtFairValue, dimn=0, qtrs=0, uom=USD, normalized ddate=2026-03-31 (SUB period).
+- Example: Current retained holdings sum: $179,475,000.00; qualifying NUM reference total: absent.
+- Fix or reason: Excluded because the required reference total is absent from the SEC dataset under the configured tag/date/unit filters. This does not establish that the human-readable filing lacks a total. A source-verified alternative mapping is needed before comparison; do not substitute the holdings sum as the reference.
 
 ## INVESTCORP CREDIT MANAGEMENT BDC, INC. (0001193125-26-220107)
 
@@ -770,14 +770,14 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 
 ## SLR HC BDC LLC (0001193125-26-206309)
 
-- Status: **INCOMPLETE**
+- Status: **COMPLETE**
 - Holdings FV: 94,091,000; filed FV: n/a; gap: n/a
 - Filed-total status: missing
 - Diagnostic clues (not proven causes): 0 holdings missing fair value; 7 current SOI rows without identifiers; 11 custom fair-value facts in NUM.
 - Category: no_filed_total
-- Evidence: 2026-03-31: retained sum $94,091,000.00; required filed total unavailable. 39 retained holdings; 0 missing fair values. Source: https://www.sec.gov/ix?doc=/Archives/edgar/data/1832148/000119312526206309/ck0001832148-20260331.htm NUM has no InvestmentOwnedAtFairValue fact for that date with dimn=0, qtrs=0 and USD.
-- Example: 2026_05/datasets/num.tsv: zero qualifying reference facts for 0001193125-26-206309; reporting date verified in datasets/sub.tsv.
-- Fix or reason: Required reference absent from the supplied extract. Part 3 specifies this exact total; alternative tags cannot be substituted automatically. Keep excluded with a blank gap. This does not claim that the visible filing has no investment total.
+- Evidence: Audit 2026-10-30: data/raw/2026_05_bdc/datasets/num.tsv has zero facts for adsh=0001193125-26-206309, tag=InvestmentOwnedAtFairValue, dimn=0, qtrs=0, uom=USD, normalized ddate=2026-03-31 (SUB period).
+- Example: Current retained holdings sum: $94,091,000.00; qualifying NUM reference total: absent.
+- Fix or reason: Excluded because the required reference total is absent from the SEC dataset under the configured tag/date/unit filters. This does not establish that the human-readable filing lacks a total. A source-verified alternative mapping is needed before comparison; do not substitute the holdings sum as the reference.
 
 ## RAND CAPITAL CORP (0001193125-26-207688)
 
@@ -814,33 +814,33 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 
 ## EQUUS TOTAL RETURN, INC. (0001096906-26-000571)
 
-- Status: **INCOMPLETE**
+- Status: **COMPLETE**
 - Holdings FV: n/a; filed FV: 17,276,000; gap: n/a
 - Filed-total status: ok
 - Diagnostic clues (not proven causes): 0 holdings missing fair value; 11 current SOI rows without identifiers; 17 custom fair-value facts in NUM.
 - Category: no_identified_holdings
-- Evidence: 2025-12-31: retained sum unavailable; required filed total $17,276,000.00. 0 retained holdings; 0 missing fair values. Source: https://www.sec.gov/ix?doc=/Archives/edgar/data/878932/000109690626000571/equus_10ka.htm All 11 current SOI rows lack the mapped Investment, Identifier Axis; the coalescer therefore emits no holdings.
-- Example: 2026_04/soi.tsv rows 152 and 154: Related Party Transaction Axis contains Morgan E&P and Senior Secured Promissory Note respectively.
-- Fix or reason: Alternative axes mix issuer, instrument and summary meanings. Part 1 needs validated context mapping; do not infer holdings from neighboring rows. Keep excluded until a validated parser change is implemented and rerun.
+- Evidence: Audit 2026-10-30: data/raw/2026_04_bdc/soi.tsv yields 11 current-period canonical rows for 0001096906-26-000571, period=2025-12-31; zero have a recognized identifier. outputs/work/canon.parquet confirms the mapping result; coverage.csv contains n_holdings=0.
+- Example: Canonical trace: release 2026_04, zero-based SOI row 8, identifier absent. Required filed fair value: $17,276,000.00.
+- Fix or reason: Excluded because the configured identifier mapping produces no investment holdings from these current SOI rows. The reported total exists, but there are no identified holdings to sum. Review the source axes and validate a general identifier mapping before admitting this filing; absence of recognized identifiers is not absence of investments.
 
 ## PARTNERS GROUP LENDING FUND, LLC (0001398344-26-009326)
 
-- Status: **INCOMPLETE**
+- Status: **COMPLETE**
 - Holdings FV: n/a; filed FV: 483,283,000; gap: n/a
 - Filed-total status: ok
 - Diagnostic clues (not proven causes): 0 holdings missing fair value; 400 current SOI rows without identifiers; 16 custom fair-value facts in NUM.
 - Category: no_identified_holdings
-- Evidence: 2026-03-31: retained sum unavailable; required filed total $483,283,000.00. 0 retained holdings; 0 missing fair values. Source: https://www.sec.gov/ix?doc=/Archives/edgar/data/1938649/000139834426009326/fp0098882-1_10qixbrl.htm All 400 current SOI rows lack the mapped Investment, Identifier Axis; the coalescer therefore emits no holdings.
-- Example: 2026_05/soi.tsv row 5955 is an industry summary; row 5958 names High Bar Brands under Investment Type Axis. Raw Investments, Fair Value Disclosure has 185 populated current rows, while canonical fair value has none.
-- Fix or reason: Both identifier roles and fair-value tag mapping need validation. Renaming one axis alone will not recover a trustworthy holdings table. Keep excluded until a validated parser change is implemented and rerun.
+- Evidence: Audit 2026-10-30: data/raw/2026_05_bdc/soi.tsv yields 400 current-period canonical rows for 0001398344-26-009326, period=2026-03-31; zero have a recognized identifier. outputs/work/canon.parquet confirms the mapping result; coverage.csv contains n_holdings=0.
+- Example: Canonical trace: release 2026_05, zero-based SOI row 4880, identifier absent. Required filed fair value: $483,283,000.00.
+- Fix or reason: Excluded because the configured identifier mapping produces no investment holdings from these current SOI rows. The reported total exists, but there are no identified holdings to sum. Review the source axes and validate a general identifier mapping before admitting this filing; absence of recognized identifiers is not absence of investments.
 
 ## SURO CAPITAL CORP. (0001493152-26-021430)
 
-- Status: **INCOMPLETE**
+- Status: **COMPLETE**
 - Holdings FV: n/a; filed FV: 388,534,651; gap: n/a
 - Filed-total status: ok
 - Diagnostic clues (not proven causes): 0 holdings missing fair value; 115 current SOI rows without identifiers; 15 custom fair-value facts in NUM.
 - Category: no_identified_holdings
-- Evidence: 2026-03-31: retained sum unavailable; required filed total $388,534,651.00. 0 retained holdings; 0 missing fair values. Source: https://www.sec.gov/ix?doc=/Archives/edgar/data/1509470/000149315226021430/form10-q.htm All 115 current SOI rows lack the mapped Investment, Identifier Axis; the coalescer therefore emits no holdings.
-- Example: 2026_05/soi.tsv rows 961 and 983: GrabAGun common stock and warrants share Legal Entity Axis but have distinct Class of Stock Axis values. Original schedule confirms both positions.
-- Fix or reason: Requires issuer-plus-instrument mapping and context-aware duplicate handling. Source validation found 15 distinct nil-valued investments and two repeated Maven entries among 17 missing-value candidates. Preserve nil; partial missing values alone do not automatically fail the current reconciliation. See the row/fact-ID audit in docs/cleaning_log.md. Keep excluded until a validated parser change is implemented and rerun.
+- Evidence: Audit 2026-10-30: data/raw/2026_05_bdc/soi.tsv yields 115 current-period canonical rows for 0001493152-26-021430, period=2026-03-31; zero have a recognized identifier. outputs/work/canon.parquet confirms the mapping result; coverage.csv contains n_holdings=0.
+- Example: Canonical trace: release 2026_05, zero-based SOI row 929, identifier absent. Required filed fair value: $388,534,651.00.
+- Fix or reason: Excluded because the configured identifier mapping produces no investment holdings from these current SOI rows. The reported total exists, but there are no identified holdings to sum. Review the source axes and validate a general identifier mapping before admitting this filing; absence of recognized identifiers is not absence of investments.

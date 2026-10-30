@@ -127,8 +127,9 @@ def write_outputs(kept: pd.DataFrame, rec: pd.DataFrame, diag: pd.DataFrame,
         f"admitted: ${metrics['filed_fv_admitted']:,.0f} ({metrics['share_of_dollars']:.1%}).",
         f"Attempts without a usable filed total: {metrics['filings_without_usable_filed_total']}. "
         "Their unknown dollars are not included in the dollar denominator.",
-        f"Triage entries incomplete: {len(incomplete)}. "
-        "Outputs are preliminary until filing-evidence review is complete.",
+        (f"Triage entries incomplete: {len(incomplete)}. "
+         "Outputs are preliminary until filing-evidence review is complete."
+         if incomplete else "Triage review complete for all currently excluded filings."),
         f"Cleaning rules used: {', '.join(metrics['cleaning_rules'])}.",
     ]
     lines = ["# Coverage report", "", *headline, ""]

@@ -46,6 +46,10 @@ def call(method, path, raw=False, **kw):
     except requests.ConnectionError:
         st.error(f"Cannot reach the backend at {API}. Start it with: uvicorn app.api:app --port 8000")
         st.stop()
+    if r.status_code == 404 and path.startswith("/runs/"):
+        st.warning("This run expired after a backend restart, shared refresh, or cache eviction. "
+                   "Reload this browser tab to create a fresh session and run.")
+        st.stop()
     if r.status_code >= 400:
         try:
             detail = r.json().get("detail", r.text)

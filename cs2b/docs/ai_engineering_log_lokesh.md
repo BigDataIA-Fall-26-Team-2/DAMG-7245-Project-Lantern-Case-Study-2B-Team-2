@@ -117,3 +117,39 @@ reviews; new draws go to a separate file and are not represented as reviewed.
 Added a regression check for shuffled input and equal fair values to the existing
 test file. This branch passes 50/50 tests. Part 3's 49-test results above describe
 the earlier PR #42 snapshot, not this follow-up.
+
+
+## Submission-readiness audit — 2026-10-30
+
+User authorized priority fixes before freeze. Independently checked raw NUM filters
+for eight `no_filed_total` cases and current canonical identifier counts for three
+`no_identified_holdings` cases. These 11 notes now describe the narrow verified
+exclusion mechanism, carry current reviewed totals, and are marked reviewed.
+This was an AI-assisted dataset/code audit, not a claim that a teammate manually
+reviewed all original filings. In particular, an absent qualifying NUM fact does
+not mean the human-readable filing has no total. The other 65 notes remain draft.
+Archived 11 historical notes for filings now admitted rather than deleting evidence.
+
+Protected writing notebooks with a scratch-workspace guard and made the runner
+copy the project before execution. Scratch configuration intentionally uses the
+single teaching release; submission configuration remains multi-release. Shared
+one provenance-based sampler between app and CLI, including zero-count behavior;
+preserved frozen hand-check CSVs. Added `python-multipart` to requirements and
+removed duplicate requests entry. Report wording now says complete only when
+all current evidence is reviewed; real results correctly retain the warning.
+Added a clear expired-run message instead of redesigning shared app state.
+
+AWS inventory was read using `lantern`: m7i-flex.large, 40 GiB gp3, one Elastic IP,
+and 71 current objects / 755,618,206 bytes in cs2b. The public AWS catalog confirmed
+$0.09576/hour. Economics now budgets about $76.77/month always-on and explicitly
+labels runtime/human-effort scenarios as assumptions. IAM denied authenticated
+pricing and CloudWatch queries; no permissions were changed and no utilization
+measurement is invented. Broader app authentication, durable multi-user storage,
+and remaining triage investigation are outside this priority patch.
+
+Validation: 55 focused tests; app startup/OpenAPI/upload registration; app/CLI
+sample equality on the real panel; direct notebook write guards; isolated notebook
+execution; seven cleaning examples traced. DVC outputs and lockfile regenerated.
+The structural check is 9/10, with exactly 65 incomplete notes. No claim of 10/10
+or final triage completion is made. Final tag must be `cs2b-submission` after merge;
+the older `Submission` tag and deployed code have not been changed by this audit.

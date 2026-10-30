@@ -44,7 +44,7 @@ Still excluded: Blackstone Private Credit Fund (0001803498-26-000031) sums to $8
 
 The source-evidence extension carries curated roles, instrument links and XBRL precision through parsing. It verifies snapshot fingerprints, source contexts and values before guarded cleaning. It recovered AGL, TriplePoint Private Venture, Chicago Atlantic and Prospect Floating Rate, moving admissions from 97 to 101. Three match exactly; Chicago differs by $287. These are generic evidence checks, not issuer-specific branches or target-gap matching. Unannotated future filings remain unchanged.
 
-All 76 current exclusion notes remain draft/incomplete. Complete review requires evidence, an explanation and current totals. A status label alone is insufficient. Historical notes for recovered filings remain saved; changed totals require re-review. Not every filing must pass, and unresolved drafts must not be marked reviewed simply to satisfy acceptance.
+Of the 76 current exclusion notes, 11 are reviewed and 65 remain draft/incomplete (2026-10-30 audit). Complete review requires evidence, an explanation and current totals. A status label alone is insufficient. Historical notes for recovered filings remain saved; changed totals require re-review. Not every filing must pass, and unresolved drafts must not be marked reviewed simply to satisfy acceptance.
 
 ## Step 3.5: Validate and share the artifacts
 
@@ -75,3 +75,15 @@ The second-release and economics reports describe earlier experiments, not fresh
 Publication status: published to the shared codelab on 2026-10-29 through the authorized personal Gmail browser session. Verified replacement content, headings and preservation of neighboring sections. Google Docs showed Saved to Drive. Repository documentation changes are included in PR #43.
 
 PR #43 refresh: the 20-holding spot check now covers the 101-filing panel (19 matches; one equity quantity stored as principal). The frozen reviewed sample is preserved separately from future deterministic draws. Principal currency and equity quantity remain limitations.
+
+
+## Submission-readiness update — 2026-10-30
+
+The local section is updated; this paragraph has not yet been republished to the shared Google Doc.
+The panel remains 101 admitted / 177 attempted. Current exclusions: 76, including
+11 reviewed notes (8 absent required NUM totals, 3 missing recognized identifiers)
+and 65 draft notes. Recovered filings' 11 historical notes are archived in
+`data/triage_recovered.csv`. The self-check remains 9/10 because triage is incomplete;
+passing reconciliation and completed evidence review are different claims.
+Teaching notebooks now write only in the runner's scratch workspace. Regenerate
+submission evidence with `dvc repro`, not the notebooks.
