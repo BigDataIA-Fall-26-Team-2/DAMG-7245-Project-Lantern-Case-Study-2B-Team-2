@@ -42,6 +42,9 @@ The same rules in their final pipeline order (`clean.RULES`), adding one at a ti
 | + `rule_jv_portfolio` | 80 | 28.2% |
 | + `rule_issuer_subtotals` | 85 | 40.2% |
 | + `rule_rollforward_copies` | 90 | 43.5% |
+| Final pipeline: + `rule_source_disclosures` and verified-holdings recovery (Lokesh, see "Integration with merged PR #41") | **101** | **44.4%** |
+
+The rows above record each Part 2 rule's effect when it was added. The final pipeline (7 rules) admits **101 of 177 filings (57.1%) and 44.4% of filed dollars**.
 
 ## rule_totals (starter kit, false positives fixed)
 
