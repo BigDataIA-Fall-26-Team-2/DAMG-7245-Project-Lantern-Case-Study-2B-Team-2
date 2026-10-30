@@ -179,6 +179,8 @@ with st.sidebar:
         st.cache_data.clear()
         for k in ("baseline", "base_fil", "run", "fil"):
             ss.pop(k, None)
+        if ss.get("step", 1) > 1:
+            ss.pending = ss.step  # rerun with the same settings and come back to this step
 
     st.button("↻ Refresh data", on_click=do_refresh, use_container_width=True,
               help="Reload the files on disk, for example after dvc pull or adding a month.")
