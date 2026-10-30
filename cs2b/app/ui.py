@@ -213,9 +213,9 @@ def loan_table(rows):
     num = lambda c: pd.to_numeric(col(c), errors="coerce")  # noqa: E731
     return pd.DataFrame({
         "Fund": text("name"), "Loan": text("identifier"), "Industry": text("industry"),
-        "Value ($M)": (num("fair_value") / 1e6).round(2), "Owed ($M)": (num("principal") / 1e6).round(2),
-        "Price (% of owed)": num("price"),
-        "Check": col("check_currency").map(lambda x: "⚠ currency?" if x is True else ""),
+        "Value ($M)": (num("fair_value") / 1e6).round(2), "Reported amount (M; units unverified)": (num("principal") / 1e6).round(2),
+        "Price (unavailable)": num("price"),
+        "Check": col("check_currency").map(lambda x: "⚠ units unverified" if x is True else ""),
         "Rate %": (num("interest_rate") * 100).round(2), "Maturity": text("maturity").str[:10],
         "Month": text("release"), "In final list": col("in_final").map({True: "yes", False: "no"}),
         "SEC rows": text("source_rows"), "Report": col("filing_url")})
@@ -249,9 +249,9 @@ def loan_card(r):
                    f"SEC rows {r.get('source_rows')}")
         a, b, c, d = st.columns(4)
         a.metric("Value", fmt_m(r.get("fair_value")))
-        b.metric("Owed", fmt_m(r.get("principal")))
+        b.metric("Reported amount", "n/a" if pd.isna(r.get("principal")) else f"{r['principal']:,.0f}")
         c.metric("Price", "n/a" if pd.isna(r.get("price")) else f"{r['price']:.1f}",
-                 help="Value ÷ owed × 100. Below 100 means the fund values it below what is owed.")
+                 help="Unavailable until principal currency and units are verified.")
         d.metric("Rate", "n/a" if pd.isna(r.get("interest_rate")) else f"{r['interest_rate'] * 100:.2f}%")
         bits = [("Spread " + f"{r['spread'] * 100:.2f}%") if pd.notna(r.get("spread")) else "",
                 ("Matures " + str(r["maturity"])[:10]) if pd.notna(r.get("maturity")) else "",
@@ -260,7 +260,7 @@ def loan_card(r):
                 "In the final list" if r.get("in_final") else "Report does not add up, not in final list"]
         st.caption(" · ".join(b for b in bits if b))
         if r.get("check_currency"):
-            st.warning("Price above 110: the amount owed is probably in another currency. Check the report.")
+            st.warning("Principal currency and units are unverified; this amount may represent shares. Price is withheld.")
         l, rr = st.columns(2)
         if r.get("filing_url"):
             l.link_button("Open the report on SEC.gov ↗", r["filing_url"], use_container_width=True)
@@ -278,7 +278,7 @@ def show_loans(rows, key, sort_price=False, height=360):
     raw = raw.reset_index(drop=True)
     disp = loan_table(raw.to_dict("records"))
     disp["Fund"] = disp["Fund"].map(pretty)
-    cols = ["Fund", "Loan", "Value ($M)", "Owed ($M)", "Price (% of owed)", "Rate %", "Maturity", "Report"]
+    cols = ["Fund", "Loan", "Value ($M)", "Reported amount (M; units unverified)", "Price (unavailable)", "Rate %", "Maturity", "Report"]
     if disp["Check"].ne("").any():
         cols.insert(5, "Check")
     if st.toggle("Show technical columns", key=f"tech_{key}"):
@@ -288,10 +288,10 @@ def show_loans(rows, key, sort_price=False, height=360):
         on_select="rerun", selection_mode="single-row",
         column_config={**LINK,
                        "Value ($M)": st.column_config.NumberColumn(format="%.1f"),
-                       "Owed ($M)": st.column_config.NumberColumn(format="%.1f"),
+                       "Reported amount (M; units unverified)": st.column_config.NumberColumn(format="%.1f"),
                        "Rate %": st.column_config.NumberColumn(format="%.2f"),
-                       "Price (% of owed)": st.column_config.ProgressColumn(
-                           "Price (% of owed)", min_value=0, max_value=120, format="%.1f")})
+                       "Price (unavailable)": st.column_config.ProgressColumn(
+                           "Price (unavailable)", min_value=0, max_value=120, format="%.1f")})
     picked = ev.selection.rows if ev and ev.selection else []
     if picked:
         loan_card(raw.iloc[picked[0]].to_dict())
@@ -347,11 +347,12 @@ def report_status(fil, key):
         todo = int(bad["triage_category"].eq("to_triage").sum())
         a, b, c = st.columns(3)
         a.metric("Totals do not match", f"{len(bad)}")
-        b.metric("Reason written", f"{len(bad) - todo}")
-        c.metric("Reason still missing", f"{todo}")
+        b.metric("Review complete", f"{len(bad) - todo}")
+        c.metric("Review incomplete/stale", f"{todo}")
         ev = st.dataframe(pd.DataFrame({
             "Fund": bad["name"].map(pretty), "Form": bad["form"],
             "Difference %": (bad["gap_pct"] * 100).round(2), "Reason": bad["triage_category"],
+            "Saved category (may be stale)": bad.get("triage_saved_category"),
             "Evidence": bad.get("triage_evidence"), "Example": bad.get("triage_example"),
             "Fix or why not": bad.get("triage_fix"), "Review": bad.get("triage_status"),
             "Report": bad["filing_url"]}),
@@ -426,12 +427,12 @@ if mode.startswith("🔎"):
                 st.info("Nothing found. Try one word, or open Filters and include funds whose totals don't match.")
             else:
                 if res["funds"] > 1:
-                    st.markdown("**Funds that hold it** (price = value ÷ owed × 100; 100 means worth what is owed)")
+                    st.markdown("**Funds that hold it** (principal totals and prices withheld: currencies/units are unverified)")
                     bf = pd.DataFrame(res["by_fund"]).reset_index(drop=True)
                     fev = st.dataframe(pd.DataFrame({
                         "Fund": bf["name"].map(pretty), "Loans": bf["loans"],
                         "Value ($M)": (bf["fair_value"] / 1e6).round(1),
-                        "Owed ($M)": (bf["principal"] / 1e6).round(1), "Avg price": bf["avg_price"],
+                        "Reported amount (M; units unverified)": (bf["principal"] / 1e6).round(1), "Avg price": bf["avg_price"],
                         "In final list": bf["in_final"].map({True: "yes", False: "no"})}),
                         hide_index=True, use_container_width=True, key="tbl_funds",
                         on_select="rerun", selection_mode="single-row",
@@ -452,35 +453,11 @@ if mode.startswith("🔎"):
                     st.download_button("⬇ Download these results (CSV)", ss.dl_search[1],
                                        file_name=f"lantern_search_{(q or 'filters').replace(' ', '_')}.csv",
                                        mime="text/csv")
-                st.caption("⚠ currency? = price above 110. Usually the amount owed is in pounds or euros "
-                           "while the value is in dollars, so check the report before using the price.")
+                st.caption("Reported amounts have unverified currencies/units. Prices are withheld.")
 
     with t_watch:
-        st.caption("Loans the funds themselves value below what the company owes. The fund doubts "
-                   "it will be paid back in full. Lower price = more doubt.")
-        w1, w2 = st.columns(2)
-        below = w1.slider("Show loans valued below (% of owed)", 50, 100, 90)
-        min_w = w2.number_input("Minimum value ($M) ", 0.0, 100000.0, 1.0, step=1.0)
-        params = {"debt_only": True, "price_hi": below, "min_fv": min_w * 1e6 if min_w else None}
-        res = get(f"/runs/{run_['run_id']}/loans", params)
-        st.caption(f"Showing: loans valued below {below}% of what is owed"
-                   + (f", worth at least ${min_w:,.0f}M" if min_w else "") + ", final list only.")
-        a, b, c = st.columns(3)
-        a.metric("Loans", f"{res['count']:,}")
-        b.metric("Funds", f"{res['funds']}")
-        c.metric("Their value", money(res["fair_value"]))
-        if res["count"]:
-            show_loans(res["loans"], "watch", sort_price=True)
-            wkey = (run_["run_id"], str(sorted(params.items())))
-            if st.button("Prepare download (CSV)", key="dl_watch"):
-                ss.dl_watch = (wkey, get(f"/runs/{run_['run_id']}/loans.csv", params, raw=True))
-            if ss.get("dl_watch") and ss.dl_watch[0] == wkey:
-                st.download_button("⬇ Download watch list (CSV)", ss.dl_watch[1],
-                                   file_name=f"lantern_watch_below_{below}.csv", mime="text/csv")
-        with st.expander(f"Prices that look wrong ({ov['check_currency']} loans above 110)"):
-            st.caption("Usually the amount owed is in another currency. Check the report before using these.")
-            odd = get(f"/runs/{run_['run_id']}/loans", {"debt_only": True, "price_lo": 110})
-            show_loans(odd["loans"], "odd", height=260)
+        st.info("The price-based watch list is unavailable until principal currencies and units "
+                "are verified. An unknown-currency ratio is not evidence of a discounted loan.")
 
     with t_fund:
         st.caption("Every fund report, split by whether its loans add up to the fund's own total. "
@@ -846,16 +823,16 @@ with st.container(border=True):
         left.markdown("**What our list says** (from the pipeline)")
         left.dataframe(pd.DataFrame({
             "#": num, "Fund": rv["name"].map(pretty), "Loan": rv["identifier"],
-            "Value ($M)": n("fair_value"), "Owed ($M)": n("principal"), "SEC rows": rv["source_rows"]}),
+            "Value ($M)": n("fair_value"), "Reported amount (M; units unverified)": n("principal"), "SEC rows": rv["source_rows"]}),
             hide_index=True, use_container_width=True, height=460)
         right.markdown("**What the report says** (checked by hand)")
         right.dataframe(pd.DataFrame({
-            "#": num, "Value ($M)": n("filing_fair_value"), "Owed ($M)": n("filing_principal"),
+            "#": num, "Value ($M)": n("filing_fair_value"), "Reported amount (M; units unverified)": n("filing_principal"),
             "Match": rv["matches"].map({"yes": "✅ yes", "no": "❌ no"}).fillna(""),
             "Note": rv["note"], "Report": rv["filing_url"]}),
             hide_index=True, use_container_width=True, height=460,
             column_config={"Report": st.column_config.LinkColumn("Report", display_text="open ↗")})
-        st.caption("Same row number = same loan. Values are in $ millions.")
+        st.caption("Same row number = same loan. Fair values are USD millions; reported principal/quantity is in millions of unverified units.")
     with st.expander("Draw your own sample to check"):
         st.caption("Picks the largest passing reports plus some at random, then loans from each. "
                    "The same seed always gives the same sample.")

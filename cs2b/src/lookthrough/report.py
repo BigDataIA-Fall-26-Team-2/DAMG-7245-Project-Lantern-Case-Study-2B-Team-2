@@ -45,6 +45,21 @@ def load_triage(path) -> pd.DataFrame:
     return rows.set_index("adsh")
 
 
+def triage_review_state(entry, holdings_fv, filed_fv):
+    """Assess human review completeness and whether its recorded totals still match."""
+    if entry is None:
+        return False, False
+    complete = (entry["review_status"] == "reviewed"
+                and all(entry[c] for c in ("triage_category", "evidence", "example", "fix_or_reason")))
+    stale = False
+    for current, recorded in ((holdings_fv, entry["reviewed_holdings_fv"]),
+                              (filed_fv, entry["reviewed_filed_fv"])):
+        same = ((pd.isna(current) and pd.isna(recorded))
+                or (pd.notna(current) and pd.notna(recorded) and abs(current - recorded) <= .01))
+        stale |= not same
+    return bool(complete and not stale), bool(stale)
+
+
 def write_outputs(kept: pd.DataFrame, rec: pd.DataFrame, diag: pd.DataFrame,
                   log: pd.DataFrame, root, P, *, sub=None) -> dict:
     """Write current admitted holdings and reports from one reconciliation result.
@@ -91,14 +106,7 @@ def write_outputs(kept: pd.DataFrame, rec: pd.DataFrame, diag: pd.DataFrame,
         complete = False
         stale = False
         if entry is not None:
-            complete = (entry["review_status"] == "reviewed"
-                        and all(entry[c] for c in ("triage_category", "evidence", "example", "fix_or_reason")))
-            for current, recorded in ((row.holdings_fv, entry["reviewed_holdings_fv"]),
-                                      (row.filed_fv, entry["reviewed_filed_fv"])):
-                same = ((pd.isna(current) and pd.isna(recorded))
-                        or (pd.notna(current) and pd.notna(recorded) and abs(current - recorded) <= .01))
-                stale |= not same
-            complete = complete and not stale
+            complete, stale = triage_review_state(entry, row.holdings_fv, row.filed_fv)
         if not complete:
             incomplete.append(row.adsh)
         # An unreviewed category must not appear ready for the grader's checker.

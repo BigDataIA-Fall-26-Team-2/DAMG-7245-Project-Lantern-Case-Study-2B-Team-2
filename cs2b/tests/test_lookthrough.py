@@ -872,3 +872,85 @@ def test_source_disclosures_require_unique_identity_scope_and_source_precision()
     assert not clean.rule_source_disclosures(changed)[0].iloc[2]
     changed = h.copy(); changed.loc[2, 'identifier'] = 'Short-term investment treasury fund'
     assert not clean.rule_source_disclosures(changed)[0].iloc[2]
+
+
+def test_triage_review_state_requires_current_totals_and_complete_evidence():
+    entry = dict(review_status='reviewed', triage_category='other', evidence='filing',
+                 example='row 1', fix_or_reason='unresolved',
+                 reviewed_holdings_fv=120., reviewed_filed_fv=100.)
+    assert report.triage_review_state(entry, 120., 100.) == (True, False)
+    assert report.triage_review_state(entry, 130., 100.) == (False, True)
+    assert report.triage_review_state({**entry, 'evidence': ''}, 120., 100.) == (False, False)
+    assert report.triage_review_state(None, 120., 100.) == (False, False)
+    assert report.triage_review_state({**entry, 'review_status': 'draft'}, 120., 100.) == (False, False)
+
+
+def test_app_exports_evidence_and_marks_stale_triage_without_quoting_prices():
+    import io
+    from unittest.mock import patch
+    sys.path.insert(0, str(ROOT))
+    from app import engine
+    result = pipeline.run_baseline(RDIR, .01)
+    h = result['holdings'].copy()
+    h['source_fact_id'] = 'fixture-fact'
+    h['source_document_sha256'] = 'fixture-hash'
+    sub = result['sub'].copy()
+    sub['release'] = 'fixture'
+    sub['inlineurl'] = 'https://example.org/filing'
+    inp = dict(current=h[h.is_current], sub=sub,
+               filed=reconcile.filed_totals(result['num'], sub),
+               soi_adsh=set(result['canon'].adsh), read={})
+    failed = result['rec'].loc[~result['rec'].admitted].iloc[0]
+    entry = dict(adsh=failed.adsh, triage_category='other', evidence='old evidence',
+                 example='row 1', fix_or_reason='old explanation', review_status='reviewed',
+                 reviewed_holdings_fv=-123., reviewed_filed_fv=-123.)
+    tri = pd.DataFrame([entry]).set_index('adsh')
+    with patch.object(engine, '_prepare', return_value=inp), \
+         patch.object(engine, 'available_releases', return_value=['fixture']), \
+         patch.object(engine, '_triage', return_value=tri):
+        run = engine.run(['fixture'])
+    rid = run['run_id']
+    try:
+        rec = engine._runs[rid]['rec'].set_index('adsh')
+        assert rec.loc[failed.adsh, 'triage_status'] == 'stale'
+        assert rec.loc[failed.adsh, 'triage_category'] == 'to_triage'
+        panel = pd.read_csv(io.StringIO(engine.panel_csv(rid)))
+        assert panel.source_fact_id.eq('fixture-fact').all()
+        loans = engine.loans(rid)
+        assert all(row['price'] is None for row in loans['loans'])
+        assert all(row['principal'] is None for row in loans['by_fund'])
+        assert engine.loans(rid, price_hi=90)['count'] == 0
+        assert 'source_document_sha256' in pd.read_csv(io.StringIO(engine.loans_csv(rid)))
+    finally:
+        engine._runs.pop(rid, None)
+
+
+def test_app_raw_parse_passes_configured_source_evidence():
+    from unittest.mock import patch
+    sys.path.insert(0, str(ROOT))
+    from app import engine
+    inp = pipeline.run_baseline(RDIR, .01)
+    inp['sub']['release'] = 'fixture'
+    inp['canon']['release'] = 'fixture'
+    evidence_paths = dict(source_manifest=Path('/fixture/evidence.json'),
+                          source_documents=Path('/fixture/documents'))
+    with patch.object(engine, '_inputs', {}), \
+         patch.object(engine, 'release_dirs', return_value={'fixture': RDIR}), \
+         patch.object(engine.paths, 'source_evidence_paths', return_value=evidence_paths), \
+         patch.object(engine.combine, 'load_inputs', return_value=inp) as loader:
+        engine._prepare(('fixture',))
+        assert loader.call_args.kwargs['source_manifest'] == evidence_paths['source_manifest']
+        assert loader.call_args.kwargs['source_documents'] == evidence_paths['source_documents']
+def test_spot_sample_is_independent_of_input_order_and_fair_value_ties():
+    import runpy
+    sample = runpy.run_path(str(ROOT / 'scripts/spot_check_sample.py'))['select_sample']
+    rows = [dict(adsh=f'A{i:02}', release='2026_05', identifier=f'loan {j}',
+                 source_rows=str(i * 10 + j), fair_value=100.)
+            for i in range(12) for j in range(4)]
+    panel = pd.DataFrame(rows)
+    first = sample(panel).reset_index(drop=True)
+    second = sample(panel.sample(frac=1, random_state=123)).reset_index(drop=True)
+    pd.testing.assert_frame_equal(first, second)
+    assert len(first) == 20 and first.adsh.nunique() == 10
+    assert first.groupby('adsh').size().eq(2).all()
+    assert sample(panel.iloc[:0]).empty
