@@ -48,3 +48,12 @@ def release_dirs(params: dict, root=None) -> dict:
         raise ValueError("releases must not contain duplicates")
     raw = root / params["data"]["raw_dir"]
     return {r: raw / f"{r}_bdc" for r in releases}
+
+
+def source_evidence_paths(params, root):
+    """Optional offline source inputs; fixtures deliberately have no annotations."""
+    config = params.get("source_evidence")
+    if not config or params["data"]["use_fixture"]:
+        return {}
+    return {"source_manifest": Path(root) / config["input"],
+            "source_documents": Path(root) / config["documents"]}

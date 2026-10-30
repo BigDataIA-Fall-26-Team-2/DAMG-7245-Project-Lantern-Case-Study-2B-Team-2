@@ -20,7 +20,8 @@ RULES = clean.RULES
 
 def prepare(P):
     dirs = combine.release_dirs(P, ROOT)
-    inputs = combine.load_inputs(dirs, num_tags=[reconcile.FV_TAG], custom_fv=True)
+    inputs = combine.load_inputs(dirs, num_tags=[reconcile.FV_TAG], custom_fv=True,
+                                 **paths.source_evidence_paths(P, ROOT))
     sub, can, num = inputs["sub"], inputs["canon"], inputs["num"]
     h = clean.add_rollforward_evidence(
         holdings.coalesce_holdings(holdings.split_periods(can, sub)))

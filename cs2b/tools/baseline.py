@@ -37,7 +37,8 @@ def main():
         if wrong_sizes:
             raise ValueError(f"Manifest size mismatch: {wrong_sizes}")
         print(f"Manifest verified: {len(entries)} ZIP files (SHA-256 and size)", flush=True)
-    result = pipeline.run_baseline(dirs, float(params["reconcile"]["tolerance"]), rules=rules)
+    result = pipeline.run_baseline(dirs, float(params["reconcile"]["tolerance"]), rules=rules,
+                                   **paths.source_evidence_paths(params, ROOT))
     summary = {
         "releases": list(dirs),
         "use_fixture": params["data"]["use_fixture"],

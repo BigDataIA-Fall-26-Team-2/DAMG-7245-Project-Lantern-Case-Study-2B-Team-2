@@ -185,14 +185,55 @@ is expected to fail until those investigations are performed; do not relabel dra
 as reviewed merely to pass the checker.
 
 
-### Integrated Part 3 run (2026-10-27)
+### Integrated Part 3 run (2026-10-29)
 
-With PR #3 merged, all five rules admit 90 of 177 attempted filings (50.8%)
-and cover $235,924,621,309 of $542,175,875,908 known filed dollars (43.5%).
-The panel contains 34,755 holdings with 37,648 raw SOI row references, retaining
-3,493 holdings flagged as non-debt. Eight attempts lack a usable filed total;
+With PR #3 merged and the source-evidence extension, seven rules admit 101 of 177 attempted filings (57.1%)
+and cover $240,917,454,804 of $542,175,875,908 known filed dollars (44.4%).
+The panel contains 34,670 holdings with 38,053 raw SOI row references, retaining
+3,972 holdings flagged as non-debt. Eight attempts lack a usable filed total;
 six SUB filings have no SOI rows and are reported separately.
 
-The 87 excluded filings still require evidence-backed triage. No entries have
+The 76 excluded filings still require evidence-backed triage. No entries have
 been falsely marked reviewed to pass acceptance. This is a preliminary artifact;
 the triage acceptance check remains failing until those investigations are complete.
+
+
+The local triage follow-up extends `rule_totals` to exact net-assets labels,
+spaced subtotals and classification-only nested summaries. The explicit category
+vocabulary is conservative: unfamiliar sector/country/type labels stay for
+triage instead of being guessed. Issuer names are never a classification wildcard.
+The rule does not use filed totals, target gaps or a divide-by-four correction.
+See `docs/cleaning_log.md` for source examples and the safety checks.
+
+### Source-backed disclosure classification
+
+Parsing reads optional, versioned annotations from `data/source_evidence.json`
+and verifies their original HTML snapshots in `data/source_filings/` (tracked
+by `data/source_filings.dvc`). These are curated classifications and instrument
+links, not automatic inference from a fund name or from a reconciliation gap.
+The parser checks the snapshot SHA-256, fact ID, investment identifier, CIK,
+period, USD unit and extracted amount; it reads precision from the source fact.
+Invalid evidence for a selected filing stops parsing. Unannotated filings and
+new releases retain their existing behavior.
+
+`rule_source_disclosures` removes verified cash equivalents outside the
+investment total, or one uniquely linked repeated disclosure of a schedule
+holding. Repeats must share filing, period, release, subsidiary and document,
+have no cost/principal or metadata conflicts, and agree within their source
+precision intervals. Original schedule amounts are never adjusted.
+Source fact IDs, document hashes, URLs, roles and precision survive into the
+holdings panel for annotated retained rows.
+
+The local rerun recovers AGL, TriplePoint Private Venture, Chicago Atlantic and
+Prospect Floating Rate: 97 → 101 admitted. Before integrating PR #41, the other 173 filing results and all
+retained holding values were unchanged by the source-evidence extension. The four recovered notes retain their
+pre-fix evidence as history; the remaining 76 exclusions still have draft triage.
+The new snapshots and rebuilt artifacts must be uploaded with an approved
+`dvc push` before teammates can reproduce this revision from a fresh clone.
+
+PR #41's unfunded-commitment rule is integrated in this branch. The combined
+seven-rule run still admits 101 filings with 44.4% dollar coverage, and removes
+2,357 commitment rows from the cleaned candidate holdings. The admitted panel
+contains 34,670 holdings and 38,053 source-row references. Existing draft triage
+snapshots are historical; current comparison values are in the generated
+coverage and triage reports. No draft has been promoted to reviewed.

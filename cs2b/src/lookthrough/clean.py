@@ -3,7 +3,10 @@ import re
 
 import pandas as pd
 
-TOTAL = r"^\s*(?:sub)?total\b|\btotal investments\b"
+# Accept the spaced "Sub Total" spelling. Match Net Assets only as a
+# complete label: names such as "Net Assets Capital" are not summaries.
+TOTAL = (r"^\s*(?:sub\s*)?total\b|\btotal investments\b"
+         r"|^\s*net\s+assets\s*$")
 CASH = r"cash and cash equivalents|money market"
 DEBT = (r"loan|lien|unitranche|note|bond|revolv|delayed draw"
         r"|subordinat|debt")
@@ -21,9 +24,125 @@ NOT_A_TOTAL = (r"\b(?:llc|inc|corp|ltd|limited|l\.?p|gmbh|holdings)\b\.?"
                r"|maturity date")
 
 
+# Classification-only labels observed in the schedules. This vocabulary contains
+# sectors/countries, never issuers, accession numbers or dollar amounts. Unknown
+# words are deliberately not matched; extend it only with reviewed evidence.
+SUMMARY_SECTORS = """Aerospace & Defense;Aerospace Defense;Air Freight & Logistics;
+Auto Components;Automobiles;Automotive;Banking, Finance, Insurance & Real Estate;
+Beverage, Food & Tobacco;Building Products;Capital Equipment;Chemicals;
+Chemicals, Plastics, & Rubber;Commercial Services & Supplies;Commercial Services and Supplies;
+Construction & Building;Construction & Engineering;Consumer Finance;
+Consumer Goods: Durable;Consumer Goods: Non-Durable;Containers, Packaging & Glass;
+Distributors;Diversified Financial Services;Diversified Financials;
+Diversified Telecommunication Services;Electrical Equipment;Energy: Electricity;
+Energy: Oil & Gas;Entertainment;Environmental Industries;Food & Staples Retailing;
+Food Products;Forest Products & Paper;Health Care Equipment & Supplies;
+Health Care Providers & Services;Healthcare Providers & Services;Health Care Technology;
+Healthcare & Pharmaceuticals;High Tech Industries;Hotel, Gaming & Leisure;
+Hotels Restaurants Leisure;Hotels, Restaurants & Leisure;Hotels, Household Products;
+Household Durables;Household Products;Insurance;Interactive Media & Services;
+IT Services;Leisure Products;Life Sciences Tools & Services;Machinery;Media;
+Media: Advertising, Printing & Publishing;Media: Broadcasting & Subscription;
+Media: Diversified & Production;Metals & Mining;Personal Products;Professional Services;
+Real Estate Management & Development;Retail;Road & Rail;Services: Business;Services: Consumer;Software;Specialty Retail;
+Telecommunications;Trading Companies & Distributors;Transportation & Logistics;
+Transportation Infrastructure;Transportation: Cargo;Transportation: Consumer;
+Utilities: Electric;Water Utilities"""
+_SECTOR = "(?:" + "|".join(re.escape(x.strip()) for x in SUMMARY_SECTORS.split(";")) + ")"
+_COUNTRY = r"(?:Austria|Canada|France|Germany|Ireland|Luxembourg|Netherlands|Puerto Rico|Switzerland|United Kingdom|United States)"
+_AFFILIATION = r"(?:(?:non[- ]controlled/)?non[- ]affiliat(?:ed|e)|controlled|affiliated)"
+_TYPE = (r"(?:first lien senior secured (?:term )?loans?|preferred equity securities|"
+         r"warrants and other equity securit(?:ies|ie)|senior unsecured notes|fund investments)")
+_ROOT = (rf"(?:{_AFFILIATION} investments(?:\s*-\s*\d+(?:\.\d+)?% of shareholder's equity)?"
+         rf"|(?:portfolio )?investments\s*-\s*{_AFFILIATION})")
+# Some extracted category paths repeat a heading or include a page-break label
+# (Description, One, Two). They still must consist entirely of known categories.
+_COMPONENT = (rf"(?:{_SECTOR}(?: (?:One|Two))?|{_TYPE}|"
+              rf"Investments made in (?:the )?{_COUNTRY}|Description|One|Two)")
+CATEGORY_SUMMARY = (rf"(?:{_ROOT}(?:\s*-\s*{_COMPONENT})*|"
+                    rf"(?:{_SECTOR} )?(?:Investments )?{_TYPE} {_AFFILIATION} Investments)")
+
+
+def rule_source_disclosures(h: pd.DataFrame):
+    """Remove only verified outside-scope cash or uniquely linked source repeats.
+
+    Curated roles/identity links are checked against immutable filing facts by
+    evidence.attach. Precision is XBRL decimals, never a fitted gap tolerance.
+    Unannotated, conflicted or ambiguous groups remain untouched.
+    """
+    why = "source-verified cash disclosure or repeated investment fact"
+    drop = pd.Series(False, index=h.index)
+    required = {"source_role", "source_scope", "source_instrument_key", "source_fact_id",
+                "source_decimals", "source_document_sha256", "release", "subsidiary", "n_conflicts"}
+    if not required <= set(h):
+        return drop, why
+    fv = h["fair_value"]
+    decimals = pd.to_numeric(h["source_decimals"], errors="coerce")
+    verified = (h["source_fact_id"].notna() & h["source_instrument_key"].notna()
+                & h["source_document_sha256"].notna() & h["n_conflicts"].eq(0)
+                & fv.gt(0) & fv.lt(float("inf")) & decimals.between(-12, 12))
+    cash = (verified & h["source_role"].eq("cash_equivalent")
+            & h["source_scope"].eq("outside_investment_total"))
+    drop |= cash & ~_matches(h, SHORT_TERM_INV)
+    # Include invalid members in each group so a conflict cannot disappear and
+    # turn an ambiguous three-row group into an apparently unique pair.
+    annotated = h[h["source_instrument_key"].notna()]
+    keys = ["adsh", "ddate", "release", "subsidiary", "source_instrument_key",
+            "source_document_sha256"]
+    for _, group in annotated.groupby(keys, dropna=False, sort=False):
+        if len(group) != 2 or not verified.loc[group.index].all():
+            continue
+        primary = group[group["source_role"].eq("schedule")]
+        copies = group[group["source_role"].isin(["narrative_repeat", "rollforward_repeat"])]
+        if len(primary) != 1 or len(copies) != 1 or not group["source_scope"].eq("investment").all():
+            continue
+        i, j = primary.index[0], copies.index[0]
+        if h.at[i, "source_fact_id"] == h.at[j, "source_fact_id"]:
+            continue
+        if h.loc[j, ["cost", "principal"]].notna().any():
+            continue
+        error_bound = .5 * (10. ** -decimals[i] + 10. ** -decimals[j])
+        if abs(fv[i] - fv[j]) <= error_bound:
+            drop[j] = True
+    return drop, why
+
+
 def rule_totals(h: pd.DataFrame):
-    return (_matches(h, TOTAL) & ~_matches(h, NOT_A_TOTAL),
-            "identifier names a total or subtotal")
+    named_total = _matches(h, TOTAL) & ~_matches(h, NOT_A_TOTAL)
+    # Full-match a classification path, never a prefix of a borrower name.
+    labels = h["identifier"].str.strip().str.replace(r"\s+", " ", regex=True)
+    category = labels.str.fullmatch(CATEGORY_SUMMARY, case=False, na=False)
+    # A complete portfolio classification label, not an issuer or instrument.
+    category |= labels.str.fullmatch(r"co[- ]investments?", case=False, na=False)
+    # A sector/type label without affiliation is less conclusive. Require a
+    # surviving detailed instrument in the same filing/period with BOTH equal
+    # cost and fair value. No rounding or filed-total matching is involved.
+    short = labels.str.fullmatch(rf"{_SECTOR} {_TYPE}", case=False, na=False)
+    if {"cost", "fair_value"} <= set(h):
+        # Classification headings with no amounts are not missing-value
+        # investments. The common terms/conflict guards below still apply.
+        header = labels.str.fullmatch(rf"(?:{_SECTOR} )?{_TYPE}", case=False, na=False)
+        category |= header & h[["cost", "fair_value"]].isna().all(axis=1)
+    match_fields = ["adsh", "ddate", "cost", "fair_value"]
+    match_fields += [c for c in ("release", "subsidiary") if c in h]
+    if set(match_fields + ["maturity"]) <= set(h):
+        detail = h[~category & ~short & ~named_total & h["maturity"].notna()]
+        detail = detail.dropna(subset=["cost", "fair_value"])
+        detail = detail[detail[["cost", "fair_value"]].abs().ne(float("inf")).all(axis=1)]
+        if "n_conflicts" in detail:
+            detail = detail[detail["n_conflicts"].eq(0)]
+        pairs = set(detail[match_fields].fillna("").itertuples(index=False, name=None))
+        witnessed = pd.Series(
+            [key in pairs for key in h[match_fields].fillna("").itertuples(index=False, name=None)],
+            index=h.index)
+        category |= short & witnessed
+    terms = [c for c in ("principal", "maturity", "interest_rate", "spread", "pik_rate") if c in h]
+    if terms:
+        category &= ~h[terms].notna().any(axis=1)
+    if "n_conflicts" in h:
+        category &= h["n_conflicts"].eq(0)
+    return (named_total | category,
+            "identifier names a total, subtotal or classification-only summary")
 
 
 # A money-market fund the filer itself lists as a short-term investment is
@@ -150,7 +269,14 @@ def _issuer_key(identifier: str) -> str:
     """Issuer part of an identifier: text before ' | ' or ',' and without a
     trailing tranche number ("Wittur Holding GmbH | Capital Goods 1" and
     "Wittur Holding GmbH 1" both give "wittur holding gmbh")."""
-    s = re.split(r"\s*\|\s*|\s*,\s*", str(identifier).strip())[0]
+    # Remove only reviewed classification prefixes. Unknown wording stays.
+    s = re.sub(
+        r"^(?:(?:non[- ]controlled[, ]+(?:non[- ]affiliated|affiliated) investments|"
+        r"control investments|equity investments|debt investments|"
+        r"first lien senior secured|multi-sector holdings)[, ]+)+",
+        "", str(identifier).strip(), flags=re.I)
+    s = re.split(r"\s+Investment Type\s+", s, flags=re.I)[0]
+    s = re.split(r"\s*\|\s*|\s*,\s*", s)[0]
     return re.sub(r"\s+\d+$", "", s).strip().lower()
 
 
@@ -228,15 +354,22 @@ def rule_rollforward_copies(h: pd.DataFrame):
     iss = h["identifier"].fillna("").map(_issuer_key)
     kind = h["identifier"].map(instrument_kind)
     form = h["identifier"].map(debt_form)
+    # Copies may not borrow evidence from another release or JV portfolio.
+    context_cols = ["adsh", "ddate"] + [c for c in ("release", "subsidiary") if c in h]
+    contexts = h[context_cols].fillna("")
+    context = dict(zip(h.index, contexts.itertuples(index=False, name=None)))
+    # First-out/last-out are distinct tranches even when both say delayed draw.
+    priority = h["identifier"].fillna("").str.extract(
+        r"(?i)\b(first[- ]out|last[- ]out)\b", expand=False).fillna("").str.lower().str.replace(" ", "-")
     twins = {}
     for ix in h.index[full]:
-        twins.setdefault((h.at[ix, "adsh"], h.at[ix, "ddate"], iss[ix],
-                          round(fv[ix])), []).append((kind[ix], form[ix]))
+        twins.setdefault((context[ix], iss[ix], round(fv[ix])), []).append((kind[ix], form[ix], priority[ix]))
     for ix in h.index[bare]:
-        key = (h.at[ix, "adsh"], h.at[ix, "ddate"], iss[ix], round(fv[ix]))
+        key = (context[ix], iss[ix], round(fv[ix]))
         pool = twins.get(key, [])
-        for n, (k, f) in enumerate(pool):
-            if _compatible(kind[ix], k) and _compatible(form[ix], f):
+        for n, (k, f, p) in enumerate(pool):
+            if (_compatible(kind[ix], k) and _compatible(form[ix], f)
+                    and priority[ix] == p):
                 drop[ix] = True
                 del pool[n]          # one counterpart per copy
                 break
@@ -287,5 +420,5 @@ def is_debt(h: pd.DataFrame) -> pd.Series:
 
 # The rules the pipeline applies, in order. tools/rule_impact.py,
 # tools/break_rules.py and pipeline.run_baseline all use this one list.
-RULES = [rule_totals, rule_cash, rule_commitment_rows, rule_jv_portfolio,
-         rule_issuer_subtotals, rule_rollforward_copies]
+RULES = [rule_source_disclosures, rule_totals, rule_cash, rule_commitment_rows,
+         rule_jv_portfolio, rule_issuer_subtotals, rule_rollforward_copies]

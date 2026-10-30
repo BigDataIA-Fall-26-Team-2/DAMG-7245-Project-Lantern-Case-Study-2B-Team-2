@@ -5,6 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 from . import paths, reconcile
+from .evidence import COLUMNS as SOURCE_COLUMNS
 
 PANEL_COLS = ["adsh", "cik", "name", "period", "identifier", "investment_type", "industry", "affiliation",
               "principal", "cost", "fair_value", "interest_rate", "spread", "pik_rate", "maturity",
@@ -80,7 +81,7 @@ def write_outputs(kept: pd.DataFrame, rec: pd.DataFrame, diag: pd.DataFrame,
         raise ValueError("Panel holding counts disagree with reconciliation results")
     if set(sums.index) != admitted or not (sums.reindex(expected.index) - expected["holdings_fv"]).abs().le(.01).all():
         raise ValueError("Panel sums disagree with admitted reconciliation results")
-    panel = panel[[c for c in PANEL_COLS if c in panel]]
+    panel = panel[[c for c in PANEL_COLS + SOURCE_COLUMNS if c in panel]]
     cov = rec.copy()
     cov["triage_category"] = ""
     summaries = []

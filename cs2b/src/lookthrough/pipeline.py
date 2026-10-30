@@ -22,14 +22,15 @@ def configured_rules(params: dict) -> list:
     return rules
 
 
-def run_baseline(rdir, tolerance, rules=None) -> dict:
+def run_baseline(rdir, tolerance, rules=None, *, source_manifest=None, source_documents=None) -> dict:
     """Coordinate input loading, holding assembly, cleaning and reconciliation.
 
     Directory callers retain the starter return contract. Mapping callers receive
     canonical rows in `soi` and a per-release `colmap`; reconciliation and
     diagnostics have the same shape in both modes.
     """
-    inputs = combine.load_inputs(rdir, num_tags=[reconcile.FV_TAG], custom_fv=True)
+    inputs = combine.load_inputs(rdir, num_tags=[reconcile.FV_TAG], custom_fv=True,
+                                 source_manifest=source_manifest, source_documents=source_documents)
     sub, num = inputs["sub"], inputs["num"]
     canon = holdings.split_periods(inputs["canon"], sub)
     h = clean.add_rollforward_evidence(holdings.coalesce_holdings(canon))

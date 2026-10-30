@@ -65,7 +65,8 @@ def load_soi_all(dirs: dict, tag=None) -> pd.DataFrame:
     return pd.concat(parts, ignore_index=True)
 
 
-def load_inputs(rdir, *, num_tags=None, custom_fv=False) -> dict:
+def load_inputs(rdir, *, num_tags=None, custom_fv=False,
+                source_manifest=None, source_documents=None) -> dict:
     """Load consistently selected SUB, TAG, SOI and NUM inputs without cleaning.
 
     Accept one directory (the starter API) or an ordered release/path mapping.
@@ -113,5 +114,8 @@ def load_inputs(rdir, *, num_tags=None, custom_fv=False) -> dict:
         soi = soi[soi["adsh"].isin(sub["adsh"])]
         num = load_num(rdir, tags=num_tags, custom_fv=custom_fv)
         canon = to_canonical(soi, colmap)
+    if source_manifest is not None:
+        from . import evidence
+        canon = evidence.attach(canon, source_manifest, source_documents)
     return {"sub": sub, "tag": tag, "colmap": colmap, "soi": soi,
             "num": num, "canon": canon}

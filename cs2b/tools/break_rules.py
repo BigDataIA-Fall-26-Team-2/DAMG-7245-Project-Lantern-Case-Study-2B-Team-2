@@ -19,8 +19,19 @@ OUT = ROOT / "reports" / "tests_that_fail.md"
 
 # (rule, kind, what the break does, exact text in clean.py, replacement)
 BREAKS = [
+    ("rule_source_disclosures", "broken", "outside-investment scope is ignored",
+     '& h["source_scope"].eq("outside_investment_total")', ''),
+    ("rule_source_disclosures", "broken", "source precision agreement is ignored",
+     'if abs(fv[i] - fv[j]) <= error_bound:', 'if True:'),
+
+    ("rule_totals", "broken", "classification matching accepts borrower-name prefixes",
+     "labels.str.fullmatch(CATEGORY_SUMMARY,", "labels.str.contains(CATEGORY_SUMMARY,"),
+    ("rule_totals", "broken", "classification rows with instrument terms are dropped",
+     "category &= ~h[terms].notna().any(axis=1)", "pass"),
+    ("rule_totals", "broken", "short category labels need no matching detailed instrument",
+     "category |= short & witnessed", "category |= short"),
     ("rule_totals", "removed", "the rule drops nothing",
-     "return (_matches(h, TOTAL) & ~_matches(h, NOT_A_TOTAL),",
+     "return (named_total | category,",
      "return (pd.Series(False, index=h.index),"),
     ("rule_totals", "broken", "the company-suffix / maturity-date guard is removed, "
      "so borrowers named \"Total ...\" are dropped again (the Total Expert bug)",
@@ -75,12 +86,12 @@ BREAKS = [
      "                pass\n"),
     ("rule_rollforward_copies", "broken", "the instrument check is removed, so preferred "
      "equity is dropped as a copy of a loan with the same value (review finding P1)",
-     "if _compatible(kind[ix], k) and _compatible(form[ix], f):",
-     "if _compatible(form[ix], f):"),
+     "if (_compatible(kind[ix], k) and _compatible(form[ix], f)",
+     "if (_compatible(form[ix], f)"),
     ("rule_rollforward_copies", "broken", "the debt-form check is removed, so a revolver "
      "is dropped as a copy of a term loan with the same value (second review finding)",
-     "if _compatible(kind[ix], k) and _compatible(form[ix], f):",
-     "if _compatible(kind[ix], k):"),
+     "if (_compatible(kind[ix], k) and _compatible(form[ix], f)",
+     "if (_compatible(kind[ix], k)"),
     ("rule_rollforward_copies", "broken", "the roll-forward evidence requirement is removed, "
      "so any bare row is a candidate copy (second review finding)",
      "            & h[\"rf_opening\"].fillna(False).astype(bool))",
@@ -227,7 +238,8 @@ def main():
           "- **TriplePoint Private Venture Credit** (adsh 0001792509-26-000017) was admitted "
           "at +0.41% only because the starter `rule_totals` wrongly dropped a real $7.5M "
           "loan (Total Expert, Inc., SOI row 163022). With the fix it is +2.36% and not "
-          "admitted: a separate ~$9.1M overcount remains, left for triage.",
+          "admitted: the source-verified $9.078M cash-equivalent fund remains retained; "
+          "source classification is not yet propagated into the rule.",
           "- **Lord Abbett Private Credit Fund S** (adsh 0000930413-26-001613, −5.66%) reports "
           "its joint-venture investment under the `Investments` tag (SOI row 17151, $21.608M, "
           "its exact shortfall). No rule recovers it: the same fallback also picks up a "
@@ -237,7 +249,7 @@ def main():
           "restates a roll-forward value under a different issuer spelling, is not caught.",
           "- **Custom-axis filings** (Partners Group, SuRo Capital) have no usable "
           "identifiers, so no rule applies to them; they are triaged.", ""]
-    OUT.write_text("\n".join(L))
+    OUT.write_text("\n".join(line.rstrip() for line in L))
     print(f"wrote {OUT.relative_to(ROOT)}")
     sys.exit(0 if (restored and code == 0 and caught) else 1)
 

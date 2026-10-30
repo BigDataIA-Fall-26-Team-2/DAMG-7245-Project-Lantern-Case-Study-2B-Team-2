@@ -105,7 +105,7 @@ def test_baseline_reconciliation_counts_every_filing():
     # The pipeline runs clean.RULES; the four Part 2 rules find nothing in
     # the fixture (no commitment rows, JV rows, issuer subtotals or roll-forward copies).
     assert list(B["log"]["rule"]) == [r.__name__ for r in clean.RULES]
-    assert list(B["log"]["rows_affected"]) == [1, 1, 0, 0, 0, 0]
+    assert list(B["log"]["rows_affected"]) == [0, 1, 1, 0, 0, 0, 0]
 
 
 def test_manifest_is_portable_and_detects_changes():
@@ -528,6 +528,80 @@ def test_total_rule_spares_companies_named_total():
     assert drop.tolist() == [True, True, False, False, False], drop.tolist()
 
 
+def test_total_rule_handles_net_assets_and_spaced_subtotals_conservatively():
+    # NexPoint's bare Net Assets and Saratoga's spaced Sub Total are
+    # summaries. Similar issuer names and instrument labels must survive.
+    labels = ["Net Assets", "  NET ASSETS  ",
+              "Sub Total Non-control/Non-affiliate investments",
+              "Sub\tTotal First Lien", "Subtotal First Lien",
+              "Net Assets Capital", "Net Assets, LLC | First lien loan",
+              "Investment | Net Assets", "Net Assets | Common stock",
+              "Sub Total Holdings, Inc. | Loan",
+              "Sub Total First Lien Maturity Date 02/13/32", None]
+    drop, _ = clean.rule_totals(pd.DataFrame({"identifier": labels}))
+    assert drop.tolist() == [True] * 5 + [False] * 7, drop.tolist()
+
+
+def test_category_summaries_keep_instruments_and_unknown_classifications():
+    root = "Non-controlled/Non-Affiliated Investments -215.2% of Shareholder's Equity"
+    sector = root + " - Investments made in Austria - Capital Equipment"
+    labels = [root, root + " - Investments made in Austria", sector,
+              sector + " - Example GmbH - First Lien - Term Loan",
+              "Investments - non-controlled/non-affiliated - First Lien Senior Secured Loan - Software",
+              "Software Preferred Equity Securities Controlled Investments",
+              "Example Software Preferred Equity Securities Controlled Investments",
+              root + " - Investments made in Austria - Unrecognized Sector",
+              "Acme | Controlled Investments", "Controlled Investments, LLC",
+              "Controlled Investments | Term Loan", "Controlled Investments"]
+    h = pd.DataFrame({"identifier": labels, "maturity": [None] * 11 + ["2030-01-01"]})
+    drop, _ = clean.rule_totals(h)
+    assert drop.tolist() == [True, True, True, False, True, True] + [False] * 6
+    # Even recognized category text is retained when instrument terms or
+    # conflicting coalesced values make its interpretation ambiguous.
+    for col, value in [("principal", 100), ("interest_rate", .1), ("spread", .05),
+                       ("pik_rate", .02), ("n_conflicts", 1)]:
+        assert not clean.rule_totals(pd.DataFrame({"identifier": [sector], col: [value]}))[0].any()
+
+
+def test_nested_classifications_are_removed_without_using_filed_totals():
+    for root, middle, leaf_prefix in [
+        ("Non-controlled/Non-Affiliated Investments", "Investments made in Canada",
+         "Capital Equipment"),
+        ("Investments - non-controlled/non-affiliated", "First Lien Senior Secured Loan",
+         "Software"),
+    ]:
+        labels = [root, root + " - " + middle, root + " - " + middle + " - " + leaf_prefix]
+        labels += [labels[-1] + " - Example LLC - Term Loan",
+                   labels[-1] + " - Example LLC - Revolver"]
+        h = pd.DataFrame({"identifier": labels, "fair_value": [100, 100, 100, 40, 60]})
+        dropped, _ = clean.rule_totals(h)
+        assert dropped.tolist() == [True, True, True, False, False]
+        assert h.loc[~dropped, "fair_value"].sum() == 100
+
+
+def test_short_category_summary_requires_a_context_matched_instrument():
+    h = pd.DataFrame({
+        "adsh": ["A", "A"], "ddate": ["2026-03-31"] * 2,
+        "release": ["2026_05"] * 2, "subsidiary": [None, None],
+        "identifier": ["Aerospace & Defense First Lien Senior Secured Term Loan",
+                       "Example Holdings First Lien Senior Secured Term Loan Due 9/1/2030"],
+        "cost": [90., 90.], "fair_value": [100., 100.],
+        "maturity": [None, "2030-09-01"], "n_conflicts": [0, 0]})
+    assert clean.rule_totals(h)[0].tolist() == [True, False]
+    for col, value in [("adsh", "B"), ("ddate", "2025-12-31"), ("release", "2026_04"),
+                       ("subsidiary", "JV"), ("cost", 89.), ("fair_value", 101.),
+                       ("maturity", None), ("n_conflicts", 1)]:
+        changed = h.copy()
+        changed.loc[1, col] = value
+        assert not clean.rule_totals(changed)[0].any(), col
+    assert not clean.rule_totals(h.iloc[:1])[0].any()
+    empty_header = h.iloc[:1].copy()
+    empty_header[["cost", "fair_value"]] = float("nan")
+    assert clean.rule_totals(empty_header)[0].all()
+    empty_header["identifier"] = "Example Holdings First Lien Senior Secured Term Loan"
+    assert not clean.rule_totals(empty_header)[0].any()
+
+
 def test_debt_flag_marks_equity_and_warrants_without_dropping_them():
     # Equity, preferred units and warrants stay in the panel, flagged False.
     h = pd.DataFrame({
@@ -585,6 +659,14 @@ def test_rollforward_rule_ignores_a_counterpart_already_dropped_as_jv():
         "rf_opening": [False, True], "source_rows": ["0", "1"]})
     kept, log = clean.apply_rules(h, [clean.rule_jv_portfolio, clean.rule_rollforward_copies])
     assert kept["source_rows"].tolist() == ["1"], kept["source_rows"].tolist()
+    assert log["rows_affected"].tolist() == [1, 0]
+    # Also exercise sequential evaluation within ONE subsidiary. Cross-JV
+    # isolation alone must not mask a regression in apply_rules ordering.
+    same_context = h.assign(subsidiary=None)
+    def remove_first(rows):
+        return rows["source_rows"].eq("0"), "previous rule excluded counterpart"
+    kept, log = clean.apply_rules(same_context, [remove_first, clean.rule_rollforward_copies])
+    assert kept["source_rows"].tolist() == ["1"]
     assert log["rows_affected"].tolist() == [1, 0]
 
 
@@ -669,3 +751,124 @@ def test_issuer_subtotal_rule_keeps_a_parent_that_names_an_instrument():
         "fair_value": [100.0, 100.0], "source_rows": ["0", "1"]})
     drop, _ = clean.rule_issuer_subtotals(h)
     assert drop.tolist() == [False, False], drop.tolist()
+
+
+def test_coinvestment_summary_requires_complete_label_and_no_instrument_terms():
+    h = pd.DataFrame({
+        "identifier": ["Co-investment", "Co-investments", "Co-investment LLC",
+                       "Co-investment Fund interest", "Co-investment", "Co-investment"],
+        "cost": [90.] * 6, "fair_value": [100.] * 6,
+        "principal": [None, None, None, None, 100., None],
+        "n_conflicts": [0, 0, 0, 0, 0, 1]})
+    drop, _ = clean.rule_totals(h)
+    assert drop.tolist() == [True, True, False, False, False, False]
+
+
+def test_rollforward_classification_prefixes_preserve_context_and_tranches():
+    pair = pd.DataFrame({
+        "adsh": ["A"] * 2, "ddate": ["2026-03-31"] * 2,
+        "release": ["2026_05"] * 2, "subsidiary": [None] * 2,
+        "identifier": [
+            "Debt Investments, First Lien Senior Secured, Example Holdings, LLC - Delayed Draw Term Loan First-Out",
+            "Non-controlled, Affiliated investments, Example Holdings, LLC - Delayed Draw Loan First-Out"],
+        "fair_value": [100., 100.], "cost": [95., None],
+        "principal": [100., None], "rf_opening": [False, True]})
+    assert clean.rule_rollforward_copies(pair)[0].tolist() == [False, True]
+    for col, value in [("adsh", "B"), ("ddate", "2026-06-30"),
+                       ("release", "2026_06"), ("subsidiary", "JV"),
+                       ("rf_opening", False), ("fair_value", 101.)]:
+        changed = pair.copy(); changed.loc[1, col] = value
+        assert not clean.rule_rollforward_copies(changed)[0].any(), col
+    for label in [pair.loc[1, "identifier"].replace("First-Out", "Last-Out"),
+                  pair.loc[1, "identifier"].replace("Example", "Different"),
+                  pair.loc[1, "identifier"].replace("Delayed Draw Loan", "Revolver")]:
+        changed = pair.copy(); changed.loc[1, "identifier"] = label
+        assert not clean.rule_rollforward_copies(changed)[0].any(), label
+    equity = pair.copy()
+    equity["identifier"] = [
+        "Control Investments Equity Investments Multi-Sector Holdings Example I LLC Investment Type Equity 50% Equity Interest",
+        "Control Investments Equity Investments Example I LLC"]
+    equity["principal"] = None
+    assert clean.rule_rollforward_copies(equity)[0].tolist() == [False, True]
+
+
+def test_source_evidence_checks_snapshot_context_value_and_scope():
+    import hashlib
+    import json
+    from lookthrough import evidence
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        source = '''<xbrli:context id="c"><xbrli:entity><xbrli:identifier scheme="sec">123</xbrli:identifier>
+        <xbrli:segment><xbrldi:typedMember dimension="us-gaap:InvestmentIdentifierAxis"><value>Example LLC</value></xbrldi:typedMember></xbrli:segment>
+        </xbrli:entity><xbrli:period><xbrli:instant>2026-03-31</xbrli:instant></xbrli:period></xbrli:context>
+        <xbrli:unit id="usd"><xbrli:measure>iso4217:USD</xbrli:measure></xbrli:unit>
+        <ix:nonFraction id="f" contextRef="c" unitRef="usd" name="us-gaap:InvestmentOwnedAtFairValue"
+        scale="3" decimals="-3" format="ixt:num-dot-decimal">10</ix:nonFraction>'''
+        doc = root / 'filing.html'; doc.write_text(source)
+        fact = dict(adsh='A', release='2026_05', period='2026-03-31', identifier='Example LLC',
+                    subsidiary=None, fact_id='f', role='schedule', instrument_key='loan',
+                    scope='investment', basis='Source-checked primary schedule position')
+        data = dict(version=1, documents={'A': dict(file=doc.name,
+                    sha256=hashlib.sha256(doc.read_bytes()).hexdigest(), url='https://example.test/filing')}, facts=[fact])
+        manifest = root / 'evidence.json'; manifest.write_text(json.dumps(data))
+        c = pd.DataFrame(dict(adsh=['A'], release=['2026_05'], period=['2026-03-31'],
+                             ddate=['2026-03-31'], identifier=['Example LLC'], cik=['123'],
+                             subsidiary=[None], fair_value=[10000.]))
+        out = evidence.attach(c, manifest, root)
+        assert out.source_role.tolist() == ['schedule'] and out.source_decimals.tolist() == [-3]
+        def rejected(frame=c):
+            try:
+                evidence.attach(frame, manifest, root)
+            except ValueError:
+                return
+            raise AssertionError('Invalid source evidence was accepted')
+        rejected(c.assign(fair_value=9999.))
+        rejected(c.assign(cik='456'))
+        rejected(c.assign(identifier='Different loan'))
+        rejected(c.assign(subsidiary='JV'))
+        doc.write_text(source + 'changed'); rejected(); doc.write_text(source)
+        data['facts'] = [fact, fact]; manifest.write_text(json.dumps(data)); rejected()
+        data['facts'] = [dict(fact, role='guess')]; manifest.write_text(json.dumps(data)); rejected()
+        data['facts'] = [fact]; manifest.write_text(json.dumps(data))
+        changed = source.replace('2026-03-31', '2025-12-31'); doc.write_text(changed)
+        data['documents']['A']['sha256'] = hashlib.sha256(doc.read_bytes()).hexdigest()
+        manifest.write_text(json.dumps(data)); rejected()
+        # An annotation from a different release is not silently reused, even
+        # for an identical issuer and amount. It leaves the new row untouched.
+        assert evidence.attach(c.assign(release='2026_06'), manifest, root).source_role.isna().all()
+        assert paths.source_evidence_paths({'data': {'use_fixture': True},
+            'source_evidence': {'input': 'missing', 'documents': 'missing'}}, root) == {}
+
+
+def test_source_disclosures_require_unique_identity_scope_and_source_precision():
+    h = pd.DataFrame({
+        'adsh': ['A'] * 3, 'ddate': ['2026-03-31'] * 3, 'release': ['2026_05'] * 3,
+        'subsidiary': [None] * 3, 'identifier': ['Example loan', 'Example note', 'Treasury fund'],
+        'cost': [9000., None, 100.], 'principal': [10000., None, None],
+        'fair_value': [10000., 10481., 100.], 'n_conflicts': [0] * 3,
+        'source_role': ['schedule', 'rollforward_repeat', 'cash_equivalent'],
+        'source_scope': ['investment', 'investment', 'outside_investment_total'],
+        'source_instrument_key': ['loan', 'loan', 'cash'],
+        'source_fact_id': ['f1', 'f2', 'f3'], 'source_decimals': [-3, 0, 0],
+        'source_document_sha256': ['verified'] * 3})
+    assert clean.rule_source_disclosures(h)[0].tolist() == [False, True, True]
+    assert not clean.rule_source_disclosures(h.drop(columns='source_role'))[0].any()
+    for col, value in [('fair_value', 10501.), ('fair_value', -1.),
+                       ('source_decimals', None), ('source_fact_id', None),
+                       ('source_fact_id', 'f1'), ('n_conflicts', 1),
+                       ('source_instrument_key', 'different loan'), ('cost', 9000.),
+                       ('source_scope', 'unknown'), ('source_document_sha256', 'different'),
+                       ('adsh', 'B'), ('release', '2026_06'),
+                       ('ddate', '2026-06-30'), ('subsidiary', 'JV')]:
+        changed = h.copy(); changed.loc[1, col] = value
+        assert not clean.rule_source_disclosures(changed)[0].iloc[1], (col, value)
+    changed = h.copy(); changed.loc[0, 'source_decimals'] = 0
+    assert not clean.rule_source_disclosures(changed)[0].iloc[1]
+    changed = h.copy(); changed.loc[1, 'source_role'] = 'narrative_repeat'
+    assert clean.rule_source_disclosures(changed)[0].iloc[1]
+    ambiguous = pd.concat([h, h.iloc[[0]]], ignore_index=True)
+    assert not clean.rule_source_disclosures(ambiguous)[0].iloc[1]
+    changed = h.copy(); changed.loc[2, 'source_scope'] = 'investment'
+    assert not clean.rule_source_disclosures(changed)[0].iloc[2]
+    changed = h.copy(); changed.loc[2, 'identifier'] = 'Short-term investment treasury fund'
+    assert not clean.rule_source_disclosures(changed)[0].iloc[2]
