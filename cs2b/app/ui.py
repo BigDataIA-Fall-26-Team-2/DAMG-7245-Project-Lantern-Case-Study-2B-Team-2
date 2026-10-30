@@ -3,6 +3,7 @@
 Start from inside cs2b:  streamlit run app/ui.py
 Set LANTERN_API if the backend is not on http://localhost:8000.
 """
+import html
 import os
 import re
 
@@ -31,6 +32,8 @@ RULE_TEXT = {
     "rule_jv_portfolio": "Loans owned by a joint venture, listed by the fund for information only.",
     "rule_issuer_subtotals": "Company-level lines that only add up that company's loans.",
     "rule_rollforward_copies": "Loans repeated from the affiliate roll-forward table.",
+    "rule_source_disclosures": "Lines that the saved original SEC pages show are category summaries "
+                               "or repeated disclosures, not separate holdings.",
     "clear_equity_principal": "Not removed: equity lines whose 'principal' is really a count of units. "
                               "The principal is cleared, the line stays.",
 }
@@ -667,7 +670,7 @@ if ss.step == 3:
         st.markdown("Some lines look like loans but are not. Switch the rules on or off and press "
                     "**Apply** to see what each one removes.")
         for r in ALL_RULES:
-            st.toggle(f"**{nice(r)}**: {RULE_TEXT.get(r, '')}", key=f"rule_{r}")
+            st.toggle(f"**{nice(r)}**: {RULE_TEXT.get(r) or cfg['rule_docs'].get(r, '')[:160]}", key=f"rule_{r}")
         applied = run["settings"]["rules"] == chosen_rules() and run["settings"]["releases"] == sorted(ss.rels)
         if not applied:
             st.button("Apply cleaning", type="primary", on_click=run_then, args=(3,))
@@ -763,41 +766,41 @@ fn = run["stats"]["final"]
 if ss.step == 5:
     with st.container(border=True):
         st.subheader("⑤ The final list")
-        st.markdown(f"Only the loans of the **{fn['reports']} reports that passed** go in: "
-                    f"**{fn['loans']:,} loans**. Pick any fund to look inside its report.")
+        st.markdown("Only the loans of the reports that add up to the fund's own total go into the final list.")
+        passed = fil[fil["admitted"]].sort_values("holdings_fv", ascending=False).reset_index(drop=True)
+        a, b, c = st.columns(3)
+        a.metric("Reports in the final list", f"{fn['reports']} of {cov['filings_attempted']}")
+        b.metric("Loans in the final list", f"{fn['loans']:,}")
+        c.metric("Their total value", money(passed["holdings_fv"].sum()))
+        st.markdown("**Funds in the final list**, biggest first. Click a fund to open its report check.")
+        ev = st.dataframe(pd.DataFrame({
+            "Fund": passed["name"].map(pretty), "Form": passed["form"], "Month": passed["release"],
+            "Loans": passed["n_holdings"], "Value ($M)": (passed["holdings_fv"] / 1e6).round(1),
+            "Fund's own total ($M)": (passed["filed_fv"] / 1e6).round(1),
+            "Difference %": (passed["gap_pct"] * 100).round(2), "Report": passed["filing_url"]}),
+            hide_index=True, use_container_width=True, height=320, key="final_funds",
+            on_select="rerun", selection_mode="single-row",
+            column_config={"Report": st.column_config.LinkColumn("Report", display_text="open ↗")})
+        picked = passed.iloc[ev.selection.rows[0]]["adsh"] if ev and ev.selection.rows else None
         names = fil.sort_values("name")
-        labels = {r.adsh: f"{'✅' if r.admitted else '❌'} {r.name} ({r.form})" for r in names.itertuples()}
-        pick = st.selectbox("Fund report", list(labels), format_func=labels.get, index=None,
-                            placeholder="Type a fund name, for example Ares or Golub")
+        labels = {r.adsh: f"{'✅' if r.admitted else '❌'} {pretty(r.name)} ({r.form})" for r in names.itertuples()}
+        other = st.selectbox("Or look up any fund, including the ones left out", list(labels),
+                             format_func=labels.get, index=None,
+                             placeholder="Type a fund name, for example Ares or Golub")
+        pick = other or picked
         if pick:
-            d = call("GET", f"/runs/{run['run_id']}/filings/{pick}/holdings")
-            f = d["filing"]
-            a, b, c = st.columns(3)
-            a.metric("Our sum of its loans", money(f["holdings_fv"]))
-            b.metric("Total the fund reported", money(f["filed_fv"]))
-            c.metric("Gap", "n/a" if f["gap_pct"] is None else f"{f['gap_pct']:+.2%}")
-            if f["gap_pct"] is None:
-                st.warning("No usable total or no loans, so there is nothing to compare.")
-            elif f["admitted"]:
-                st.success(f"Inside the {tol:.1%} tolerance: its {f['n_holdings']:,} loans are in the final list.")
-            else:
-                st.error(f"Outside the {tol:.1%} tolerance, so it is left out. Reason: {f['triage_category']}.")
-            if f.get("filing_url"):
-                st.link_button("Open the original report on SEC.gov ↗", f["filing_url"])
-            h = pd.DataFrame(d["holdings"])
-            if not h.empty:
-                with st.expander(f"Show its {len(h):,} loans (largest first)"):
-                    st.caption("source_rows = row numbers in that month's SEC file, so each loan traces back.")
-                    st.dataframe(h.drop(columns=["filing_url"], errors="ignore"),
-                                 hide_index=True, use_container_width=True)
-        with st.expander("Download this run"):
-            st.download_button("⬇ Reports (CSV)", fil.to_csv(index=False),
-                               file_name=f"lantern_reports_{run['run_id']}.csv", mime="text/csv")
-            if st.button("Prepare loans (CSV)"):
-                ss[f"panel_{run['run_id']}"] = call("GET", f"/runs/{run['run_id']}/panel.csv", raw=True)
-            if f"panel_{run['run_id']}" in ss:
-                st.download_button("⬇ Loans (CSV)", ss[f"panel_{run['run_id']}"],
-                                   file_name=f"lantern_loans_{run['run_id']}.csv", mime="text/csv")
+            with st.container(border=True):
+                show_fund(pick)
+        d1, d2, _ = st.columns([1, 1, 2])
+        d1.download_button("⬇ Reports (CSV)", fil.to_csv(index=False), use_container_width=True,
+                           file_name=f"lantern_reports_{run['run_id']}.csv", mime="text/csv")
+        pkey = f"panel_{run['run_id']}"
+        if pkey in ss:
+            d2.download_button("⬇ Loans (CSV)", ss[pkey], use_container_width=True,
+                               file_name=f"lantern_loans_{run['run_id']}.csv", mime="text/csv")
+        elif d2.button("Prepare loans (CSV)", use_container_width=True):
+            ss[pkey] = call("GET", f"/runs/{run['run_id']}/panel.csv", raw=True)
+            st.rerun()
         st.button("Next: check some loans by hand →", type="primary", on_click=go_to, args=(6,))
     st.stop()
 done_row(5, f"{fn['loans']:,} loans from {fn['reports']} reports")
@@ -816,23 +819,55 @@ with st.container(border=True):
         st.metric("Loans that match the fund's report", f"{yes} of {len(done)}")
         for m in done[done["matches"] != "yes"].itertuples():
             st.warning(f"Row {m.Index + 1}, {pretty(m.name)}: {m.note}")
-        n = lambda c: (pd.to_numeric(rv[c], errors="coerce") / 1e6).map(  # noqa: E731
-            lambda x: "" if pd.isna(x) else f"{x:,.2f}")
-        num = list(range(1, len(rv) + 1))
-        left, right = st.columns(2)
-        left.markdown("**What our list says** (from the pipeline)")
-        left.dataframe(pd.DataFrame({
-            "#": num, "Fund": rv["name"].map(pretty), "Loan": rv["identifier"],
-            "Value ($M)": n("fair_value"), "Reported amount (M; units unverified)": n("principal"), "SEC rows": rv["source_rows"]}),
-            hide_index=True, use_container_width=True, height=460)
-        right.markdown("**What the report says** (checked by hand)")
-        right.dataframe(pd.DataFrame({
-            "#": num, "Value ($M)": n("filing_fair_value"), "Reported amount (M; units unverified)": n("filing_principal"),
-            "Match": rv["matches"].map({"yes": "✅ yes", "no": "❌ no"}).fillna(""),
-            "Note": rv["note"], "Report": rv["filing_url"]}),
-            hide_index=True, use_container_width=True, height=460,
-            column_config={"Report": st.column_config.LinkColumn("Report", display_text="open ↗")})
-        st.caption("Same row number = same loan. Fair values are USD millions; reported principal/quantity is in millions of unverified units.")
+        def millions_text(c):
+            v = pd.to_numeric(rv[c], errors="coerce") / 1e6
+            return v.map(lambda x: "" if pd.isna(x) else f"{x:,.2f}")
+
+        ours_v, ours_a = millions_text("fair_value"), millions_text("principal")
+        rep_v, rep_a = millions_text("filing_fair_value"), millions_text("filing_principal")
+        body = []
+        for i, r in rv.iterrows():
+            badge = {"yes": "✅ yes", "no": "❌ no"}.get(r["matches"], "")
+            url = str(r.get("filing_url") or "")
+            link = f"<a href='{html.escape(url)}' target='_blank'>open ↗</a>" if url else ""
+            body.append(
+                f"<tr class='{'miss' if r['matches'] == 'no' else ''}'>"
+                f"<td class='r'>{i + 1}</td><td>{html.escape(pretty(r['name']))}</td>"
+                f"<td class='loan'>{html.escape(str(r['identifier']))}</td>"
+                f"<td class='r'>{ours_v[i]}</td><td class='r'>{ours_a[i]}</td>"
+                f"<td class='r'>{html.escape(str(r['source_rows']))}</td>"
+                f"<td class='r rep first'>{rep_v[i]}</td><td class='r rep'>{rep_a[i]}</td>"
+                f"<td class='rep'>{badge}</td><td class='rep note'>{html.escape(str(r['note']))}</td>"
+                f"<td class='rep'>{link}</td></tr>")
+        st.markdown("""<style>
+.hc-wrap{max-height:540px;overflow:auto;border:1px solid rgba(150,150,150,.35);border-radius:8px}
+.hc{border-collapse:separate;border-spacing:0;width:100%;font-size:13px}
+.hc th{position:sticky;z-index:2;background:#1b1e26;text-align:left;padding:6px 8px;
+  border-bottom:1px solid rgba(150,150,150,.35);white-space:nowrap}
+.hc thead tr:first-child th{top:0;height:30px;font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+.hc thead tr:nth-child(2) th{top:30px}
+.hc th.rep{background:#1c2638}
+.hc td{padding:6px 8px;border-bottom:1px solid rgba(150,150,150,.15);vertical-align:top}
+.hc td.rep{background:rgba(59,130,246,.07)}
+.hc .first{border-left:2px solid rgba(59,130,246,.7)}
+.hc td.r{text-align:right;white-space:nowrap}
+.hc td.loan{min-width:280px}
+.hc td.note{min-width:260px}
+.hc tr.miss td{background:rgba(217,83,79,.14)}
+.hc tbody tr:hover td{background:rgba(250,204,21,.18)}
+.hc a{color:#60a5fa}
+</style>""", unsafe_allow_html=True)
+        st.markdown(
+            "<div class='hc-wrap'><table class='hc'><thead>"
+            "<tr><th colspan='6'>What our list says (from the pipeline)</th>"
+            "<th colspan='5' class='rep first'>What the report says (checked by hand)</th></tr>"
+            "<tr><th>#</th><th>Fund</th><th>Loan</th><th>Value ($M)</th><th>Reported amount (M)</th>"
+            "<th>SEC rows</th><th class='rep first'>Value ($M)</th><th class='rep'>Reported amount (M)</th>"
+            "<th class='rep'>Match</th><th class='rep'>Note</th><th class='rep'>Report</th></tr>"
+            "</thead><tbody>" + "".join(body) + "</tbody></table></div>",
+            unsafe_allow_html=True)
+        st.caption("One row = one loan: left is our pipeline, right is what we read in the filing. "
+                   "Fair values are USD millions; reported principal/quantity is in millions of unverified units.")
     with st.expander("Draw your own sample to check"):
         st.caption("Picks the largest passing reports plus some at random, then loans from each. "
                    "The same seed always gives the same sample.")
