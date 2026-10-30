@@ -35,9 +35,9 @@ MAX_RUNS = 10
 
 FILING_COLS = ["adsh", "cik", "name", "form", "period", "release", "n_holdings", "missing_fv",
                "holdings_fv", "filed_fv", "filed_total_status", "gap_pct", "admitted",
-               "triage_category", "triage_evidence", "triage_example", "triage_fix", "triage_status",
+               "triage_category", "triage_saved_category", "triage_stale", "triage_complete", "triage_evidence", "triage_example", "triage_fix", "triage_status",
                "filing_url"]
-HOLDING_COLS = [c for c in report.PANEL_COLS if c not in ("cik", "name", "period")]
+HOLDING_COLS = [c for c in report.PANEL_COLS + report.SOURCE_COLUMNS if c not in ("cik", "name", "period")]
 SAMPLE_COLS = ["adsh", "release", "name", "identifier", "is_debt", "fair_value", "principal",
                "source_rows", "filing_url"]
 
@@ -180,7 +180,8 @@ def _prepare(releases: tuple) -> dict:
             else:
                 every = release_dirs()
                 dirs = {r: every[r] for r in releases}
-                inp = combine.load_inputs(dirs, num_tags=[reconcile.FV_TAG], custom_fv=True)
+                inp = combine.load_inputs(dirs, num_tags=[reconcile.FV_TAG], custom_fv=True,
+                                          **paths.source_evidence_paths(P, ROOT))
                 sub, num = inp["sub"], inp["num"]
                 canon = holdings.split_periods(inp["canon"], sub)
                 h = holdings.coalesce_holdings(canon)
@@ -281,11 +282,23 @@ def run(releases=None, tolerance=None, rules=None) -> dict:
         v = from_triage(col)
         v[rec["admitted"]] = None
         rec[out] = v
+    rec["triage_saved_category"] = rec["triage_category"]
+    rec["triage_complete"] = False
+    rec["triage_stale"] = False
+    for idx, row in rec.loc[~rec["admitted"]].iterrows():
+        entry = tri.loc[row.adsh] if row.adsh in tri.index else None
+        complete, stale = report.triage_review_state(entry, row.holdings_fv, row.filed_fv)
+        rec.loc[idx, ["triage_complete", "triage_stale"]] = [complete, stale]
+        rec.loc[idx, "triage_status"] = "stale" if stale else ("reviewed" if complete else "incomplete")
+        if not complete:
+            rec.loc[idx, "triage_category"] = "to_triage"
     kept["filing_url"] = kept["adsh"].map(sub["inlineurl"])
-    fv = pd.to_numeric(kept["fair_value"], errors="coerce")
     pr = pd.to_numeric(kept["principal"], errors="coerce")
-    kept["price"] = (100 * fv / pr).where(kept["is_debt"].astype(bool) & pr.gt(0)).round(1)
-    kept["check_currency"] = kept["price"].gt(110)
+    # The parser does not establish principal currency or distinguish every share
+    # quantity from principal. Never turn these raw amounts into a quoted price.
+    kept["price"] = float("nan")
+    kept["check_currency"] = pr.notna()
+    kept["price_status"] = "unverified principal currency/units"
     admitted = set(rec.loc[rec["admitted"], "adsh"])
     kept["in_final"] = kept["adsh"].isin(admitted)
 
@@ -368,12 +381,12 @@ def panel_csv(rid: str) -> str:
     r = _get(rid)
     ok = set(r["rec"].loc[r["rec"]["admitted"], "adsh"])
     h = r["kept"][r["kept"]["adsh"].isin(ok)]
-    return h[[c for c in report.PANEL_COLS + ["filing_url"] if c in h]].to_csv(index=False)
+    return h[[c for c in report.PANEL_COLS + report.SOURCE_COLUMNS + ["filing_url"] if c in h]].to_csv(index=False)
 
 
 LOAN_COLS = ["name", "identifier", "industry", "investment_type", "is_debt", "fair_value", "principal",
-             "price", "check_currency", "interest_rate", "spread", "maturity", "release", "adsh",
-             "source_rows", "in_final", "filing_url"]
+             "price", "price_status", "check_currency", "interest_rate", "spread", "maturity", "release", "adsh",
+             "source_rows", "in_final", "filing_url"] + report.SOURCE_COLUMNS
 
 
 def _loans(rid, q=None, scope="final", debt_only=False, industries=None, min_fv=None,
@@ -409,6 +422,7 @@ def loans(rid, limit=2000, **filters) -> dict:
                     principal=("principal", "sum"), avg_price=("price", "mean"),
                     in_final=("in_final", "first"))
                .reset_index().sort_values("fair_value", ascending=False))
+    by_fund["principal"] = float("nan")  # unknown currencies/units cannot be summed
     by_fund["avg_price"] = by_fund["avg_price"].round(1)
     rows = h.sort_values("fair_value", ascending=False).head(limit)
     return {"count": int(len(h)), "funds": int(h["adsh"].nunique()),
@@ -432,7 +446,7 @@ def overview(rid) -> dict:
              .rename("fair_value").reset_index())
     return {"loans": int(len(h)), "funds": int(h["adsh"].nunique()), "fair_value": total,
             "debt_share": float(h.loc[h["is_debt"].astype(bool), "fair_value"].sum() / total) if total else 0.0,
-            "below_90": int(h["price"].lt(90).sum()), "check_currency": int(h["check_currency"].sum()),
+            "below_90": None, "price_status": "unverified principal currency/units", "check_currency": int(h["check_currency"].sum()),
             "industries": records(ind.head(15)), "funds_top": records(funds.head(15)),
             "all_industries": sorted(_get(rid)["kept"]["industry"].dropna().unique().tolist())}
 
