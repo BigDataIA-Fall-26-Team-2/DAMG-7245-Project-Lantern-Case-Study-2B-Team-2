@@ -16,4 +16,8 @@ outputs:
 triage:
   input: data/triage.csv       # human-reviewed evidence; report generation never edits this
 cleaning:
-  rules: [rule_totals, rule_cash, rule_jv_portfolio, rule_issuer_subtotals, rule_rollforward_copies]
+  rules: [rule_source_disclosures, rule_totals, rule_cash, rule_jv_portfolio, rule_issuer_subtotals, rule_rollforward_copies]
+
+source_evidence:
+  input: data/source_evidence.json
+  documents: data/source_filings

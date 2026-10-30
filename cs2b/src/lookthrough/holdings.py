@@ -2,6 +2,7 @@
 import pandas as pd
 
 from .mapping import CANONICAL
+from .evidence import COLUMNS as SOURCE_COLUMNS
 
 KEY = ["adsh", "ddate", "identifier"]
 TEXT = ["investment_type", "industry", "affiliation"]
@@ -26,7 +27,7 @@ def coalesce_holdings(df: pd.DataFrame) -> pd.DataFrame:
     `subsidiary` (the unconsolidated JV a row belongs to) joins the key when
     present, so two JVs holding the same loan stay two holdings."""
     rows = df[df["identifier"].notna()].copy()
-    fields = [f for f in list(CANONICAL) + TEXT if f in rows]
+    fields = [f for f in list(CANONICAL) + TEXT + SOURCE_COLUMNS if f in rows]
     meta = [c for c in META if c in rows]
     key = KEY + (["subsidiary"] if "subsidiary" in rows else [])
     g = rows.groupby(key, sort=False, dropna=False)

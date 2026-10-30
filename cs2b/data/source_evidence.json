@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "annotation_method": "Source-checked classifications and instrument links from filing review; not automatic semantic inference or human sign-off. Facts, precision, context and snapshot hashes are verified by the loader.",
+  "documents": {
+    "0001193125-26-214378": {
+      "file": "0001193125-26-214378.html",
+      "sha256": "24136038b4e6161f777aed9a35820e75c54aca6f3f3b0a2c2f8a8831b9e00b6a",
+      "url": "https://www.sec.gov/ix?doc=/Archives/edgar/data/2011498/000119312526214378/ck0002011498-20260331.htm"
+    },
+    "0001792509-26-000017": {
+      "file": "0001792509-26-000017.html",
+      "sha256": "edfa0e2ab7028dba61bc76287113ae6c1cf27053c9c2b2e20ebb7f6491cfcafa",
+      "url": "https://www.sec.gov/ix?doc=/Archives/edgar/data/1792509/000179250926000017/tpvc-20260331.htm"
+    },
+    "0001193125-26-222738": {
+      "file": "0001193125-26-222738.html",
+      "sha256": "054f7b42a5dc84c80640eb909cb65b4e6ba7b7ec0d81ae0f8f04633e2404181c",
+      "url": "https://www.sec.gov/ix?doc=/Archives/edgar/data/1843162/000119312526222738/lien-20260331.htm"
+    },
+    "0001521945-26-000054": {
+      "file": "0001521945-26-000054.html",
+      "sha256": "adea9e9332febca212c072d2c5ead2b2c928357768c6fed8f67f3e55de3cc1cb",
+      "url": "https://www.sec.gov/ix?doc=/Archives/edgar/data/1521945/000152194526000054/pfloat-20260331.htm"
+    }
+  },
+  "facts": [
+    {
+      "adsh": "0001193125-26-214378",
+      "release": "2026_05",
+      "period": "2026-03-31",
+      "identifier": "Investments Goldman Sachs Financial Square Government Institutional Fund",
+      "subsidiary": null,
+      "fact_id": "F_6d9b9d15-411e-4401-bd56-2cedcd2ac665",
+      "role": "cash_equivalent",
+      "instrument_key": "agl-money-market",
+      "scope": "outside_investment_total",
+      "basis": "The schedule places this fund in money market funds included in cash/cash equivalents, after Total investments. It is outside the investment total."
+    },
+    {
+      "adsh": "0001792509-26-000017",
+      "release": "2026_05",
+      "period": "2026-03-31",
+      "identifier": "Federated Government Obligations Fund | Non-Affiliated Issuer",
+      "subsidiary": null,
+      "fact_id": "f-2502",
+      "role": "cash_equivalent",
+      "instrument_key": "tpvc-money-market",
+      "scope": "outside_investment_total",
+      "basis": "The row and section say Cash Equivalents, after Total Investments in Portfolio Companies. It is outside the investment total."
+    },
+    {
+      "adsh": "0001193125-26-222738",
+      "release": "2026_05",
+      "period": "2026-03-31",
+      "identifier": "US Corporate Debt First Lien Senior Secured U.S. Debt Cannabis CO Acquisition Vehicle, LLC Facility Type Term Loan All in Rate 20.00% Benchmark F Spread 0.00% PIK 20.00% Floor 0.00% Initial Acquisition Date 9/30/2025 Maturity 12/31/2029",
+      "subsidiary": null,
+      "fact_id": "F_cd43aedb-f6c4-4f5f-bbca-a21a1c508532",
+      "role": "schedule",
+      "instrument_key": "co-acquisition-term-loan",
+      "scope": "investment",
+      "basis": "The primary schedule shows the CO Acquisition Vehicle term loan, maturity 2029-12-31, at 17,370 in thousands."
+    },
+    {
+      "adsh": "0001193125-26-222738",
+      "release": "2026_05",
+      "period": "2026-03-31",
+      "identifier": "CO Acquisition Vehicle LLC",
+      "subsidiary": null,
+      "fact_id": "F_c6981e7b-5f10-44f7-b1fe-a931faf74745",
+      "role": "rollforward_repeat",
+      "instrument_key": "co-acquisition-term-loan",
+      "scope": "investment",
+      "basis": "The affiliate roll-forward repeats this same loan at ending fair value 17,370,481 in dollars. Its issuer and reporting date match the schedule; the display precision differs."
+    },
+    {
+      "adsh": "0001521945-26-000054",
+      "release": "2026_05",
+      "period": "2026-03-31",
+      "identifier": "Credit Central Loan Company, LLC | Consumer Finance | First Brands Group - First Lien Term Loan | Automotive | WatchGuard Technologies, Inc. | High Tech Industries",
+      "subsidiary": null,
+      "fact_id": "f-714",
+      "role": "schedule",
+      "instrument_key": "watchguard-first-lien",
+      "scope": "investment",
+      "basis": "The primary schedule row names WatchGuard Technologies first-lien loan due 2029-06-30. Its XBRL context has a combined multi-company identifier."
+    },
+    {
+      "adsh": "0001521945-26-000054",
+      "release": "2026_05",
+      "period": "2026-03-31",
+      "identifier": "WatchGuard Technologies Inc | First Lien Term Loan",
+      "subsidiary": null,
+      "fact_id": "f-2194",
+      "role": "narrative_repeat",
+      "instrument_key": "watchguard-first-lien",
+      "scope": "investment",
+      "basis": "The valuation-method note repeats the fair value of the same WatchGuard first-lien loan. It is not another position. The source paragraph describes a change to yield-analysis valuation."
+    }
+  ]
+}

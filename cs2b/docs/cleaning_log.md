@@ -389,3 +389,297 @@ Shares | Equity". Example of the effect on admission: Main Street Capital (adsh
 0001396440-26-000073) keeps 185 equity holdings worth $1,251M, such as "OMi Topco, LLC |
 Preferred Member Units" ($79.0M, SOI row 136276), and reconciles at −0.04%. Test:
 `test_debt_flag_marks_equity_and_warrants_without_dropping_them`.
+
+
+## Part 3 triage follow-up: nested classification summaries
+
+The `rule_totals` extension recognizes complete classification-only labels, not
+arbitrary shared issuer prefixes. Its reviewed vocabulary consists of sector,
+country, instrument-type and affiliation labels; it contains no company names,
+filing accession numbers or expected dollar totals. Unknown labels are retained.
+Both affiliation-first paths and sector/type/affiliation suffixes are supported.
+The rule keeps candidates carrying principal, maturity, interest-rate, spread or
+PIK terms, or coalescing conflicts. A bare sector/type label with amounts also
+requires an existing detailed instrument with identical cost and fair value in
+the same filing, period, release and subsidiary. Classification headings with no
+amounts are removed only if the instrument-term/conflict guards also pass.
+
+Evidence from the May release (zero-based SOI positions):
+
+- Steele Creek, `0001213900-26-056517`: rows 129730–129732 repeat the
+  $102,000 INNIO loan as instrument, industry and country entries; row 130011
+  is the $108,642,000 portfolio summary. The human-readable schedule explicitly
+  identifies the country and portfolio totals. Removing classification summaries
+  leaves $108,642,000, equal to the reported total.
+- Remora, `0001213900-26-055928`: row 89108 is the $7,180,000 Aerospace &
+  Defense subtotal; rows 89685 and 144984 repeat the $252,495,000 portfolio.
+  The category paths contain the phrase First Lien Senior Secured Loan even
+  though they describe aggregate rows. Removing those summaries leaves
+  $252,495,000, equal to the reported total.
+- Star Mountain, `0001140361-26-021702`: rows 124132 and 53220 are
+  Non-Affiliate and Controlled investment totals, with nested type and industry
+  summaries. Rows 36017–36018 carry the Aerospace & Defense / First Lien
+  summary ($1,523,125 fair value, $901,698 cost); the detailed Delva instrument
+  at rows 63770–63771 has those same values and a maturity. Both lines were
+  checked in the original schedule. Removing the summaries leaves $382,009,613,
+  equal to the reported total.
+
+The existing test file covers nested levels, issuer/tranche preservation,
+unknown classifications, instrument terms and conflicts, and isolation of the
+short-label counterpart by filing, date, release, subsidiary, cost and value.
+No tolerance, reported-total selection or source values were changed.
+
+
+### Missing reported totals: retain the required reference (2026-10-27)
+
+Part 3 requirement 1 (handout page 5) explicitly selects the undimensioned
+`InvestmentOwnedAtFairValue` fact at the SUB period. Re-reading the raw May
+NUM and SUB tables confirms that all eight missing-total attempts lack this
+fact in the required current-period, USD, instant context. Five have
+`InvestmentsFairValueDisclosure`; one has
+`InvestmentOwnedAndCashEquivalentsFairValue`; two have neither. Kayne also
+has `LongTermInvestments`, with a different value from its disclosure fact.
+
+These are diagnostic evidence, not permitted fallback references. No
+selector, cleaning rule or tolerance changes are made in this batch. The
+eight exclusions retain blank filed values and gaps, and their unknown
+dollars remain outside the dollar denominator. Their persistent triage
+notes record this decision and retain draft status pending human review.
+The audit establishes absence in the supplied extract; it does not assert
+that the original filing has no visible total or that other tags have
+equivalent scope. It also does not resolve other holdings errors.
+
+### Identifier-mapping investigation (2026-10-27; no production change)
+
+All three zero-holdings attempts have usable filed reference totals, but no
+current SOI row has the standard `Investment, Identifier Axis`. The loader
+selects a fixed set of axes, and `coalesce_holdings` excludes rows whose canonical
+identifier is null. This is an upstream mapping limitation, not evidence that
+these funds own no investments. The following findings were checked against the
+complete raw SOI columns, not only the canonical parser output. Source positions
+are zero-based within the indicated release. Original-filing semantic validation
+and any proposed mapping implementation remain pending.
+
+- **Equus**, `0001096906-26-000571`, April release: 11 current rows;
+  filed reference $17,276,000. `Related Party Transaction Axis` contains both
+  `Morgan E&P, Inc. Houston, TX [Member]` (row 152) and
+  `Senior Secured Promissory Note [Member]` (154); `Plan Name Axis` carries
+  Energy and Environmental summaries (4374–4375). CitroTech appears in the
+  related-party field at 3570, while class/summary information occupies other
+  rows. A nonempty-axis fallback would mix issuers, instruments and summaries.
+  Recovering reliable holdings requires original-context validation; do not
+  infer ownership by neighboring SOI row positions.
+- **Partners Group**, `0001398344-26-009326`, May release: 400 current rows;
+  filed reference $483,283,000. Company names appear in `Industry Sector Axis`
+  on some rows (AAH Topco at 4880) and `Investment Type Axis` on others (High
+  Bar Brands at 5958). Industry summaries also occupy the former axis (5955).
+  `InvestmentsIdentifier` contains an affiliation label, not an investment ID.
+  There are zero currently mapped fair-value rows, but 185 raw rows have
+  `Investments, Fair Value Disclosure`; these include summaries and details.
+  Fixing only identifiers would therefore still leave missing values. A safe
+  correction needs validated axis roles and value-tag semantics, with separate
+  instruments and summaries preserved for downstream cleaning.
+- **SuRo**, `0001493152-26-021430`, May release: 115 current rows;
+  filed reference $388,534,651. Of these, 84 carry `Legal Entity Axis`, with
+  37 distinct labels. `Class of Stock Axis` distinguishes instruments: GrabAGun
+  common stock at 961 ($1,805,260) and warrants at 983 ($566,109), for example.
+  Company-only identifiers would merge these different investments. This is
+  the clearest candidate for a validated composite identifier using issuer and
+  instrument context, preserving release/source rows and refusing ambiguous
+  contexts. Those raw-row counts are not verified holding counts.
+
+These are Part 1 mapping concerns feeding Part 3. No production fallback, inferred
+holding, admission change or reviewed-triage designation was made. Investigate
+SuRo's original filing and complete context keys first before proposing a
+reusable mapping rule; retain the other cases as documented exclusions until
+there is sufficient evidence for a safe correction.
+
+### SuRo original-filing validation (2026-10-27)
+
+Source: https://www.sec.gov/Archives/edgar/data/1509470/000149315226021430/form10-q.htm
+(accession `0001493152-26-021430`, period 2026-03-31).
+Validation only: no parser or admission changes.
+
+The original schedule confirms separate GrabAGun common shares ($1,805,260)
+and warrants ($566,109), followed by an issuer total of $2,371,369. Thus legal
+entity alone is not a holding identifier, and issuer-only totals must not become
+additional holdings. The undimensioned reference is $388,534,651, XBRL fact
+`Fact000065`, context `AsOf2026-03-31`; the schedule total agrees.
+
+Of 84 current raw SOI rows carrying Legal Entity Axis, 67 also carry a stock-class
+or debt-instrument axis. They produce 67 distinct combinations of entity, stock
+class, debt instrument and consolidated-entity label, but this does NOT mean
+67 distinct investments. Their nonmissing fair values sum to $395,472,997,
+$6,938,346 above the reference. Seventeen of those rows have missing fair value.
+
+The original filing confirms repeated StormWind Series A/B/C/D facts under two
+context families, with different instrument and affiliation member labels:
+
+- Primary schedule `Fact000899/893/887/881`: $44,734 / $2,152,809 /
+  $4,342,090 / $398,713 (raw SOI 1049/1066/1087/1096).
+- Repeated facts `Fact002376/2370/2364/2358`: the same four values
+  (raw SOI 1031/1056/1073/1094).
+- Their sum is $6,938,346, also the issuer total `Fact000905` (row 2381).
+
+Removing one evidenced duplicate family makes the diagnostic nonmissing-value
+sum equal the reference, but is not sufficient for admission. For example,
+Curious.com common stock appears with a dash in the schedule and an explicitly
+nil XBRL fair-value fact (`xdx2ixbrl0933`, `xs:nil="true"`). The extractor's
+missing value is faithful to that tag; treating every missing value as zero
+would invent data. All 17 missing-value candidates still need individual
+classification before claiming a complete reconstructed holdings table.
+
+Conclusion: an issuer-plus-instrument fallback alone is unsafe. A future Part 1
+change needs context-aware instrument identity, supported handling of repeated
+context families, exclusion of issuer summaries, and explicit missing/nil-value
+handling. Equal amounts alone must not justify deduplication. The diagnostic
+arithmetic is evidence for investigation, not a production rule or proof that
+SuRo is ready to admit. SuRo remains excluded and triage remains draft.
+
+
+### SuRo: classification of all 17 missing-value candidates (2026-10-27)
+
+Source: [SuRo March 2026 filing](https://www.sec.gov/Archives/edgar/data/1509470/000149315226021430/form10-q.htm).
+All 17 source facts are current-period `InvestmentOwnedAtFairValue` facts
+explicitly tagged `xs:nil="true"`. The 15 primary schedule investments show
+a dash in the visible fair-value column. The other two rows repeat Maven
+Series B/C in the affiliate roll-forward table, whose closing values also
+display dashes. These are not 17 missing numeric values lost by the parser.
+
+| May SOI row (zero-based) | Investment | Original filing fact ID | Classification |
+|---:|---|---|---|
+| 951 | Curious.com — common | `xdx2ixbrl0933` | Primary schedule investment; nil |
+| 959 | Fullbridge — common | `xdx2ixbrl0838` | Primary schedule investment; nil |
+| 963 | Orchard — common | `xdx2ixbrl0786` | Primary schedule investment; nil |
+| 969 | Trax — common | `xdx2ixbrl0821` | Primary schedule investment; nil |
+| 971 | Treehouse — common | `xdx2ixbrl0855` | Primary schedule investment; nil |
+| 1021 | Trax — Investec preferred | `xdx2ixbrl0827` | Primary schedule investment; nil |
+| 1025 | Orchard — Series 1 preferred | `xdx2ixbrl0780` | Primary schedule investment; nil |
+| 1027 | Orchard — Series 2 preferred | `xdx2ixbrl0774` | Primary schedule investment; nil |
+| 1033 | BettorView — Series A-1 preferred | `xdx2ixbrl0910` | Primary schedule investment; nil |
+| 1043 | CTN/Catona — Series A preferred | `xdx2ixbrl0861` | Primary schedule investment; nil |
+| 1062 | Maven — Series B preferred | `xdx2ixbrl0922` | Primary schedule investment; nil |
+| 1064 | Maven — Series B preferred | `xdx2ixbrl2347` | Repeated affiliate roll-forward entry; nil |
+| 1075 | Maven — Series C preferred | `xdx2ixbrl0916` | Primary schedule investment; nil |
+| 1077 | Maven — Series C preferred | `xdx2ixbrl2341` | Repeated affiliate roll-forward entry; nil |
+| 1091 | CTN/Catona — Series C-3 preferred | `xdx2ixbrl0867` | Primary schedule investment; nil |
+| 1098 | Orchard — Series D preferred | `xdx2ixbrl0768` | Primary schedule investment; nil |
+| 2396 | Fullbridge — promissory note | `xdx2ixbrl0844` | Primary schedule investment; nil |
+
+Maven Series B rows 1062/1064 correspond to the same 49,505 shares; Series C
+rows 1075/1077 correspond to the same 318,979 shares. The filing labels the
+repeated entries in the affiliate roll-forward, supporting their classification
+as repetitions rather than additional positions. The repeated rows lack cost;
+the primary schedule supplies costs of $217,206 and $2,000,447 respectively.
+
+Disposition: preserve nil as missing, retain the 15 distinct investment
+entries for any future reconstruction, and treat the two roll-forward entries
+as evidenced repetitions. A dash/nil is not a machine-readable numeric zero;
+no blanket zero-fill is authorized by this evidence. There is no observed
+non-nil numeric fair-value fact lost for these 17 contexts. This finding does
+not prove that every other SuRo context has been correctly reconstructed.
+The current comparison sums available values and rejects an all-missing sum;
+partial missing values alone do not automatically exclude a filing. Admission
+after a future mapping/deduplication fix must be assessed by rerunning, not inferred
+from the presence of nil values. No production code, source values,
+admission results or human-review status were changed in this investigation.
+
+
+### Current exclusion-note refresh (2026-10-29)
+
+The merged DVC pipeline was run with the local cleaning changes: 94 admitted
+of 177 attempted; 83 excluded. All 83 persistent notes now use the current
+holdings/filed totals, an explicit exclusion reason, and a trace example.
+Historical notes for four now-admitted filings remain preserved.
+
+Twenty exclusions have specific supported explanations: eight absent required
+reference facts, three unmapped-identifier cases, FS KKR unfunded adjustments,
+TCW Star source scaling, and seven newly investigated cases documented in the
+triage input (AGL, TriplePoint Private Venture, Apollo Origination II, Runway,
+Commonwealth, Prospect Floating Rate and Chicago Atlantic). Diagnostic arithmetic
+is recorded separately from production changes; none of these investigations
+automatically changes admission.
+
+For the other 63, the exclusion is verified but its underlying cause remains
+unresolved. Their notes say this explicitly; a retained row shown as a trace
+example is not asserted to be the cause. Prior resolved Net Assets/Sub Total
+issues are not reused as explanations of StepStone/Saratoga's remaining gaps.
+All notes retain draft status for human review. A populated note is not the
+same as a completed source investigation, and no review flags were changed
+merely to make the acceptance check pass.
+
+
+### Guarded pattern implementation and rerun (2026-10-29)
+
+Extended the existing totals rule to an exact Co-investment/Co-investments
+classification label, with the existing instrument-term and conflict guards.
+Extended roll-forward issuer normalization only for known classification prefixes
+and the Investment Type delimiter. Same-filing/date, roll-forward opening evidence,
+compatible instrument form and one-counterpart-per-copy requirements remain.
+Release/subsidiary matching and equal first-out/last-out priority are now required.
+No company names, accession IDs, reported totals or target gaps enter the rules.
+
+The full DVC rerun admits 97/177 (previously 94), with no admitted filing lost.
+Exactly three previously retained rows are removed: Apollo Origination II's
+Co-investment summary, Runway's Runway-Cadma roll-forward copy, and Commonwealth's
+Kent Water first-out roll-forward copy. Each now reconciles exactly. The tighter
+tranche guard also retains one CION JP Intermediate B first-out row that previously
+matched without tranche-priority evidence; CION remains excluded and its note
+and numerical snapshot are updated. This is conservative retention, not a claim
+that the restored row is necessarily a distinct investment.
+
+Four proposed recoveries are deliberately not implemented: AGL and TriplePoint
+cash classification requires source headings absent from the canonical/raw SOI
+rows; Chicago requires documented precision metadata; Prospect's combined-company
+identifier and missing opening evidence do not satisfy the guarded duplicate
+contract. These need additional evidence propagated through parsing. Hardcoded
+fund names, arbitrary numerical tolerances or deleting by observed gap would not
+be reusable corrections. Partial missing values remain missing; no zero-fill.
+
+
+### Four remaining recoveries: exact source-context audit (2026-10-29)
+
+The original current-period fact identifiers and source context strings were
+matched against the four current excluded filings. This closes the cause
+investigation for these four; it does not implement a general parser correction.
+
+- `0001193125-26-214378`: Original fact F_6d9b9d15-411e-4401-bd56-2cedcd2ac665, period 2026-03-31, InvestmentOwnedAtFairValue, USD, scale=3, decimals=-3: 29,454. Its typed identifier exactly matches SOI row 97318. The visible section labels the fund as a money-market position included in cash/cash equivalents, outside Total investments. Required new evidence: cash section membership. Inspected HTML SHA-256 `24136038b4e6161f777aed9a35820e75c54aca6f3f3b0a2c2f8a8831b9e00b6a`.
+- `0001792509-26-000017`: Original fact f-2502, context c-657, period 2026-03-31, InvestmentOwnedAtFairValue, USD, scale=3, decimals=-3: 9,078. Its typed identifier exactly matches SOI row 70748. The visible row and section label it Cash Equivalents, after Total Investments in Portfolio Companies. Required new evidence: cash section membership. Inspected HTML SHA-256 `edfa0e2ab7028dba61bc76287113ae6c1cf27053c9c2b2e20ebb7f6491cfcafa`.
+- `0001193125-26-222738`: Original schedule fact F_cd43aedb-f6c4-4f5f-bbca-a21a1c508532 uses scale=3, decimals=-3 and displays 17,370; affiliate roll-forward fact F_c6981e7b-5f10-44f7-b1fe-a931faf74745 uses decimals=0 and displays 17,370,481. Both are current-period USD facts, and their identifiers match SOI rows 167231;167232 and 50464;50465. The $481 difference is within the schedule precision of $500. Required new evidence: source precision and repeated-disclosure identity. Inspected HTML SHA-256 `054f7b42a5dc84c80640eb909cb65b4e6ba7b7ec0d81ae0f8f04633e2404181c`.
+- `0001521945-26-000054`: Original schedule fact f-714, context c-120, reports $3,407,773. Narrative valuation-note fact f-2194, context c-624, repeats the same WatchGuard first-lien-loan value while describing a valuation-method change. Both are current-period USD facts with decimals=0; context identifiers match SOI rows 54171 and 170128. The second fact is a narrative restatement, not another position or an affiliate roll-forward. Required new evidence: narrative-versus-schedule role and instrument identity. Inspected HTML SHA-256 `adea9e9332febca212c072d2c5ead2b2c928357768c6fed8f67f3e55de3cc1cb`.
+
+Diagnostic sums after removing the independently evidenced non-holding/copy:
+AGL $1,249,444,000 (exact); TriplePoint $385,098,000 (exact); Prospect
+$63,037,631 (exact); Chicago $363,967,000 vs $363,966,713 (gap
++0.0000788534%). These computations use the current 97-admitted run.
+
+Safe implementation boundary: parse source roles and precision into versioned
+evidence, bind evidence to filing/period/context and input fingerprint, and match
+repeated instruments unambiguously. No rule may infer cash scope from a fund name,
+use a blanket $500 tolerance, treat every narrative fact as disposable, or select
+a removal because its value closes the reconciliation gap. Evidence absent in a
+future release must leave the candidate unchanged. These four need a source-
+evidence input extension rather than a looser version of the existing five rules.
+
+### Implemented source-evidence extension (2026-10-29)
+
+The four recoveries above are now implemented and verified locally. Six curated
+fact annotations in `data/source_evidence.json` bind the classifications and
+instrument links to four original HTML snapshots tracked by DVC. Parsing checks
+their fingerprints, fact contexts and values, then carries source roles and
+XBRL decimals through coalescing. This is a curated evidence input, not an
+automatic semantic classifier; unknown future filings are left unchanged.
+
+The new first rule, `rule_source_disclosures`, removes exactly the two
+outside-total cash positions and the two uniquely linked repeat disclosures.
+It requires explicit scope, conflict-free metadata, matching filing/date/release/
+subsidiary/document, distinct fact IDs and source-precision agreement. Repeat
+rows with cost or principal are retained. Ambiguous groups are retained.
+No filed total or target gap is consulted, and retained amounts are unchanged.
+
+The rerun admits 101/177, versus 97/177 before this extension, with no regression.
+AGL, TriplePoint and Prospect match exactly; Chicago differs by $287
+(0.0000788534%). All other 173 filing results are identical. The panel now has
+36,443 holdings and 39,901 raw-row references; dollar coverage is 44.4%.
+The four historical triage notes record the implemented correction without
+claiming human review. Seventy-six current exclusions remain draft/incomplete.

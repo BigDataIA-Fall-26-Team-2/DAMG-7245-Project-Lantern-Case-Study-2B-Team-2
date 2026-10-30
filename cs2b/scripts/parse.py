@@ -29,7 +29,8 @@ work = ROOT / "outputs" / "work"
 work.mkdir(parents=True, exist_ok=True)
 
 dirs = paths.release_dirs(P, ROOT)
-inputs = combine.load_inputs(dirs, num_tags=[reconcile.FV_TAG], custom_fv=True)
+inputs = combine.load_inputs(dirs, num_tags=[reconcile.FV_TAG], custom_fv=True,
+                             **paths.source_evidence_paths(P, ROOT))
 sub, num = inputs["sub"], inputs["num"]
 canon = holdings.split_periods(inputs["canon"], sub)
 h = holdings.coalesce_holdings(canon)
