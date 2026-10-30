@@ -8,3 +8,7 @@ pytest>=8
 dvc[s3]>=3.50
 # Optional, for notebook 07 (verify your dependency). Pin the exact version your instructor announces:
 # edgartools==<pinned version>
+fastapi>=0.110
+uvicorn>=0.29
+streamlit>=1.35
+requests>=2.31
