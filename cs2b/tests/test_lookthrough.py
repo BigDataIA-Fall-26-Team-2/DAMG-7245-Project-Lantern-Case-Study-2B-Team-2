@@ -872,3 +872,18 @@ def test_source_disclosures_require_unique_identity_scope_and_source_precision()
     assert not clean.rule_source_disclosures(changed)[0].iloc[2]
     changed = h.copy(); changed.loc[2, 'identifier'] = 'Short-term investment treasury fund'
     assert not clean.rule_source_disclosures(changed)[0].iloc[2]
+
+
+def test_spot_sample_is_independent_of_input_order_and_fair_value_ties():
+    import runpy
+    sample = runpy.run_path(str(ROOT / 'scripts/spot_check_sample.py'))['select_sample']
+    rows = [dict(adsh=f'A{i:02}', release='2026_05', identifier=f'loan {j}',
+                 source_rows=str(i * 10 + j), fair_value=100.)
+            for i in range(12) for j in range(4)]
+    panel = pd.DataFrame(rows)
+    first = sample(panel).reset_index(drop=True)
+    second = sample(panel.sample(frac=1, random_state=123)).reset_index(drop=True)
+    pd.testing.assert_frame_equal(first, second)
+    assert len(first) == 20 and first.adsh.nunique() == 10
+    assert first.groupby('adsh').size().eq(2).all()
+    assert sample(panel.iloc[:0]).empty

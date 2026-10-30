@@ -75,3 +75,38 @@ Current rows: 96,373. Rows without an identifier: 22,987 (dropped by `coalesce_h
 **Remaining conflicts by field:** pik_rate 257, interest_rate 8, cost 3, maturity 3, fair_value 2; principal, spread, pct_net_assets and the text fields 0.
 
 **Resolution rule.** Within a holding, keep the first non-null value in SOI row order (`coalesce_holdings`), and record `n_conflicts`. The 2 fair-value conflicts are both "Blue Owl Cross-Strategy Opportunities LLC (BOCSO)", in Blue Owl Capital Corp (adsh 0001655888-26-000033, SOI rows 44735, 185194, 185819) and Blue Owl Credit Income Corp (adsh 0001812554-26-000027, rows 44737, 185196, 185821): values $378.0M and $24.7M. The rule keeps $378.0M. The sister funds report identical figures, so these may describe BOCSO as a whole rather than each fund's position; to be verified in the filings. pik_rate conflicts do not affect fair-value reconciliation and are left to the first-value rule.
+## Source evidence extension (Part 3 follow-up, 2026-10-29)
+
+The seven-rule pipeline optionally enriches canonical rows from the configuration
+`source_evidence.input` and `source_evidence.documents`. The current inputs are
+`data/source_evidence.json` and four original filing HTML snapshots in
+`data/source_filings/`, tracked by `data/source_filings.dvc`. These supplement
+SOI/NUM; they do not replace original amounts or supply guessed fair values.
+
+| Field | Meaning |
+|---|---|
+| `source_role` | Curated role: schedule, cash_equivalent, rollforward_repeat or narrative_repeat |
+| `source_scope` | investment, or outside_investment_total for the evidenced cash position |
+| `source_instrument_key` | Curated identity linking a schedule fact to its repeated disclosure |
+| `source_fact_id` | Original inline-XBRL fact ID |
+| `source_document_sha256` | Fingerprint of the immutable original HTML snapshot |
+| `source_url` | Original filing link |
+| `source_decimals` | Precision read from the original XBRL fact, after respecting its scale |
+
+`evidence.attach` binds annotations to filing, release, reporting date, identifier
+and subsidiary in the canonical input. It verifies the snapshot, fact tag, CIK,
+instant date, investment identifier, USD unit, numeric format and extracted value.
+A stale or invalid annotation for a selected filing raises an error.
+Unselected releases and unannotated filings receive no classification-based drop.
+
+Coalescing preserves these fields and counts conflicting metadata. The guarded
+cleaning rule requires conflict-free evidence, a unique schedule/repeat pair,
+distinct fact IDs and matching filing/date/release/subsidiary/document.
+Repeat rows with cost or principal are retained. The fair-value difference must
+fit the combined precision intervals: 0.5 × (10^(-d1) + 10^(-d2)).
+This is source precision, not a fixed dollar allowance or the 1% reconciliation
+tolerance. The retained schedule amount is never rewritten.
+
+The admitted panel retains source metadata where supplied, alongside `release`
+and `source_rows` for every holding. The annotations are curated, not an
+automatic semantic classifier, and do not imply human triage sign-off.

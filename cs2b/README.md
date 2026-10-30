@@ -49,7 +49,7 @@ Public data only: the SEC BDC data sets (https://www.sec.gov/data-research/sec-m
 From `cs2b`, restore the versioned inputs and run the baseline:
 
 ```bash
-dvc pull data/raw.dvc
+AWS_PROFILE=lantern dvc pull
 python tools/baseline.py
 ```
 
@@ -70,7 +70,7 @@ current filings fails rather than silently reducing coverage. An entirely empty
 selection fails with a diagnostic rather than producing a misleading baseline.
 
 Outputs are `reports/baseline.json`, `reports/baseline_reconciliation.csv`, and
-`reports/baseline_diagnostics.csv`. They use the ordered `cleaning.rules` selection (the five reviewed Part 2 rules) and
+`reports/baseline_diagnostics.csv`. They use the ordered `cleaning.rules` selection (currently seven rules, including the Part 3 source-evidence extension) and
 are not the final panel or completed triage. The existing single-directory
 `run_baseline` API remains available for the starter notebooks and smoke tool.
 The original notebooks and smoke tool still use one directory. The self-check
@@ -106,10 +106,12 @@ human-readable spot checks. Cleaning integration is complete; filing-level evide
 ### Generate the preliminary panel and reports
 
 ```bash
-python tools/baseline.py --write-outputs
+AWS_PROFILE=lantern dvc pull
+dvc repro
+dvc metrics show
 ```
 
-This uses the configured cleaning rules, the five reviewed Part 2 rules. It produces
+This runs the seven configured cleaning rules through the integrated pipeline. It produces
 `outputs/panel/holdings.parquet`, `reports/coverage.csv`, `reports/coverage.json`,
 `reports/coverage.md`, `reports/triage.md`, and `reports/cleaning_log.csv`.
 The panel retains `is_debt`, `release` and semicolon-separated `source_rows`, includes only
@@ -117,16 +119,19 @@ current holdings of admitted filings, and is checked against admitted totals
 before being written. Parquet support is required; there is no silent CSV fallback.
 The CSV uses the eight handout columns. JSON and Markdown use the same coverage
 calculation, including attempted filings without usable totals and the separate
-list of SUB filings without SOI rows. The panel is DVC-tracked by
-`outputs/panel.dvc`; restore the committed artifact with `dvc pull outputs/panel.dvc`.
-After intentional regeneration, run `dvc add outputs/panel` and
-`dvc push outputs/panel.dvc`, then commit the updated pointer with the reports.
-Generating reports alone does not publish them to S3. Part 5's `dvc repro` stage
-integration remains separate team work.
+list of SUB filings without SOI rows. The panel and intermediate tables are outputs in
+`dvc.yaml`, with versions recorded in `dvc.lock`. Restore them with `dvc pull`;
+regenerate them with `dvc repro`; publish regenerated artifacts with
+`AWS_PROFILE=lantern dvc push` and commit the updated lockfile and reports.
+There is no separate `outputs/panel.dvc`. Do not add a second DVC owner for
+pipeline outputs. Generating reports alone does not publish them to S3.
+`python tools/baseline.py` and `python tools/rule_impact.py` regenerate the
+supplementary baseline and rule-impact reports after an intentional rule change.
+
 
 Human triage belongs in the Git-tracked CSV configured by `triage.input`
-(default `data/triage.csv`), not in generated reports. The supplied file is an
-empty template; no real filing has been marked reviewed by this implementation.
+(default `data/triage.csv`), not in generated reports. The file contains draft investigations and historical recovery notes.
+No real filing has been falsely marked reviewed to satisfy acceptance.
 
 Each input row contains:
 - `adsh`: the filing accession number (one unique row per filing).
@@ -228,8 +233,9 @@ The local rerun recovers AGL, TriplePoint Private Venture, Chicago Atlantic and
 Prospect Floating Rate: 97 → 101 admitted. Before integrating PR #41, the other 173 filing results and all
 retained holding values were unchanged by the source-evidence extension. The four recovered notes retain their
 pre-fix evidence as history; the remaining 76 exclusions still have draft triage.
-The new snapshots and rebuilt artifacts must be uploaded with an approved
-`dvc push` before teammates can reproduce this revision from a fresh clone.
+The new snapshots and rebuilt artifacts were uploaded on 2026-10-29 with
+`AWS_PROFILE=lantern dvc push`; DVC reported the cache and remote in sync.
+A fresh clone still needs authorized AWS credentials to restore them.
 
 PR #41's unfunded-commitment rule is integrated in this branch. The combined
 seven-rule run still admits 101 filings with 44.4% dollar coverage, and removes
@@ -237,3 +243,22 @@ seven-rule run still admits 101 filings with 44.4% dollar coverage, and removes
 contains 34,670 holdings and 38,053 source-row references. Existing draft triage
 snapshots are historical; current comparison values are in the generated
 coverage and triage reports. No draft has been promoted to reviewed.
+
+### Part 3 documentation and review status
+
+- [Lokesh's AI engineering log](docs/ai_engineering_log_lokesh.md): AI assistance,
+  decisions, corrections, validation and remaining uncertainty.
+- [Schema](docs/schema.md): canonical fields and source-evidence metadata.
+- [Cleaning evidence](docs/cleaning_log.md): historical investigations and implemented rules.
+- [Shared codelab](https://docs.google.com/document/d/1GLzlaeA_w7YedAElnZQFLLQcgpPO9HXLntwK72rK4Ck/edit):
+  shared team document. [Part 3 section](docs/codelab_part3.md) contains the
+  walkthrough and commands, published to the codelab on 2026-10-29.
+- PR #42 snapshot `17ecff2`: 49/49 tests pass, all 25 deliberate rule breaks
+  caught, 9/10 structural checks pass. The remaining failure is incomplete
+  evidence review for 76 exclusions. Rule freeze does not constitute triage sign-off.
+
+The main-release results above are current for that snapshot. The second-release
+and economics reports describe earlier five-rule experiments; their timings,
+sample results and cost assumptions are not fresh measurements of the seven-rule
+pipeline. Review the evidence and current totals before promoting any triage
+entry to `reviewed`. Do not change status just to make acceptance pass.
