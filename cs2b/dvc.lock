@@ -191,8 +191,8 @@ stages:
     deps:
     - path: data/triage.csv
       hash: md5
-      md5: 521d236e87b618c82229f24fa29146e6
-      size: 65914
+      md5: ad2c8e792de38ba9e9158ed9deffa1d1
+      size: 104275
     - path: outputs/work/diag.parquet
       hash: md5
       md5: 5aadba8cf92b849b687a20c859495925
@@ -227,8 +227,8 @@ stages:
       size: 6869
     - path: src/lookthrough/report.py
       hash: md5
-      md5: d027b8b16b4922cd97fe4d7d564f6bd2
-      size: 10639
+      md5: 9406d07819295269617c7b4cde62c90a
+      size: 10762
     - path: src/lookthrough/tables.py
       hash: md5
       md5: 5b732399c36e58635fb42b454a6b1df9
@@ -252,17 +252,78 @@ stages:
       size: 928
     - path: reports/coverage.csv
       hash: md5
-      md5: 17b9ba95da5103f58d743fcdfa104a28
-      size: 18292
+      md5: 46a03119c18ff867995e75a7ab19f4eb
+      size: 18047
     - path: reports/coverage.json
       hash: md5
-      md5: 6ed7b6dfbc220c85a7377bfc762d7e5d
-      size: 2598
+      md5: 4bf9a9f74b4b8c3a28cd07344422da47
+      size: 774
     - path: reports/coverage.md
       hash: md5
-      md5: 3e0fe99cf31b06b4779e5664e85d6626
-      size: 21463
+      md5: 037fe960d137038428062dff5997b79d
+      size: 21291
     - path: reports/triage.md
       hash: md5
-      md5: a2aa70588a17e17b7b9a4afad1a38952
-      size: 90461
+      md5: 20e7f576b19dc4d5bf89ff0d3cffe03f
+      size: 128574
+  affiliation:
+    cmd: python scripts/affiliation.py
+    deps:
+    - path: data/raw
+      hash: md5
+      md5: 8a010c33fa74fe29aee9f0737e7d8657.dir
+      size: 664301503
+      nfiles: 33
+    - path: outputs/work/kept.parquet
+      hash: md5
+      md5: 71db9746fa1f5783b91a409bce010857
+      size: 2756529
+    - path: outputs/work/num.parquet
+      hash: md5
+      md5: 7dd3971384038727c475f127dbdae979
+      size: 7731009
+    - path: outputs/work/sub.parquet
+      hash: md5
+      md5: b4654ef7e201358999965412fd73d01b
+      size: 50600
+    - path: scripts/affiliation.py
+      hash: md5
+      md5: c7001b95e8be46f3033e4d2c9f41c082
+      size: 2325
+    - path: src/lookthrough/affiliation.py
+      hash: md5
+      md5: 45eec1ffed82fcb13f3c28c4561e074d
+      size: 4564
+    - path: src/lookthrough/mapping.py
+      hash: md5
+      md5: f0abbef253b706e29550237a7e364491
+      size: 3559
+    - path: src/lookthrough/paths.py
+      hash: md5
+      md5: 5ac0c16a58b1417a70047a56728a5e32
+      size: 2509
+    - path: src/lookthrough/reconcile.py
+      hash: md5
+      md5: 0c799152bb4ff2d703c25e4abccbfc77
+      size: 6869
+    params:
+      params.yaml:
+        data:
+          use_fixture: false
+          raw_dir: data/raw
+          fixture_dir: data/fixture
+        outputs.reports: reports
+        reconcile.tolerance: 0.01
+        releases:
+        - '2026_04'
+        - '2026_05'
+        - '2026_06'
+    outs:
+    - path: reports/affiliation.csv
+      hash: md5
+      md5: 9fa74b07d110dade7949700695d94d36
+      size: 55510
+    - path: reports/affiliation.md
+      hash: md5
+      md5: da381237e19630cbbc87ac0e23ef8364
+      size: 1187

@@ -153,3 +153,45 @@ execution; seven cleaning examples traced. DVC outputs and lockfile regenerated.
 The structural check is 9/10, with exactly 65 incomplete notes. No claim of 10/10
 or final triage completion is made. Final tag must be `cs2b-submission` after merge;
 the older `Submission` tag and deployed code have not been changed by this audit.
+
+
+## Completed exclusion-decision review and stretch audit — 2026-10-30
+
+After the user authorized completing the reviews and pushing a PR, integrated
+main through 884a333 (including Guna's issue draft and Dhruvi's cleaning note).
+Preserved the resource-based economics and included Shravya's reported 9.7-second
+laptop timing with attribution; it is not a measured EC2 timing.
+
+Independently audited all 76 current exclusions against raw tables: checked
+30,910 retained SOI references, matching filing/date, unchanged retained amounts,
+missing mapped values, sums and raw current undimensioned USD NUM references.
+FS KKR's three negative type-level adjustments exactly offset its gap. Reviewed
+all exclusion decisions and bound notes to current totals. For 64 `other` cases,
+the notes explicitly say the underlying cause remains unresolved: source amount
+traceability and exclusion correctness are established, not completeness of the
+source schedule or freedom from repeated disclosures. No claim of 64 recovered
+filings or manual review of every human-readable original is made. The user will
+review these explanations in the PR. The checker was not weakened.
+
+Added optional affiliation reconciliation using explicit standard SOI enumeration
+members and current NUM category totals. Unknown/custom/conflicting membership,
+missing values and conflicting totals cannot pass. The feature leaves the primary
+panel unchanged. Added focused regression tests for these guards.
+
+Custom-tag screen found 34 exact missing-value candidates in two TCW filings.
+A counterfactual rerun through all seven rules recovered zero filings and worsened
+both gaps. Existing source investigation identifies roll-forward balances. Kept
+these out of production and documented candidate rows and before/after gaps;
+custom-tag stretch completion is not claimed. This limitation is evidence-based,
+not bypassed for bonus credit. No external issue, tag change, or EC2 deployment
+was performed.
+
+Final validation for this follow-up: 57/57 tests and 10/10 self-checks pass;
+`dvc repro`, `dvc push`, and `dvc status` complete with the cache/remote and
+pipeline up to date. Latest main reserialized all eight work Parquet tables;
+comparison with its S3 objects confirms identical values, dtypes, and indexes.
+The audited local serialization remains recorded in this branch's lockfile.
+Affiliation output: 267 reported categories across 134 filings, one fully
+classified category matches, 266 remain explicitly incomplete. The additional
+stage is outside the teammate's earlier 9.7-second timing. No fresh-clone or EC2
+validation is claimed; the user will perform those after merging.

@@ -112,3 +112,26 @@ stages:
     metrics:
       - ${outputs.reports}/coverage.json:
           cache: false
+
+  affiliation:
+    cmd: python scripts/affiliation.py
+    deps:
+      - scripts/affiliation.py
+      - src/lookthrough/affiliation.py
+      - src/lookthrough/mapping.py
+      - src/lookthrough/paths.py
+      - src/lookthrough/reconcile.py
+      - outputs/work/kept.parquet
+      - outputs/work/num.parquet
+      - outputs/work/sub.parquet
+      - ${data.raw_dir}
+    params:
+      - releases
+      - data
+      - outputs.reports
+      - reconcile.tolerance
+    outs:
+      - ${outputs.reports}/affiliation.csv:
+          cache: false
+      - ${outputs.reports}/affiliation.md:
+          cache: false

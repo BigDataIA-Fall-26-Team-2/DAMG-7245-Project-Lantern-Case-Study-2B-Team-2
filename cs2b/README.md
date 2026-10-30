@@ -100,10 +100,10 @@ Coverage retains every attempted filing. It also identifies SUB filings without
 SOI rows and counts attempts without a usable filed total. Dollar coverage uses
 only known positive filed totals: dollars for unresolved filings are unknown,
 not estimated as zero. These safeguards do not replace filing-level triage or
-human-readable spot checks. Cleaning integration is complete; filing-level evidence review remains pending.
+human-readable spot checks. Cleaning integration and exclusion-decision evidence review are complete; 64 underlying causes remain unresolved.
 
 
-### Generate the preliminary panel and reports
+### Generate the panel and reports
 
 ```bash
 AWS_PROFILE=lantern dvc pull
@@ -130,7 +130,7 @@ supplementary baseline and rule-impact reports after an intentional rule change.
 
 
 Human triage belongs in the Git-tracked CSV configured by `triage.input`
-(default `data/triage.csv`), not in generated reports. The file contains draft investigations and historical recovery notes.
+(default `data/triage.csv`), not in generated reports. The file contains reviewed current exclusion decisions; recovered filings’ historical notes are in `data/triage_recovered.csv`.
 No real filing has been falsely marked reviewed to satisfy acceptance.
 
 Each input row contains:
@@ -198,9 +198,9 @@ The panel contains 34,670 holdings with 38,053 raw SOI row references, retaining
 3,972 holdings flagged as non-debt. Eight attempts lack a usable filed total;
 six SUB filings have no SOI rows and are reported separately.
 
-The 76 excluded filings still require evidence-backed triage. No entries have
-been falsely marked reviewed to pass acceptance. This is a preliminary artifact;
-the triage acceptance check remains failing until those investigations are complete.
+At this 2026-10-29 snapshot, all 76 exclusions still required evidence review and
+the triage check failed. The 2026-10-30 audit below supersedes that status; it does
+not change the admitted panel or claim that every underlying cause is known.
 
 
 The local triage follow-up extends `rule_totals` to exact net-assets labels,
@@ -233,7 +233,8 @@ The local rerun recovers AGL, TriplePoint Private Venture, Chicago Atlantic and
 Prospect Floating Rate: 97 → 101 admitted. Before integrating PR #41, the other 173 filing results and all
 retained holding values were unchanged by the source-evidence extension. The four recovered notes retain their
 pre-fix evidence as history in `data/triage_recovered.csv`. Of the 76 current exclusions,
-11 now have reviewed evidence and 65 remain draft (2026-10-30 audit).
+all 76 exclusion decisions now have reviewed dataset evidence (2026-10-30 audit);
+64 underlying causes remain unresolved and explicitly categorized as `other`.
 The new snapshots and rebuilt artifacts were uploaded on 2026-10-29 with
 `AWS_PROFILE=lantern dvc push`; DVC reported the cache and remote in sync.
 A fresh clone still needs authorized AWS credentials to restore them.
@@ -241,9 +242,9 @@ A fresh clone still needs authorized AWS credentials to restore them.
 PR #41's unfunded-commitment rule is integrated in this branch. The combined
 seven-rule run still admits 101 filings with 44.4% dollar coverage, and removes
 2,357 commitment rows from the cleaned candidate holdings. The admitted panel
-contains 34,670 holdings and 38,053 source-row references. Existing draft triage
-snapshots are historical; current comparison values are in the generated
-coverage and triage reports. No draft has been promoted to reviewed.
+contains 34,670 holdings and 38,053 source-row references. The pre-review triage
+snapshots are historical; current reviewed exclusion decisions and comparison
+values are in the generated coverage and triage reports.
 
 ### Part 3 documentation and review status
 
@@ -267,12 +268,19 @@ entry to `reviewed`. Do not change status just to make acceptance pass.
 
 ## Submission readiness — 2026-10-30
 
-The panel still admits **101/177 filings**. Of the 76 exclusions, **11 have reviewed,
-current evidence** (8 missing required NUM totals; 3 without recognized identifiers).
-The other **65 remain draft**; the preliminary warning and failing triage self-check
-remain intentional. An unresolved gap is not proof of a particular cleaning error.
-Eleven notes for filings now admitted were moved to `data/triage_recovered.csv` as
-historical evidence; only current exclusions remain in `data/triage.csv`.
+The panel still admits **101/177 filings**. All **76 exclusion decisions** have
+reviewed evidence with current totals. Categories: 8 `no_filed_total`, 3
+`no_identified_holdings`, 1 `unfunded_commitments`, and 64 `other`. For those 64,
+the source-to-panel discrepancy is independently verified, but its underlying
+cause remains unresolved. Review completion is not a claim that those causes
+were identified or the filings recovered. The notes say so explicitly.
+
+`reports/triage_review_audit.csv` records the independent raw SOI/NUM checks:
+30,910 retained source-row references verified, source dates/accessions and
+retained values checked, and reported totals independently selected from raw NUM.
+Run `python tools/review_triage.py` after `dvc repro` to repeat the audit; it does
+not mark notes reviewed. Eleven recovered filings' historical notes are preserved
+in `data/triage_recovered.csv`.
 
 `tools/run_notebooks.py` copies the project to a retained system temporary directory,
 excluding the virtual environment and DVC cache. It needs roughly another workspace's
@@ -286,5 +294,22 @@ in-memory runs; a restart or cache eviction requires reloading the session. Uplo
 and refresh are shared across users: coordinate those actions during the demo.
 
 Before the final `cs2b-submission` tag, merge the readiness PR, rerun the checks, and
-review the remaining triage limitation explicitly. Do not treat the older `Submission`
+review the unresolved-cause limitation explicitly. Do not treat the older `Submission`
 tag as the final version. See `reports/economics.md` for the deployed-resource budget.
+
+
+## Stretch-goal evidence
+
+- Second release: `reports/second_release.md` records the unchanged earlier five-rule run.
+- Affiliation reconciliation: `dvc repro affiliation` writes `reports/affiliation.csv`
+  and `.md`. Only explicit standard source classifications and unique current
+  USD category totals are compared. Unknown classification prevents a pass;
+  this report does not change whole-filing admissions.
+- Custom tags: `python tools/audit_custom_fv.py` reproduces the candidate screen
+  and counterfactual run in `reports/custom_tag_recovery.md`. 34 missing values
+  match candidate facts, but neither affected filing becomes admitted. No safe
+  production recovery or completed custom-tag bonus is claimed.
+- Issue draft: `reports/issue_draft.md` is already merged from Guna's PR #49.
+  It is a draft for after grading; no external issue has been posted.
+
+Final branch validation: **57/57 tests and 10/10 self-checks pass**. The checker is unchanged. This verifies the stated structural and evidence-completeness checks, not resolution of all underlying causes.

@@ -129,7 +129,8 @@ def write_outputs(kept: pd.DataFrame, rec: pd.DataFrame, diag: pd.DataFrame,
         "Their unknown dollars are not included in the dollar denominator.",
         (f"Triage entries incomplete: {len(incomplete)}. "
          "Outputs are preliminary until filing-evidence review is complete."
-         if incomplete else "Triage review complete for all currently excluded filings."),
+         if incomplete else "Triage review complete for all currently excluded filings. "
+         "Reviewed exclusion evidence does not imply that every underlying root cause is resolved; see individual notes."),
         f"Cleaning rules used: {', '.join(metrics['cleaning_rules'])}.",
     ]
     lines = ["# Coverage report", "", *headline, ""]

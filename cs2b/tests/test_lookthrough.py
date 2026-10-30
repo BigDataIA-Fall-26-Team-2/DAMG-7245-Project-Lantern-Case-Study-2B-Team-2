@@ -996,3 +996,39 @@ def test_notebook_scratch_cannot_overwrite_original_evidence():
             assert (scratch / '.notebook-scratch').exists()
         finally:
             shutil.rmtree(scratch.parent)
+
+
+def test_affiliation_reconciliation_rejects_unknown_and_conflicting_evidence():
+    from lookthrough import affiliation
+    member = 'InvestmentUnaffiliatedIssuerMember'
+    kept = pd.DataFrame([dict(adsh='A', affiliation_member=member, fair_value=100., source_rows='1')])
+    sub = pd.DataFrame([dict(adsh='A', period='2026-03-31')])
+    fact = dict(adsh='A', tag=reconcile.FV_TAG, qtrs='0', uom='USD', dimn='1',
+                ddate='2026-03-31', value=100.,
+                segments=f'InvestmentIssuerAffiliationAxis(us-gaap/2025)={member}(us-gaap/2025)')
+    num = pd.DataFrame([fact, fact, {**fact, 'ddate':'2025-12-31', 'value':999.},
+                        {**fact, 'uom':'EUR', 'value':999.}])
+    result = affiliation.reconcile_affiliations(kept, num, sub, .01)
+    assert result.status.tolist() == ['matched'] and result.num_fact_count.iloc[0] == 2
+    unknown = pd.concat([kept, pd.DataFrame([dict(adsh='A', affiliation_member=None,
+                                                   fair_value=20., source_rows='2')])])
+    assert affiliation.reconcile_affiliations(unknown,num,sub,.01).status.iloc[0] == 'incomplete_classification_or_values'
+    conflict = pd.concat([num,pd.DataFrame([{**fact,'value':101.}])])
+    assert affiliation.reconcile_affiliations(kept,conflict,sub,.01).status.iloc[0] == 'unusable_category_total'
+    kept['fair_value'] = 102.
+    assert affiliation.reconcile_affiliations(kept,num,sub,.01).status.iloc[0] == 'mismatch'
+
+
+def test_affiliation_source_requires_standard_unambiguous_labels():
+    from lookthrough import affiliation
+    member = 'InvestmentUnaffiliatedIssuerMember'
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        pd.DataFrame({'adsh':['A','A','A'], 'ddate':['20260331']*3, affiliation.ENUM:[
+            'http://fasb.org/us-gaap/2025#'+member,
+            'http://example.com/2025#'+member,
+            'http://fasb.org/us-gaap/2025#InvestmentAffiliatedIssuerControlledMember']}).to_csv(root/'soi.tsv',sep='\t',index=False)
+        kept = pd.DataFrame({'adsh':['A']*3,'release':['r']*3,'period':['2026-03-31']*3,'source_rows':['0','1','0;2']})
+        result = affiliation.source_members(kept,{'r':root})
+        assert result.iloc[0] == member
+        assert result.iloc[1:].isna().all()
