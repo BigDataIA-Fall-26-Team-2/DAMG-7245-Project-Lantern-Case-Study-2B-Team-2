@@ -122,8 +122,8 @@ stages:
       size: 1067
     - path: src/lookthrough/clean.py
       hash: md5
-      md5: cd1a9bb9dffb0f7c6f123493dc1a4b6f
-      size: 21045
+      md5: a1b29ff224fee65e7ba790355f113e61
+      size: 22005
     - path: src/lookthrough/pipeline.py
       hash: md5
       md5: c29f610c62ed8c32dfb7a7e56a2edda1
@@ -134,18 +134,19 @@ stages:
         - rule_source_disclosures
         - rule_totals
         - rule_cash
+        - rule_commitment_rows
         - rule_jv_portfolio
         - rule_issuer_subtotals
         - rule_rollforward_copies
     outs:
     - path: outputs/work/kept.parquet
       hash: md5
-      md5: 9183a26fe00324ef1a6a9e7b64711e27
-      size: 2822612
+      md5: 71db9746fa1f5783b91a409bce010857
+      size: 2756529
     - path: outputs/work/log.parquet
       hash: md5
-      md5: 9df7d5e29273a73d6c2e6c2526af28f6
-      size: 3806
+      md5: b67b37b57df38ab8697a8e3cf93d9900
+      size: 3838
   reconcile:
     cmd: python scripts/reconcile.py
     deps:
@@ -155,8 +156,8 @@ stages:
       size: 5690456
     - path: outputs/work/kept.parquet
       hash: md5
-      md5: 9183a26fe00324ef1a6a9e7b64711e27
-      size: 2822612
+      md5: 71db9746fa1f5783b91a409bce010857
+      size: 2756529
     - path: outputs/work/num.parquet
       hash: md5
       md5: 7dd3971384038727c475f127dbdae979
@@ -179,12 +180,12 @@ stages:
     outs:
     - path: outputs/work/diag.parquet
       hash: md5
-      md5: 3b36306e047ff99ea485173789310c5f
-      size: 11184
+      md5: 5aadba8cf92b849b687a20c859495925
+      size: 11170
     - path: outputs/work/rec.parquet
       hash: md5
-      md5: 6e1b4b76bcdfe5a5fa9a342938f3ac75
-      size: 19766
+      md5: 9d4d2c4b9c2569d8bced2963d7efb9a1
+      size: 19710
   report:
     cmd: python scripts/report.py
     deps:
@@ -194,20 +195,20 @@ stages:
       size: 80322
     - path: outputs/work/diag.parquet
       hash: md5
-      md5: 3b36306e047ff99ea485173789310c5f
-      size: 11184
+      md5: 5aadba8cf92b849b687a20c859495925
+      size: 11170
     - path: outputs/work/kept.parquet
       hash: md5
-      md5: 9183a26fe00324ef1a6a9e7b64711e27
-      size: 2822612
+      md5: 71db9746fa1f5783b91a409bce010857
+      size: 2756529
     - path: outputs/work/log.parquet
       hash: md5
-      md5: 9df7d5e29273a73d6c2e6c2526af28f6
-      size: 3806
+      md5: b67b37b57df38ab8697a8e3cf93d9900
+      size: 3838
     - path: outputs/work/rec.parquet
       hash: md5
-      md5: 6e1b4b76bcdfe5a5fa9a342938f3ac75
-      size: 19766
+      md5: 9d4d2c4b9c2569d8bced2963d7efb9a1
+      size: 19710
     - path: outputs/work/sub.parquet
       hash: md5
       md5: b4654ef7e201358999965412fd73d01b
@@ -242,26 +243,26 @@ stages:
     outs:
     - path: outputs/panel
       hash: md5
-      md5: 986c81f9ea084a9cd591fc4307f80af0.dir
-      size: 1594924
+      md5: 40e0c248df17d8e0fa3a19c0a63319fe.dir
+      size: 1542250
       nfiles: 1
     - path: reports/cleaning_log.csv
       hash: md5
-      md5: 96539ac72b438d1affd70e799c854e17
-      size: 810
+      md5: e6b40789ff4f2c007f62923f53359d69
+      size: 928
     - path: reports/coverage.csv
       hash: md5
-      md5: 9c1fc2dde66b8dc9eabde2432334c44f
-      size: 18252
+      md5: 239031c00f8ac65ff04de6d399609a71
+      size: 18213
     - path: reports/coverage.json
       hash: md5
-      md5: 99549174c0160eb2cb3b3c072974385c
-      size: 2878
+      md5: ce8cc25aabd2cebbd597825657a23652
+      size: 2906
     - path: reports/coverage.md
       hash: md5
-      md5: 532cf21e5199f1cbc18ec23743876e11
-      size: 21366
+      md5: 3bb017538bfb1a166f06f46edec0a3f7
+      size: 21384
     - path: reports/triage.md
       hash: md5
-      md5: b96175af7eb9d2658317504bdad7df7c
-      size: 91845
+      md5: c13bfb733d7e8839e8ddbf2ae86f1692
+      size: 91863

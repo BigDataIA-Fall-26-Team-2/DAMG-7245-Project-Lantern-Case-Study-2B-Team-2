@@ -4,7 +4,7 @@ Filings attempted: 177; admitted: 101 (57.1%).
 Known positive filed fair value attempted: $542,175,875,908; admitted: $240,917,454,804 (44.4%).
 Attempts without a usable filed total: 8. Their unknown dollars are not included in the dollar denominator.
 Triage entries incomplete: 76. Outputs are preliminary until filing-evidence review is complete.
-Cleaning rules used: rule_source_disclosures, rule_totals, rule_cash, rule_jv_portfolio, rule_issuer_subtotals, rule_rollforward_copies.
+Cleaning rules used: rule_source_disclosures, rule_totals, rule_cash, rule_commitment_rows, rule_jv_portfolio, rule_issuer_subtotals, rule_rollforward_copies.
 
 Generated from the separate triage input. Edit that input, not this report.
 A reviewed entry records human-supplied evidence; automated checks only assess completeness and stale totals.
@@ -102,7 +102,7 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Status: **INCOMPLETE**
 - Holdings FV: 6,766,048,000; filed FV: 6,342,711,000; gap: +6.674%
 - Filed-total status: ok
-- Diagnostic clues (not proven causes): 293 holdings missing fair value; 208 current SOI rows without identifiers; 319 custom fair-value facts in NUM.
+- Diagnostic clues (not proven causes): 1 holdings missing fair value; 208 current SOI rows without identifiers; 319 custom fair-value facts in NUM.
 - Category: other
 - Evidence: 2026-03-31: retained sum $6,766,048,000.00; required filed total $6,342,711,000.00. Gap +6.674%; allowed ±1%. 1094 retained holdings; 293 missing fair values. Source: https://www.sec.gov/ix?doc=/Archives/edgar/data/1851322/000119312526221623/ck0001851322-20260331.htm
 - Example: Trace example (not a proven cause): 2026_05/soi.tsv, zero-based rows 109480; Investments-non-controlled/non-affiliated Debt Investments Insurance Services Integrity Marketing Acquisition, LLC Investment First Lien Debt Reference Rate and Spread S + 5.00% Interest Rate 8.67% Maturity Date 08/25/2028; fair value $110,903,000.00.
@@ -168,7 +168,7 @@ A reviewed entry records human-supplied evidence; automated checks only assess c
 - Status: **INCOMPLETE**
 - Holdings FV: 4,055,156,000; filed FV: 3,668,950,000; gap: +10.526%
 - Filed-total status: ok
-- Diagnostic clues (not proven causes): 294 holdings missing fair value; 149 current SOI rows without identifiers; 383 custom fair-value facts in NUM.
+- Diagnostic clues (not proven causes): 2 holdings missing fair value; 149 current SOI rows without identifiers; 383 custom fair-value facts in NUM.
 - Category: other
 - Evidence: 2026-03-31: retained sum $4,055,156,000.00; required filed total $3,668,950,000.00. Gap +10.526%; allowed ±1%. 1023 retained holdings; 294 missing fair values. Source: https://www.sec.gov/ix?doc=/Archives/edgar/data/1782524/000119312526211906/msdl-20260331.htm
 - Example: Trace example (not a proven cause): 2026_05/soi.tsv, zero-based rows 96600;96601; Investments controlled/affiliated Equity Investments Investments in Joint Ventures Capstone Lending, LLC Investment Common Equity Acquisition Date 02/19/2026; fair value $93,072,000.00.

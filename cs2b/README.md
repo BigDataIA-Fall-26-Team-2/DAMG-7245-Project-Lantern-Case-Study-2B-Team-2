@@ -187,10 +187,10 @@ as reviewed merely to pass the checker.
 
 ### Integrated Part 3 run (2026-10-29)
 
-With PR #3 merged and the source-evidence extension, six rules admit 101 of 177 attempted filings (57.1%)
+With PR #3 merged and the source-evidence extension, seven rules admit 101 of 177 attempted filings (57.1%)
 and cover $240,917,454,804 of $542,175,875,908 known filed dollars (44.4%).
-The panel contains 36,443 holdings with 39,901 raw SOI row references, retaining
-3,980 holdings flagged as non-debt. Eight attempts lack a usable filed total;
+The panel contains 34,670 holdings with 38,053 raw SOI row references, retaining
+3,972 holdings flagged as non-debt. Eight attempts lack a usable filed total;
 six SUB filings have no SOI rows and are reported separately.
 
 The 76 excluded filings still require evidence-backed triage. No entries have
@@ -225,8 +225,15 @@ Source fact IDs, document hashes, URLs, roles and precision survive into the
 holdings panel for annotated retained rows.
 
 The local rerun recovers AGL, TriplePoint Private Venture, Chicago Atlantic and
-Prospect Floating Rate: 97 → 101 admitted. The other 173 filing results and all
-retained holding values are unchanged. The four recovered notes retain their
+Prospect Floating Rate: 97 → 101 admitted. Before integrating PR #41, the other 173 filing results and all
+retained holding values were unchanged by the source-evidence extension. The four recovered notes retain their
 pre-fix evidence as history; the remaining 76 exclusions still have draft triage.
 The new snapshots and rebuilt artifacts must be uploaded with an approved
 `dvc push` before teammates can reproduce this revision from a fresh clone.
+
+PR #41's unfunded-commitment rule is integrated in this branch. The combined
+seven-rule run still admits 101 filings with 44.4% dollar coverage, and removes
+2,357 commitment rows from the cleaned candidate holdings. The admitted panel
+contains 34,670 holdings and 38,053 source-row references. Existing draft triage
+snapshots are historical; current comparison values are in the generated
+coverage and triage reports. No draft has been promoted to reviewed.

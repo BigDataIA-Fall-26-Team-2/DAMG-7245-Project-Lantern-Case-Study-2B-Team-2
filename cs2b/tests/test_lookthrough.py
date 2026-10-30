@@ -102,10 +102,10 @@ def test_baseline_reconciliation_counts_every_filing():
     assert d["DELTA"]["negative_type_level_fv"] == -3_000_000
     assert d["ECHO"]["custom_fv_facts_in_num"] == 3 and d["ECHO"]["missing_fv_rows"] == 3
     assert d["FOXTROT"]["rows_without_identifier"] == 3
-    # The pipeline runs clean.RULES; the three Part 2 rules find nothing in
-    # the fixture (no JV rows, issuer subtotals or roll-forward copies).
+    # The pipeline runs clean.RULES; the four Part 2 rules find nothing in
+    # the fixture (no commitment rows, JV rows, issuer subtotals or roll-forward copies).
     assert list(B["log"]["rule"]) == [r.__name__ for r in clean.RULES]
-    assert list(B["log"]["rows_affected"]) == [0, 1, 1, 0, 0, 0]
+    assert list(B["log"]["rows_affected"]) == [0, 1, 1, 0, 0, 0, 0]
 
 
 def test_manifest_is_portable_and_detects_changes():
@@ -613,6 +613,25 @@ def test_debt_flag_marks_equity_and_warrants_without_dropping_them():
     out = clean.flag_debt(h)
     assert len(out) == len(h)
     assert out["is_debt"].tolist() == [True, False, False, False], out["is_debt"].tolist()
+
+
+def test_commitment_rule_drops_only_unfunded_commitment_rows():
+    # Guna's spot-check finding: T Series SOI row 97935 is a row from the
+    # unfunded-commitments table, not a holding. It names the commitment type
+    # and expiration date and has no cost or principal: dropped. The funded
+    # loan, a commitment-looking row that carries principal, and a row naming
+    # only a commitment type are kept.
+    h = pd.DataFrame({
+        "adsh": ["A"] * 4, "ddate": ["2026-03-31"] * 4,
+        "identifier": [
+            "Investments First Lien Debt Cerity Partners, LLC Commitment Type Revolver Commitment Expiration Date 07/28/2031",
+            "Cerity Partners, LLC | First Lien Term Loan",
+            "Acme Commitment Type Delayed Draw Commitment Expiration Date 1/1/2027",
+            "Investments Anaplan, Inc. Commitment Type Revolving Loan"],
+        "fair_value": [None, 50.0, -1.0, -2.0], "cost": [None, 49.0, None, None],
+        "principal": [None, 50.0, 5.0, None], "source_rows": ["0", "1", "2", "3"]})
+    drop, _ = clean.rule_commitment_rows(h)
+    assert drop.tolist() == [True, False, False, False], drop.tolist()
 
 
 # Regression tests from Lokesh's review of PR #3.

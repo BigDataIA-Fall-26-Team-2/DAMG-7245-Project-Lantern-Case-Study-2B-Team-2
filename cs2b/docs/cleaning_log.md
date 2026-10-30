@@ -29,15 +29,18 @@ the raw `soi.tsv` to confirm it: `reports/cleaning_log_check.md`
 | + `rule_rollforward_copies` | 90 | 43.4% |
 | + `rule_totals` false positives fixed | 90 | 43.5% |
 | + review fixes (PR #3: name boundary, instrument match, rules see survivors only) | 90 | 43.5% |
+| + second review fix (roll-forward evidence, debt forms) | 90 | 43.5% |
+| + `rule_commitment_rows` (from Guna's spot check) | 90 | 43.5% |
 
 The same rules in their final pipeline order (`clean.RULES`), adding one at a time:
 
 | Rules applied (final versions) | Admitted filings (of 177) | Share of filed dollars |
 |---|---|---|
-| `rule_totals` | 74 | 23.5% |
+| `rule_totals` | 74 | 23.6% |
 | + `rule_cash` | 75 | 26.1% |
+| + `rule_commitment_rows` | 75 | 26.1% |
 | + `rule_jv_portfolio` | 80 | 28.2% |
-| + `rule_issuer_subtotals` | 85 | 40.1% |
+| + `rule_issuer_subtotals` | 85 | 40.2% |
 | + `rule_rollforward_copies` | 90 | 43.5% |
 
 ## rule_totals (starter kit, false positives fixed)
@@ -94,6 +97,41 @@ borrower with those words in its name would be dropped. No such borrower appears
 (all 38 matching lines were checked).
 
 **Test.** `test_cash_rule_keeps_money_market_labelled_short_term_investment`.
+
+## rule_commitment_rows (from the Part 4 spot check)
+
+**Artifact.** Some filers tag each undrawn commitment from their unfunded-commitments note on the
+identifier axis. Guna's spot check found one in the sample: T Series BDC, adsh
+0001193125-26-219405 (2026_05), SOI row 97935, "Investments in Non-Controlled, Non-Affiliated
+First Lien Debt Cerity Partners, LLC Commitment Type Revolver Commitment Expiration Date
+07/28/2031", with no fair value, cost or principal. It is not a holding: the funded part of the
+loan is already in the schedule.
+
+**Rule.** Drop a row whose identifier names both a commitment type and a commitment expiration
+date ("Commitment Type ... Commitment Expiration Date") and that carries no cost and no
+principal. Rows naming only a commitment type (one filer, 77 rows) are kept, because they could
+not be confirmed as commitment-table rows.
+
+**Example.** 7Ridge Investments, adsh 0001193125-26-222241 (2026_05), SOI row 87437 (verified in
+`reports/cleaning_log_check.md`).
+
+**Rows affected.** 2,357 current-period rows in 11 filings (Antares x3, North Haven x2, Morgan
+Stanley Direct Lending, MSD, LGAM, SL Investment Fund II, T Series, Vista). Fair values are zero
+or blank, or small negatives (unrealized loss on the undrawn amount); none has cost or
+principal.
+
+**Effect.** No filing changes admission (still 90 of 177, 43.5% of dollars). Four admitted
+filings move closer to their filed totals because their small negatives were already outside
+the filed total: North Haven Private Income Fund A −0.20% → 0.000%, Antares Strategic Credit
+Fund II −0.18% → 0.000%, Antares Private Credit Fund −0.19% → −0.001%, Antares Strategic Credit
+Fund −0.22% → −0.016%. None moves further away. The panel no longer lists these rows as
+holdings, so the Part 4 spot check re-picks its T Series holding.
+
+**Relation to the negative-value investigation below.** That test dropped every negative value
+and harmed 4 filings, because many negatives are schedule lines the filer nets into its total.
+This rule uses the commitment-table wording, not the sign, so those schedule lines are kept.
+
+**Test.** `test_commitment_rule_drops_only_unfunded_commitment_rows`.
 
 ## rule_jv_portfolio
 
@@ -299,6 +337,15 @@ BDC, Blue Owl Technology Income) and only 2 would gain. Negative values are ther
 **Related observation.** Muzinich BDC lists "Liabilities in Excess of Other Assets" (−$76.3M) on
 the identifier axis. It is a net-assets reconciliation line, not a holding; the filing has no
 filed total, so it does not affect admission and is left for the triage report.
+
+
+## Known limitation (from the Part 4 spot check): principal has no currency
+
+`principal` is reported in the loan's own currency while `fair_value` is in USD, and the data set
+has no currency column for principal. Guna found Apollo's SPARKLE BIDCO loan (GBP) and a
+Blackstone Spectrum loan (EUR). Reconciliation uses fair value only, so coverage is unaffected,
+but any price derived as fair value / principal is wrong for non-USD loans. No cleaning rule:
+the currency is not in the SOI data, so it is documented in `reports/dependency_check.md`.
 
 ## Investigated, no rule: holdings without an identifier (custom axes)
 
@@ -683,3 +730,13 @@ AGL, TriplePoint and Prospect match exactly; Chicago differs by $287
 36,443 holdings and 39,901 raw-row references; dollar coverage is 44.4%.
 The four historical triage notes record the implemented correction without
 claiming human review. Seventy-six current exclusions remain draft/incomplete.
+
+### Integration with merged PR #41
+
+Included Dhruvi's commitment-row rule after cash filtering, preserving both
+teams' tests and rules. The combined run removes 2,357 commitment rows and still
+admits 101/177 with 44.4% dollar coverage. Final panel: 34,670 holdings, 38,053
+source-row references, 3,972 non-debt rows. The earlier 36,443-row figure above
+describes the pre-integration source-evidence run. Draft triage evidence remains
+historical, with current arithmetic generated alongside it; 76 exclusions remain
+incomplete. No additional admission or human-review claim is made.
