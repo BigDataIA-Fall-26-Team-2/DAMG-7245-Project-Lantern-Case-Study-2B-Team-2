@@ -44,7 +44,7 @@ Still excluded: Blackstone Private Credit Fund (0001803498-26-000031) sums to $8
 
 The source-evidence extension carries curated roles, instrument links and XBRL precision through parsing. It verifies snapshot fingerprints, source contexts and values before guarded cleaning. It recovered AGL, TriplePoint Private Venture, Chicago Atlantic and Prospect Floating Rate, moving admissions from 97 to 101. Three match exactly; Chicago differs by $287. These are generic evidence checks, not issuer-specific branches or target-gap matching. Unannotated future filings remain unchanged.
 
-All 76 current exclusion decisions have reviewed dataset evidence (2026-10-30 audit). The underlying causes of 64 discrepancies remain unresolved under `other`; review completion does not mean those causes are known or the filings recovered. Complete review requires evidence, an explanation and current totals. A status label alone is insufficient. Historical notes for recovered filings remain saved; changed totals require re-review. Not every filing must pass, and unresolved drafts must not be marked reviewed simply to satisfy acceptance.
+All 76 current exclusion decisions have reviewed dataset evidence (2026-10-30 audit). The underlying causes of 63 discrepancies remain unresolved under `other`; review completion does not mean those causes are known or the filings recovered. Complete review requires evidence, an explanation and current totals. A status label alone is insufficient. Historical notes for recovered filings remain saved; changed totals require re-review. Not every filing must pass, and unresolved drafts must not be marked reviewed simply to satisfy acceptance.
 
 ## Step 3.5: Validate and share the artifacts
 
@@ -56,7 +56,7 @@ python tools/baseline.py
 
 python tools/rule_impact.py
 
-Current validation: 57/57 tests and 10/10 structural checks pass. The 2026-10-29 snapshot previously passed 49 tests and caught 25 deliberate rule breaks; that mutation experiment was not rerun for this documentation/reporting patch. The provenance self-check samples 25 rows; the separate exclusion audit checked all 30,910 retained references for exclusions. Neither claims that all original filings were manually read.
+Current validation: 58/58 tests and 10/10 structural checks pass. The 2026-10-29 snapshot previously passed 49 tests and caught 25 deliberate rule breaks; that mutation experiment was not rerun for this documentation/reporting patch. The provenance self-check samples 25 rows; the separate exclusion audit checked all 30,910 retained references for exclusions. Neither claims that all original filings were manually read.
 
 After an intentional rule or evidence change, run dvc repro, refresh supplementary reports, review differences, then publish with AWS_PROFILE=lantern dvc push and commit the lockfile, code and small reports. PR #42’s snapshots and rebuilt artifacts are already uploaded; DVC confirmed cache and remote in sync. Computation runs locally; S3 stores artifacts.
 
@@ -82,7 +82,7 @@ PR #43 refresh: the 20-holding spot check now covers the 101-filing panel (19 ma
 The local section is updated; this paragraph has not yet been republished to the shared Google Doc.
 The panel remains 101 admitted / 177 attempted. All 76 exclusion decisions now
 have reviewed dataset evidence and current totals: 8 missing required totals,
-3 without recognized identifiers, 1 unfunded adjustment explanation, and 64
+3 without recognized identifiers, 1 unfunded adjustment explanation, 1 repeated-disclosure explanation (`restated_copies`, TCW), and 63
 verified but unresolved discrepancies (`other`). The audit independently checks
 raw NUM reference totals and 30,910 retained SOI references; it does not claim
 that every original filing has been manually read or every cause determined.

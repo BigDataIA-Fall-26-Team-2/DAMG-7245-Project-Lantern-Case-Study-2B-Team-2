@@ -445,7 +445,8 @@ def overview(rid) -> dict:
     funds = (h.groupby("name")["fair_value"].sum().sort_values(ascending=False)
              .rename("fair_value").reset_index())
     return {"loans": int(len(h)), "funds": int(h["adsh"].nunique()), "fair_value": total,
-            "debt_share": float(h.loc[h["is_debt"].astype(bool), "fair_value"].sum() / total) if total else 0.0,
+            "debt_share": None,
+            "debt_status": "unverified instrument classification; equity quantities can populate principal",
             "below_90": None, "price_status": "unverified principal currency/units", "check_currency": int(h["check_currency"].sum()),
             "industries": records(ind.head(15)), "funds_top": records(funds.head(15)),
             "all_industries": sorted(_get(rid)["kept"]["industry"].dropna().unique().tolist())}

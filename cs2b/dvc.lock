@@ -191,8 +191,8 @@ stages:
     deps:
     - path: data/triage.csv
       hash: md5
-      md5: ad2c8e792de38ba9e9158ed9deffa1d1
-      size: 104275
+      md5: 31e42bca998cfc64b40f2fb5c86846e7
+      size: 104110
     - path: outputs/work/diag.parquet
       hash: md5
       md5: 5aadba8cf92b849b687a20c859495925
@@ -252,20 +252,20 @@ stages:
       size: 928
     - path: reports/coverage.csv
       hash: md5
-      md5: 46a03119c18ff867995e75a7ab19f4eb
-      size: 18047
+      md5: 0329c5f69265d6e29bdf848700c61f96
+      size: 18057
     - path: reports/coverage.json
       hash: md5
       md5: 4bf9a9f74b4b8c3a28cd07344422da47
       size: 774
     - path: reports/coverage.md
       hash: md5
-      md5: 037fe960d137038428062dff5997b79d
-      size: 21291
+      md5: 7bfde63858e02b941f6267f565a3a32d
+      size: 21301
     - path: reports/triage.md
       hash: md5
-      md5: 20e7f576b19dc4d5bf89ff0d3cffe03f
-      size: 128574
+      md5: c2f0ba08bbed1548b5c83f84e4c814f9
+      size: 128409
   affiliation:
     cmd: python scripts/affiliation.py
     deps:

@@ -10,7 +10,7 @@ Mapping is by XBRL tag via `mapping.map_soi_columns`, using labels from the TAG 
 | principal | InvestmentOwnedBalancePrincipalAmount | `Investment Owned, Balance, Principal Amount` | float, unit not verified | Filled on 52% of May rows. Stored without a currency: non-dollar principal (for example £ or €) appears as a plain number (see `reports/dependency_check.md`). `Investment Owned, Face Amount` is not used as a fallback (see below). |
 | interest_rate | InvestmentInterestRate | `Investment Interest Rate` | float, decimal | Median 0.087 (8.7%). Max 8.0, so some filers may report in percent units. Flag for cleaning. |
 | spread | InvestmentBasisSpreadVariableRate | `Investment, Basis Spread, Variable Rate` | float, decimal | Median 0.05. Max 10.0, same units concern. |
-| maturity | InvestmentMaturityDate | `Investment Maturity Date` | date | Already ISO (YYYY-MM-DD) in May; normalized by `load.norm_date`. |
+| maturity | InvestmentMaturityDate | `Investment Maturity Date` | date | Already ISO (YYYY-MM-DD) in May; retained as provided. `load.norm_date` normalizes filing/report dates, not this maturity column. |
 | pik_rate | InvestmentInterestRatePaidInKind | `Investment, Interest Rate, Paid in Kind` | float, decimal | Filled on 6% of May rows. Max 7.5, units concern. |
 | pct_net_assets | InvestmentOwnedPercentOfNetAssets | `Investment Owned, Net Assets, Percentage` | float, decimal | Median 0.002. Max 295.2, likely percent units or a total row. Flag for cleaning. |
 | identifier | Investment, Identifier Axis | `Investment, Identifier Axis` | text | Filled on 76% of May rows; missing ones are candidates for totals or custom axes. Free text, format varies by filer. |

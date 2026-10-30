@@ -3,13 +3,16 @@
 Start from inside cs2b:  uvicorn app.api:app --port 8000
 Swagger UI: http://127.0.0.1:8000/docs   ReDoc: http://127.0.0.1:8000/redoc
 """
+import os
+import secrets
 import threading
 from contextlib import asynccontextmanager
 from typing import Optional
 
-from fastapi import FastAPI, File, Form, HTTPException, Path, Query, Request, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Path, Query, Request, UploadFile
 from fastapi.responses import JSONResponse, PlainTextResponse, RedirectResponse
 from pydantic import BaseModel, Field
+from fastapi.security import APIKeyHeader
 
 from app import engine
 
@@ -23,7 +26,7 @@ pipeline code in `src/lookthrough` (the same functions `dvc repro` runs):
 2. **Read**: SUB, NUM, TAG and SOI combined; current period only; split rows coalesced.
 3. **Clean**: the cleaning rules chosen in the request (default: `params.yaml`).
 4. **Compare**: each filing's holdings vs the fund's own total in NUM; admitted within the tolerance.
-5. **Explore**: search, watch list and fund checks on the admitted panel.
+5. **Explore**: search and fund checks on the admitted panel. Prices and debt-share estimates are withheld while currency/units and instrument classification remain unverified.
 
 A **run** is one set of settings (releases, tolerance, rules). `POST /runs` returns a `run_id`;
 every `/runs/{run_id}/...` endpoint reads that run. Runs live in memory and never write to
@@ -49,6 +52,18 @@ async def lifespan(_app):
 
 app = FastAPI(title="LANTERN look-through API", version="1.0.0", description=DESCRIPTION,
               openapi_tags=TAGS, lifespan=lifespan)
+
+
+admin_key = APIKeyHeader(name="X-Lantern-Admin-Key", auto_error=False)
+
+
+def require_admin(key: Optional[str] = Depends(admin_key)):
+    """Shared-data mutations are disabled unless an operator configures a key."""
+    expected = os.environ.get("LANTERN_ADMIN_TOKEN", "")
+    if not expected:
+        raise HTTPException(403, "Administrative actions are disabled on this deployment")
+    if not key or not secrets.compare_digest(key, expected):
+        raise HTTPException(401, "A valid administrator key is required")
 
 
 @app.exception_handler(Exception)
@@ -108,7 +123,7 @@ def health():
     return {"status": "ok"}
 
 
-@app.post("/refresh", tags=["Health"], summary="Reload the data from disk",
+@app.post("/refresh", dependencies=[Depends(require_admin)], tags=["Health"], summary="Reload the data from disk",
           description="Forgets every run and every loaded release, then reloads the team releases "
                       "in the background. Use after `dvc pull`, a new `data/triage.csv`, or adding a month.")
 def refresh():
@@ -122,7 +137,7 @@ def refresh():
          description="Releases found in data/raw and data/uploads, all cleaning rule names with their "
                      "descriptions, and the defaults from params.yaml.")
 def config():
-    return engine.config()
+    return {**engine.config(), "admin_enabled": bool(os.environ.get("LANTERN_ADMIN_TOKEN"))}
 
 
 @app.get("/source", tags=["Source data"], summary="SEC files and their fingerprint check",
@@ -139,7 +154,7 @@ def get_releases():
     return engine.releases_info()
 
 
-@app.post("/releases/upload", tags=["Uploads"], summary="Add a month from an uploaded ZIP",
+@app.post("/releases/upload", dependencies=[Depends(require_admin)], tags=["Uploads"], summary="Add a month from an uploaded ZIP",
           description="Checks the ZIP is an SEC BDC data set (soi.tsv, sub.tsv, num.tsv, tag.tsv), unpacks "
                       "it into data/uploads and records its SHA-256. Refuses names already in use.")
 async def upload_release(release: str = Form(..., description="Month name, like 2026_08 or 2025q4."),
@@ -148,14 +163,14 @@ async def upload_release(release: str = Form(..., description="Month name, like 
     return _call(engine.add_upload, release, data)
 
 
-@app.post("/releases/fetch", tags=["Uploads"], summary="Add a month downloaded from the SEC",
+@app.post("/releases/fetch", dependencies=[Depends(require_admin)], tags=["Uploads"], summary="Add a month downloaded from the SEC",
           description="Downloads <release>_bdc.zip from the SEC with the User-Agent in params.yaml, then "
                       "checks, unpacks and fingerprints it like an upload.")
 def fetch_release(body: FetchIn):
     return _call(engine.add_from_sec, body.release)
 
 
-@app.delete("/releases/{release}", tags=["Uploads"], summary="Remove an added month",
+@app.delete("/releases/{release}", dependencies=[Depends(require_admin)], tags=["Uploads"], summary="Remove an added month",
             description="Deletes an added month from data/uploads. Team releases in data/raw cannot be removed.")
 def delete_release(release: str):
     return _call(engine.remove_release, release)

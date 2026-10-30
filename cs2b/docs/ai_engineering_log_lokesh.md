@@ -195,3 +195,31 @@ Affiliation output: 267 reported categories across 134 filings, one fully
 classified category matches, 266 remain explicitly incomplete. The additional
 stage is outside the teammate's earlier 9.7-second timing. No fresh-clone or EC2
 validation is claimed; the user will perform those after merging.
+
+
+## 2026-10-30 — Final submission review fixes
+
+On `Lokesh-final-submission-fixes`, aligned TCW's reviewed exclusion with
+original filing footnote 4: 12 valued non-controlled-affiliate rows total
+$107,862,000 and repeat the schedule disclosure. The additional 18 rows have
+missing fair values; they are not asserted to be 18 verified duplicate holdings.
+TCW remains excluded, with category `restated_copies`; 63 exclusions remain
+`other` with unresolved causes. No admission or cleaning rule was changed.
+Source: https://www.sec.gov/Archives/edgar/data/1715933/000119312526141887/ck0001715933-20251231.htm
+
+Shared upload/fetch/delete/refresh API operations now require an operator key
+and are disabled when no key is configured. Removed these controls from the
+public UI. Suppressed debt share because equity quantities can populate principal;
+the optional debt filter is explicitly heuristic. Added access-control regression
+coverage in the existing test file and its httpx dependency.
+
+Updated README, schema, app documentation, codelab notes and economics. Economics
+separates measured laptop timing, assumed human effort and estimated historical
+runtime/cost. The historical estimate is 115 seconds on the laptop, not the
+earlier 80-second estimate based on a smaller release inventory.
+
+Validation: 58/58 tests and 10/10 self-checks pass. Regenerated report outputs
+and dvc.lock; panel hashes and admissions remain unchanged (101/177 admitted,
+76 excluded). Video remains pending. No final retag, commit, push or deployment
+is claimed for this patch; final submission must include the video and be
+validated after merge before moving `cs2b-submission`.
