@@ -1,0 +1,25 @@
+{
+  "environment": "web",
+  "format": "html",
+  "prefix": "https://storage.googleapis.com",
+  "mainga": "UA-49880327-14",
+  "updated": "2026-10-30T15:19:07-04:00",
+  "id": "lantern-case-study-2b",
+  "duration": 0,
+  "title": "Project LANTERN: A Reconciled BDC Holdings Panel",
+  "authors": "Dhruvi, Lokesh, Guna, Shravya",
+  "summary": "Reproducible pipeline that turns the SEC’s 2026q2 BDC data sets into a reconciled, traceable holdings panel (DAMG 7245 Case Study 2B, Team 2)",
+  "source": "codelab.md",
+  "theme": "",
+  "status": [
+    "published"
+  ],
+  "category": [
+    "dataengineering"
+  ],
+  "tags": [
+    "web"
+  ],
+  "feedback": "https://github.com/BigDataIA-Fall-26-Team-2/DAMG-7245-Project-Lantern-Case-Study-2B-Team-2/issues",
+  "url": "lantern-case-study-2b"
+}

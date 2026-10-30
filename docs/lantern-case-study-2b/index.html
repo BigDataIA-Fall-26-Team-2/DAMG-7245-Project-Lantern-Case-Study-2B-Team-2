@@ -1,0 +1,362 @@
+
+<!doctype html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#4F7DC9">
+  <meta charset="UTF-8">
+  <title>Project LANTERN: A Reconciled BDC Holdings Panel</title>
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+  <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://storage.googleapis.com/claat-public/codelab-elements.css">
+  <style>
+    .success {
+      color: #1e8e3e;
+    }
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <google-codelab-analytics gaid="UA-49880327-14" ga4id=""></google-codelab-analytics>
+  <google-codelab codelab-gaid=""
+                  codelab-ga4id=""
+                  id="lantern-case-study-2b"
+                  title="Project LANTERN: A Reconciled BDC Holdings Panel"
+                  environment="web"
+                  feedback-link="https://github.com/BigDataIA-Fall-26-Team-2/DAMG-7245-Project-Lantern-Case-Study-2B-Team-2/issues">
+    
+      <google-codelab-step label="Overview" duration="0">
+        <p>Project LANTERN Case Study 2B turns the SEC&#39;s raw BDC (business development company) data sets for 2026q2 into one reconciled holdings panel: every holding of every admitted filing, traceable to its filing and SOI rows, reconciled to the BDC&#39;s own reported total within 1%, and honest about what it covers. The whole pipeline rebuilds with one command (<code>dvc pull && dvc repro</code>). Built by Team 2 (Dhruvi, Lokesh, Guna, Shravya) for DAMG 7245, Fall 2026.</p>
+<p><strong>Result:</strong> 101 of 177 filings admitted (57.1%), $240.9B of $542.2B filed fair value (44.4%).</p>
+<p><strong>Demo video: </strong><a href="https://northeastern-my.sharepoint.com/:v:/g/personal/nandavarapu_s_northeastern_edu/IQDoLqRrU-O5TbBlqIM2Quu1AVrjPK7rUj4L4R1mAxP5JJo" target="_blank">https://northeastern-my.sharepoint.com/:v:/g/personal/nandavarapu_s_northeastern_edu/IQDoLqRrU-O5TbBlqIM2Quu1AVrjPK7rUj4L4R1mAxP5JJo</a></p>
+<p><strong>What you&#39;ll learn</strong></p>
+<ul>
+<li>Download three monthly SEC BDC data sets with provenance and combine them into one quarter</li>
+<li>Map raw SOI columns to canonical fields by XBRL tag, and split current from comparative schedules</li>
+<li>Clean the artifacts that make the naive sum wrong: totals, cash lines, joint-venture portfolios, subtotals and repeated copies</li>
+<li>Reconcile each filing to its filed total and report coverage and triage honestly</li>
+<li>Verify the panel against the filings, and measure the pipeline&#39;s speed and cost</li>
+</ul>
+<p><strong>The pipeline</strong></p>
+<p>acquire -&gt; parse -&gt; clean -&gt; reconcile -&gt; report</p>
+<p><img alt="The pipeline: five DVC stages, with numbers from the final run" src="img/b11741ac79c7590.png"><em>The pipeline: five DVC stages, with numbers from the final run</em></p>
+<p>Each step of this Codelab covers one Part of the case study, with the command to run it, the key results, and what broke along the way.</p>
+<p><strong>Repository</strong></p>
+<p><a href="https://github.com/BigDataIA-Fall-26-Team-2/DAMG-7245-Project-Lantern-Case-Study-2B-Team-2" target="_blank">https://github.com/BigDataIA-Fall-26-Team-2/DAMG-7245-Project-Lantern-Case-Study-2B-Team-2</a></p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Part 0: Setup, acquisition and provenance" duration="0">
+        <p>Goal: get the three monthly SEC files for our quarter, prove exactly which bytes we used, and store them so anyone can get the same files back with one command.</p>
+<h2 is-upgraded>Step 0.1: Point the project at our quarter</h2>
+<p>Our team got 2026q2. In 2026 the SEC publishes one ZIP per month, so our quarter is three files: 2026_04, 2026_05 and 2026_06. In <code>params.yaml</code> we list all three under <code>releases</code>, set our name and email as the SEC user agent (the SEC refuses downloads without one), and set <code>use_fixture</code> to false so everything runs on real data, not the practice fixture.</p>
+<h2 is-upgraded>Step 0.2: Download the three files and record their fingerprints</h2>
+<p><code>python tools/download_release.py</code></p>
+<p>This downloads each ZIP from the SEC, unpacks it into its own folder (<code>data/raw/2026_04_bdc</code> and so on), and writes <code>data/manifest.json</code>. For every ZIP the manifest keeps the URL, the size and a SHA-256 fingerprint. If even one byte of a file changes, its fingerprint changes, so the manifest proves which version of the SEC files we used. The SEC does refresh old releases, so this matters.</p>
+<p>You should get three ZIPs: 2026_04 is 1.1 MB, 2026_05 is 41.0 MB and 2026_06 is only 0.1 MB. June is that small because almost every fund files its 31 March report by mid-May, so June holds no reports with a schedule of investments.</p>
+<h2 is-upgraded>Step 0.3: Track the data with DVC</h2>
+<p><code>dvc add data/raw</code></p>
+<p><code>dvc push</code></p>
+<p>The data is 664 MB, too big for GitHub, so DVC keeps it in our S3 bucket (lantern-team2-dvc-fall-2026, folder cs2b). GitHub only keeps the small pointer file <code>data/raw.dvc</code>. DVC lives inside cs2b, so the case study has its own setup and remote.</p>
+<h2 is-upgraded>Step 0.4: Prove a fresh clone gets the same files</h2>
+<p><code>git clone <repo> && cd cs2b</code></p>
+<p><code>dvc pull</code></p>
+<p><code>python -c "import sys; sys.path.insert(0,'src'); from lookthrough import acquire; print(acquire.verify_manifest('data/manifest.json', root='.'))"</code></p>
+<p>In an empty folder, <code>dvc pull</code> brought back all 33 files, and <code>verify_manifest</code> printed <code>[]</code>, which means no file differs from its fingerprint. In the pipeline the acquire stage runs this same check every time, so <code>dvc repro</code> stops if the raw files are not the ones in the manifest.</p>
+<p><strong>What broke and how we fixed it</strong></p>
+<p>The starter notebook records only one release in the manifest, and every run overwrote the file. With three monthly files we would have kept only the last one. We wrote one download script that handles all three releases and writes a single manifest with one entry per file.</p>
+<p>On Windows the manifest saved paths with backslashes, so a clone on Mac or Linux could not verify them. We changed the manifest to always store forward slashes, and the kit&#39;s portability test passes.</p>
+<p>Three of the kit&#39;s checker tests failed as soon as we switched to real data. They copy our <code>params.yaml</code> into a temporary folder that only contains the fixture, so with <code>use_fixture</code> false they looked for real data that was not there. The test now sets <code>use_fixture</code> to true in its own temporary copy, and our real settings stay untouched.</p>
+<p>The first <code>dvc push</code> failed with 403 Forbidden even with valid AWS keys. We tested the keys directly and they could list, write and delete in the bucket, so the problem was DVC. The setting <code>allow_anonymous_login</code> made DVC connect anonymously and ignore the keys. We switched it off in each teammate&#39;s local config, and the push worked.</p>
+<p>The bucket is private, so a clone with no AWS login cannot pull. The reproduction is shown from the team&#39;s configured environment.</p>
+<p>Evidence: <code>params.yaml</code>, <code>data/manifest.json</code>, <code>data/raw.dvc</code>, <code>.dvc/config</code>, <code>tools/download_release.py</code>, <code>scripts/acquire.py</code>, <code>reports/manifest_check.json</code>.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Part 1: Raw parsing and schema mapping" duration="0">
+        <p>Goal: Turn the raw SOI columns of all three monthly files into one clean, named table of holdings, mapped by XBRL tag, with every row traceable to its source.</p>
+<h2 is-upgraded>Step 1.1: Load the three monthly files as one quarter</h2>
+<p><code>python scripts/parse.py</code> (or <code>dvc repro -s parse</code>)</p>
+<p>The starter code reads one release at a time, so <code>src/lookthrough/combine.py</code> loads 2026_04, 2026_05 and 2026_06 together and adds a <code>release</code> column. <code>soi_row</code> restarts at 0 in each month, so every row is cited as <code>release</code> + <code>soi_row</code>. You should get 183 filings (4 in April, 179 in May, 0 in June), none flagged as amended.</p>
+<h2 is-upgraded>Step 1.2: Map columns by tag, not by label</h2>
+<p><code>mapping.map_soi_columns</code> finds the SOI columns whose labels belong to each canonical tag in the TAG table: fair value, cost, principal, rates, maturity, percent of net assets, identifier, type, industry, affiliation, and <code>subsidiary</code> for joint ventures. The full mapping, and a decision for every unmapped column, is in <code>docs/schema.md</code>.</p>
+<h2 is-upgraded>Step 1.3: Split current from comparative rows</h2>
+<p><code>split_periods</code> marks a row current when its date equals the filing&#39;s period end. Of 191,043 rows, 96,373 are current; the rest are last year&#39;s comparative schedule, which would roughly double every total. Per-filing counts are in <code>reports/period_split.csv</code>.</p>
+<h2 is-upgraded>Step 1.4: Coalesce holdings and count conflicts</h2>
+<p><code>coalesce_holdings</code> merges the rows of each holding into one, keeping <code>source_rows</code>. You should get 64,762 current holdings, 268 of them with a conflicting value across rows, resolved by keeping the first non-empty value in SOI row order.</p>
+<h2 is-upgraded>Step 1.5: Check the parsing against the filings</h2>
+<p>We compared three filings with their printed schedules (<code>reports/agreement.md</code>). TCW Steel City matches to the dollar. Oaktree is 19.8% over until its joint-venture portfolios are excluded, then 0.98%. TCW Direct Lending VII matches exactly once its affiliated-investments footnote ($107,862,000) is excluded. No difference came from parsing.</p>
+<p><strong>What broke and how we fixed it</strong></p>
+<p>April had no fair values: April&#39;s own TAG table only knows the old label, so per-month mapping read an empty column (0 of 4,378 rows). In the us-gaap/2026 taxonomy the fair-value tag is labelled &#34;Initial fair value of Investment&#34;. Merging the TAG tables of all three months fixed it: 4,177 rows.</p>
+<p>Joint-venture loans looked like conflicts: 24 filings also list their joint ventures&#39; portfolios, so the same loan held by two JVs was merged and one value thrown away. Adding the JV name (<code>subsidiary</code>) to the holding key cut fair-value conflicts from 200 to 2.</p>
+<p>Dropped rows with names: 4,032 current rows have an issuer name but no identifier and are dropped; we flagged this in <code>docs/schema.md</code> but did not measure its effect on coverage.</p>
+<p>Evidence: <code>src/lookthrough/combine.py</code>, <code>src/lookthrough/holdings.py</code>, <code>docs/schema.md</code>, <code>reports/agreement.md</code>, <code>reports/period_split.csv</code>, <code>docs/ai_engineering_log_shravya.md</code>.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Part 2: Cleaning the extract" duration="0">
+        <p>Goal: Remove the rows that are not the BDC&#39;s own holdings, so that each filing&#39;s holdings add up to the fair-value total it reports. Every rule needs a named artifact, an example row from the raw files, a test, and measured evidence that it helps without harming any filing.</p>
+<h2 is-upgraded>Step 2.1: Measure what each rule does</h2>
+<p><code>PYTHONPATH=src python tools/rule_impact.py</code></p>
+<p>This runs the whole quarter with all rules, and again with each rule left out. It writes <code>reports/rule_impact.csv</code>, with each filing&#39;s gap with and without each rule, and <code>reports/cleaning_log.csv</code>. A rule was kept only if it admitted filings and pushed no filing further from its total.</p>
+<h2 is-upgraded>Step 2.2: The seven rules</h2>
+<p>The rules run in this order (<code>clean.RULES</code>, listed in <code>params.yaml</code>). Each rule sees only the rows that earlier rules kept. Six come from Part 2; the first, rule_source_disclosures, was added in Part 3 from source-verified filing evidence.</p>
+<table>
+<tr><td colspan="1" rowspan="1"><p>Rule</p>
+</td><td colspan="1" rowspan="1"><p>Artifact</p>
+</td><td colspan="1" rowspan="1"><p>Rows dropped</p>
+</td><td colspan="1" rowspan="1"><p>Example</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>rule_source_disclosures</p>
+</td><td colspan="1" rowspan="1"><p>Source-verified cash disclosures and repeated investment facts (Part 3, curated evidence)</p>
+</td><td colspan="1" rowspan="1"><p>4</p>
+</td><td colspan="1" rowspan="1"><p>0001193125-26-222738, 2026_05 SOI row 50464</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>rule_totals</p>
+</td><td colspan="1" rowspan="1"><p>Total and subtotal lines</p>
+</td><td colspan="1" rowspan="1"><p>29</p>
+</td><td colspan="1" rowspan="1"><p>TriplePoint Venture Growth −2.85% → 0.00%</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>rule_cash</p>
+</td><td colspan="1" rowspan="1"><p>Cash lines, except money-market lines the filer labels as short-term investments</p>
+</td><td colspan="1" rowspan="1"><p>36</p>
+</td><td colspan="1" rowspan="1"><p>Palmer Square −2.02% → 0.000%; Great Elm −3.47% → 0.000%</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>rule_commitment_rows</p>
+</td><td colspan="1" rowspan="1"><p>Rows from the unfunded-commitments table</p>
+</td><td colspan="1" rowspan="1"><p>2,357 (11 filings)</p>
+</td><td colspan="1" rowspan="1"><p>T Series, 2026_05 SOI row 97935; North Haven A −0.20% → 0.000%</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>rule_jv_portfolio</p>
+</td><td colspan="1" rowspan="1"><p>Loans of unconsolidated joint ventures (Nonconsolidated Subsidiary Axis)</p>
+</td><td colspan="1" rowspan="1"><p>1,014</p>
+</td><td colspan="1" rowspan="1"><p>Bain Capital Specialty Finance +93.5% → 0.000%</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>rule_issuer_subtotals</p>
+</td><td colspan="1" rowspan="1"><p>Company lines equal to the sum of their own instruments</p>
+</td><td colspan="1" rowspan="1"><p>133</p>
+</td><td colspan="1" rowspan="1"><p>Ares Capital: Ivy Hill $2,661.2M = $1,899.0M + $762.2M; +16.59% → +0.11%</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>rule_rollforward_copies</p>
+</td><td colspan="1" rowspan="1"><p>Affiliate roll-forward repeats of schedule holdings</p>
+</td><td colspan="1" rowspan="1"><p>319 (20 filings)</p>
+</td><td colspan="1" rowspan="1"><p>FS KKR, Wittur: schedule row 171216 vs copy row 171222; Main Street +12.82% → −0.04%</p>
+</td></tr>
+</table>
+<h2 is-upgraded>Step 2.3: Coverage as each rule is added</h2>
+<table>
+<tr><td colspan="1" rowspan="1"><p>Rules applied</p>
+</td><td colspan="1" rowspan="1"><p>Admitted (of 177)</p>
+</td><td colspan="1" rowspan="1"><p>Share of filed dollars</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>rule_totals</p>
+</td><td colspan="1" rowspan="1"><p>74</p>
+</td><td colspan="1" rowspan="1"><p>23.6%</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>+ rule_cash</p>
+</td><td colspan="1" rowspan="1"><p>75</p>
+</td><td colspan="1" rowspan="1"><p>26.1%</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>+ rule_commitment_rows</p>
+</td><td colspan="1" rowspan="1"><p>75</p>
+</td><td colspan="1" rowspan="1"><p>26.1%</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>+ rule_jv_portfolio</p>
+</td><td colspan="1" rowspan="1"><p>80</p>
+</td><td colspan="1" rowspan="1"><p>28.2%</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>+ rule_issuer_subtotals</p>
+</td><td colspan="1" rowspan="1"><p>85</p>
+</td><td colspan="1" rowspan="1"><p>40.2%</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>+ rule_rollforward_copies</p>
+</td><td colspan="1" rowspan="1"><p>90</p>
+</td><td colspan="1" rowspan="1"><p>43.5%</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>+ rule_source_disclosures and verified-holdings recovery (Part 3)</p>
+</td><td colspan="1" rowspan="1"><p>101</p>
+</td><td colspan="1" rowspan="1"><p>44.4%</p>
+</td></tr>
+</table>
+<p>The starter kit (<code>rule_totals</code> and <code>rule_cash</code> only) admitted 73 filings and 25.8% of dollars. The final pipeline, with all seven rules, admits 101 of 177 filings (57.1%) and 44.4% of dollars.</p>
+<h2 is-upgraded>Step 2.4: Verify every example against the raw files</h2>
+<p><code>PYTHONPATH=src python tools/verify_examples.py</code></p>
+<p>This opens each example row in that month&#39;s raw <code>soi.tsv</code> and confirms that the identifier and value match (<code>reports/cleaning_log_check.md</code>). A row is cited as <code>release</code> + <code>soi_row</code>, which is 0-based; the file line is row + 2.</p>
+<h2 is-upgraded>Step 2.5: Investigated, no rule</h2>
+<p>All nine artifacts were investigated. Five did not become rules, because the evidence did not support one:</p>
+<ul>
+<li>Negative values: dropping all negatives harmed 4 filings, because many are schedule lines the filer nets into its total. Only commitment-table rows are dropped, identified by their wording, not their sign.</li>
+<li>Comparative-period rows: 49.6% of rows. These are already handled by <code>split_periods</code> in Part 1.</li>
+<li>Equity and warrants: 7,858 holdings are flagged <code>is_debt = False</code> but kept, because they are real holdings.</li>
+<li>Holdings without an identifier: 17,278 rows are category totals and are correctly excluded. Five filings (Partners Group, SuRo, Horizon, Firsthand, Equus) have no identified holdings and went to triage.</li>
+<li>Principal currency (from Guna&#39;s spot check): principal is in the loan&#39;s own currency (GBP, EUR) and the data has no currency column. This is recorded as a known limitation. It does not affect coverage, because reconciliation uses fair value only.</li>
+</ul>
+<p><strong>What broke and how we fixed it</strong></p>
+<p>The starter total rule dropped real borrowers: Total Expert Inc., Total Access Elevator LLC, Total Power Limited and Total Safety Holdings LLC were dropped as &#34;totals&#34;. Rows with a company suffix or a maturity date are now kept (42 → 29 rows). This also showed that TriplePoint Private Venture Credit&#39;s earlier admission came from wrongly dropping a real $7.5M loan.</p>
+<p>The first subtotal rule had 5 false positives, caused by sibling tranches and a loose tolerance. It now uses a tolerance of 0.2% or $1 and excludes tranche names.</p>
+<p>Review, round 1 (Lokesh, two findings): in the subtotal rule, ABC was treated as the parent of ABCD LLC; the rule now requires a word boundary after the parent name. In the roll-forward rule, a preferred-equity holding was deleted as a &#34;copy&#34; of a loan with the same value, and a JV loan already dropped by another rule could still act as a counterpart. Now debt never matches equity, each original vouches for only one copy, and each rule sees only surviving rows. Five regression tests fail on the pre-review code (23 of 28 tests pass there) and pass now.</p>
+<p>Review, round 2: a revolver was still deleted as a copy of a term loan with the same value. A copy must now carry the roll-forward&#39;s own evidence: an opening balance with no cost or principal on the same identifier. 318 of the 324 real copies have it. Debt forms must also agree, so a revolver never matches a term loan.</p>
+<p>Guna&#39;s spot check found a sampled &#34;holding&#34; that was a commitment-table row. That finding became <code>rule_commitment_rows</code>.</p>
+<p>Evidence: <code>src/lookthrough/clean.py</code>, <code>docs/cleaning_log.md</code>, <code>reports/cleaning_log.csv</code>, <code>reports/rule_impact.csv</code>, <code>reports/cleaning_log_check.md</code>, <code>tests/test_lookthrough.py</code>, PR #3 and PR #41 review threads, <code>docs/ai_engineering_log_dhruvi.md</code>.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Part 3: Reconciliation, coverage and triage" duration="0">
+        <p>Goal: Compare each filing&#39;s cleaned investments with its independent reported total, publish passing holdings, and explain exclusions with source evidence. Owner: Sai Lokesh Reddy Nandavarapu.</p>
+<table>
+<tr><td colspan="1" rowspan="1"><p>Step</p>
+</td><td colspan="1" rowspan="1"><p>Input</p>
+</td><td colspan="1" rowspan="1"><p>Output</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Reconcile</p>
+</td><td colspan="1" rowspan="1"><p>Cleaned holdings + reported totals</p>
+</td><td colspan="1" rowspan="1"><p>Comparison results and diagnostics</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Generate reports</p>
+</td><td colspan="1" rowspan="1"><p>Holdings + comparison results</p>
+</td><td colspan="1" rowspan="1"><p>Admitted holdings panel and coverage reports</p>
+</td></tr>
+<tr><td colspan="1" rowspan="1"><p>Triage</p>
+</td><td colspan="1" rowspan="1"><p>Excluded filings + source evidence</p>
+</td><td colspan="1" rowspan="1"><p>Saved explanations and review status</p>
+</td></tr>
+</table>
+<h2 is-upgraded>Step 3.1: Restore the configured inputs</h2>
+<p>Run from cs2b with the installed environment. The selected releases are 2026_04, 2026_05 and 2026_06. This configuration selects inputs explicitly; it does not monitor for new SEC releases.</p>
+<p><code>source .venv/bin/activate</code></p>
+<p><code>AWS_PROFILE=lantern dvc pull</code></p>
+<p><code>dvc repro</code></p>
+<p><code>dvc metrics show</code></p>
+<p>The acquire stage verifies ZIP sizes and SHA-256 hashes in <code>data/manifest.json</code>. DVC also restores the four original HTML snapshots used by source evidence. Profile lantern must refer to an authorized AWS identity. The bucket stays private; the TA accepted demonstrating reproduction from the team&#39;s configured environment.</p>
+<h2 is-upgraded>Step 3.2: Compare the correct values</h2>
+<p>Inputs: <code>outputs/work/kept.parquet</code> from cleaning, plus <code>num.parquet</code>, <code>sub.parquet</code> and <code>canon.parquet</code> from parsing. <code>reconcile.py</code> sums current-period holding fair values and compares them with the unique, finite, undimensioned USD <code>InvestmentOwnedAtFairValue</code> fact at the SUB period end. Missing or conflicting totals are not guessed or replaced with another tag.</p>
+<p>Absolute gap = |holdings sum − filed total| / |filed total|. The tolerance is 0.01. A $15m filed total permits 14.85m–15.15m; $15.5m fails. <code>rec.parquet</code> stores arithmetic and admission decisions; <code>diag.parquet</code> stores investigation clues.</p>
+<h2 is-upgraded>Step 3.3: Read the panel and coverage</h2>
+<p><code>report.py</code> reads retained holdings, reconciliation, diagnostics, cleaning log and SUB, together with <code>data/triage.csv</code>. It writes <code>outputs/panel/holdings.parquet</code> for admitted filings only, plus <code>reports/coverage.csv</code>, <code>coverage.json</code>, <code>coverage.md</code>, <code>triage.md</code> and <code>cleaning_log.csv</code>. Each panel row retains <code>release</code> and <code>source_rows</code>. Annotated rows also retain source fact IDs, document hashes, URLs and precision.</p>
+<p>Combined PR #42 snapshot (17ecff2, 2026-10-29, including PR #41): 101/177 attempted filings admitted (57.1%), 76 excluded, and $240,917,454,804 of $542,175,875,908 known filed dollars covered (44.4%). The panel has 34,670 holdings and 38,053 source-row references. Six additional SUB filings have no SOI rows; eight attempts lack a usable filed total. Unknown totals are not estimated as zero dollars.</p>
+<h2 is-upgraded>Step 3.4: Investigate exclusions and preserve evidence</h2>
+<p>Edit <code>data/triage.csv</code>, not generated <code>triage.md</code>. A note records accession, category, source evidence, a row example, fix or reason, review status and reviewed totals. Categories include <code>totals_counted</code>, <code>cash_lines</code> and <code>restated_copies</code>. Use <code>other</code> with an explicit unresolved cause when evidence is insufficient. A large gap alone does not prove duplication.</p>
+<p>Recovered example: AGL (0001193125-26-214378) summed to $1,278,898,000 against $1,249,444,000 reported. The original filing identifies $29,454,000 as cash outside the investment total. A source-verified rule removes that row and the sum matches exactly.</p>
+<p>Still excluded: Blackstone Private Credit Fund (0001803498-26-000031) sums to $88,167,227,000 against $80,469,381,000, a +9.566% gap. No supported correction is established. Missing-value contexts are clues, not proof of the cause. Keep the filing excluded. Its exclusion evidence is reviewed, while its underlying cause remains unresolved.</p>
+<p>The source-evidence extension carries curated roles, instrument links and XBRL precision through parsing. It verifies snapshot fingerprints, source contexts and values before guarded cleaning. It recovered AGL, TriplePoint Private Venture, Chicago Atlantic and Prospect Floating Rate, moving admissions from 97 to 101. Three match exactly; Chicago differs by $287. These are generic evidence checks, not issuer-specific branches or target-gap matching. Unannotated future filings remain unchanged.</p>
+<p>All 76 current exclusion decisions have reviewed dataset evidence and current totals: 8 no_filed_total, 3 no_identified_holdings, 1 unfunded_commitments and 64 other. The underlying causes of those 64 discrepancies remain unresolved. The notes support keeping them excluded without claiming a proven cleaning fix. The independent audit checked 30,910 retained SOI source-row references and raw NUM totals. Eleven recovered filings&#39; historical notes are preserved in data/triage_recovered.csv. See reports/triage_review_audit.csv. Changed totals require re-review.</p>
+<h2 is-upgraded>Step 3.5: Validate and share the artifacts</h2>
+<p><code>python tests/run_tests.py</code></p>
+<p><code>PYTHONPATH=src python -m lookthrough.check</code></p>
+<p><code>python tools/baseline.py</code></p>
+<p><code>python tools/rule_impact.py</code></p>
+<p>Current validation: 57/57 tests and 10/10 self-checks pass. The checker is unchanged. The separate exclusion audit checked all 30,910 retained source-row references for excluded filings. The earlier mutation experiment caught 25 rule breaks; it was not rerun for this reporting patch. These checks do not mean that every original filing was manually read or every underlying cause was resolved.</p>
+<p>After an intentional rule or evidence change, run <code>dvc repro</code>, refresh supplementary reports, review differences, then publish with <code>AWS_PROFILE=lantern dvc push</code> and commit the lockfile, code and small reports. PR #42&#39;s snapshots and rebuilt artifacts are already uploaded; DVC confirmed cache and remote in sync. Computation runs locally; S3 stores artifacts.</p>
+<p><strong>What broke and how we fixed it</strong></p>
+<p>The early baseline used starter rules. Integrating reviewed team rules established 90 admissions; source-supported summary and repeat fixes raised this to 94, 97 and then 101. We kept parsing, cleaning and orchestration separate, rejected ambiguous totals and preserved tranche/context guards. PR #41&#39;s commitment rule removes 2,357 candidate rows without changing the final 101 admissions.</p>
+<p>Four recoveries needed information absent from SOI labels. We added versioned classification and precision evidence instead of loosening matching. Prospect&#39;s repeat is a narrative valuation disclosure, not a roll-forward. Partial missing fair values do not automatically exclude a filing; all-missing values cannot pass. Passing tests never meant that every real-data investigation was complete.</p>
+<p><strong>Evidence and limitations</strong></p>
+<p>Current evidence review and readiness changes: PR #50. Source-backed recoveries were introduced in PR #42. Evidence: data/triage.csv, reports/triage_review_audit.csv, reports/coverage.json, reports/affiliation.md, reports/custom_tag_recovery.md and docs/ai_engineering_log_lokesh.md.Code, reports and documentation are merged into main (PR #50).</p>
+<p>The current spot check is 19/20 on the final seven-rule panel. The second-release report uses the earlier five-rule baseline. Economics separates measured laptop runtime from estimated AWS hosting cost. Principal currency and equity units remain limitations. Affiliation has one fully classified category match and 266 incomplete comparisons; custom-tag candidates produced no new admissions.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Part 4: Verify your dependency" duration="0">
+        <p>Goal: check single holdings in our panel against the human-readable schedule in each filing, because a filing that adds up to its total can still hide wrong lines.</p>
+<h2 is-upgraded>Step 4.1: Draw the sample</h2>
+<p><code>python scripts/spot_check_sample.py</code></p>
+<p>The script takes the 5 largest admitted filings by fair value and 5 more at random, then 2 holdings from each: the largest and one at random. That gives 20 holdings across 10 filings. The random part uses seed 7, so the same panel always gives the same 20 holdings and a grader can draw exactly our sample. It writes <code>reports/spot_check_sample.csv</code> with each filing&#39;s link, and it never overwrites <code>reports/spot_check.csv</code>, where our reviewed results live.</p>
+<h2 is-upgraded>Step 4.2: Check each holding by hand</h2>
+<p>For each holding we open the filing, search for the company, and find its line in the schedule dated 31 March 2026. Then we compare two numbers with the panel: fair value and principal. A few things decide which line is the right one. Each 10-Q repeats the December schedule, so we check the date in the table title. When the same loan appears twice, the interest rate in our identifier tells the March line from the December one. When a company has several loans, the loan type and the maturity tell them apart. And we always read the units in the title, because Ares Capital reports in millions, BlackRock and Onex in plain dollars, and most others in thousands.</p>
+<p>Each result goes into <code>reports/spot_check.csv</code>: the filing&#39;s values, yes or no, and a note.</p>
+<h2 is-upgraded>Step 4.3: Results</h2>
+<p>19 of 20 holdings match the filing on both fair value and principal.</p>
+<p>We checked twice. The first sample was drawn when 90 filings were admitted. After the commitment rule and the triage fixes, 101 filings were admitted and the sample changed, so we drew it again. 11 holdings were the same with the same values and we kept their reviews. The other 9 were new and we checked them by hand. The file reflects the panel we submit.</p>
+<h2 is-upgraded>Step 4.4: What the checks found</h2>
+<p>A promise counted as a holding. In the first sample, T Series BDC (2026_05 SOI row 97935) had a &#34;holding&#34; called Cerity Partners Revolver, Commitment Expiration Date 07/28/2031, with no fair value and no principal. In the filing that line is not in the schedule at all. It is in the unfunded commitments table: money promised but not lent yet. Across the panel 1,788 rows in 9 filings looked like this. Dhruvi turned this finding into <code>rule_commitment_rows</code>, which removes these rows (2,357 in 11 filings on the final data). In the second sample that line is gone, and T Series gives a real loan, Smarsh, which matches.</p>
+<p>Principal has no currency. Apollo&#39;s SPARKLE BIDCO loan (SOI row 77827) shows principal £87,479 thousand and fair value $114,051 thousand. Blackstone&#39;s Spectrum Safety loan (SOI row 158717) shows EUR 1,806 thousand against $2,087 thousand. The panel has the right numbers, but no currency column, so anyone reading it takes the principal as dollars. The price then comes out around 130 and 116 instead of about par.</p>
+<p>A unit count stored as principal (row 14). Great Elm Capital&#39;s CLO Formation JV, LLC is common equity, which owes nothing, so it should have no principal. But Great Elm uses one column called &#34;Par Amount / Quantity&#34;: for loans it is the amount owed, for equity it is the number of units. The filing shows 166 units, the fund tagged that number as principal, and the panel stored principal 166 (SOI rows 50077;50078). The fair value, 37,590 thousand, matches. Because principal is filled in, the panel marks this equity as debt, and its price is meaningless. It is not only Great Elm: 574 equity holdings in 43 filings carry a principal, some as unit counts, some as zero, some as share counts on preferred shares. We documented it and left the fair values untouched.</p>
+<p>Things that looked wrong but were right. For BlackRock&#39;s Bluefin loan and Onex&#39;s IMB Midco, the first search hit was the December line with a different rate and value; the March line matched our panel, which shows the current-period split works. Onex&#39;s IMB Midco revolver really has a negative fair value of (74,594) on a drawn amount of 255,109, exactly as the filing reports it, on the next page of the schedule. Its two term loans have low reported fair values relative to the raw principal fields. Those ratios must not be treated as reliable prices until currency and units are verified; the app withholds price-based watch lists.</p>
+<p><strong>What broke and how we fixed it</strong></p>
+<p>Search did not work in the SEC&#39;s inline viewer for large filings. Opening the plain document link instead made Ctrl+F work.</p>
+<p>The first search hit was often the wrong schedule. Every 10-Q carries last December&#39;s schedule too, so we learned to check the table title and use the rate in the identifier.</p>
+<p>Identifiers that end in a number did not always mean the position. &#34;Series A preferred units 3&#34; at Ares was the third of four lines, but &#34;Smarsh ... Two&#34; at T Series was the third of three. The values always pointed to exactly one line, so we matched on the values.</p>
+<p>Rerunning the sampler used to overwrite the reviewed file and wipe the hand checks. A reviewer caught it. The sampler now writes a separate file and refuses to touch a file with completed reviews unless told to.</p>
+<p>Evidence: <code>scripts/spot_check_sample.py</code>, <code>reports/spot_check_sample.csv</code>, <code>reports/spot_check.csv</code>, <code>reports/dependency_check.md</code>.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Part 5: Pipeline, tests and economics" duration="0">
+        <p>Goal: Rebuild the panel and every report with one command, and measure what it costs.</p>
+<h2 is-upgraded>Step 5.1: Run the pipeline</h2>
+<p><code>dvc pull</code></p>
+<p><code>dvc repro</code></p>
+<p><code>dvc metrics show</code></p>
+<p><code>dvc.yaml chains five core stages: acquire, parse, clean, reconcile and report. Each calls the existing functions in src/lookthrough/ using params.yaml. An additional affiliation stage writes category comparisons without changing admissions. Acquire verifies data/manifest.json; it never downloads or writes data/raw. The tolerance is a parameter and reports/coverage.json is a DVC metric.</code></p>
+<h2 is-upgraded>Step 5.2: Make DVC follow the configuration</h2>
+<p>Paths come from <code>params.yaml</code> through <code>${...}</code> templating, including <code>triage.input</code>, so DVC watches the same files the scripts read. The pipeline stops with a clear error if <code>data.use_fixture</code> is true, and needs an explicit <code>releases</code> list even for one release.</p>
+<h2 is-upgraded>Step 5.3: Check it gives the same answer</h2>
+<p>The staged pipeline reproduced the team&#39;s outputs exactly at the time it was built (five-rule baseline): identical reports, and the same panel row for row (34,755 holdings). A second <code>dvc repro</code> skips every stage, and on the same machine forced reruns leave <code>dvc.lock</code> unchanged. The final seven-rule panel has 34,670 holdings.</p>
+<h2 is-upgraded>Step 5.4: Tests that fail</h2>
+<p><code>python tests/run_tests.py</code></p>
+<p><code>python tools/break_rules.py</code></p>
+<p>Each rule has its own test. The current submission-readiness suite passes 57/57 tests and the unchanged self-check passes 10/10. A passing test only matters if it fails when the code is wrong. <code>tools/break_rules.py</code> breaks the rules 25 ways: it removes each rule, then removes each of its safeguards, such as the word boundary, the debt/equity check, the roll-forward evidence and the no-principal guard. It then runs the suite after each break.</p>
+<p>In the earlier mutation experiment, all 25 breaks were caught, clean.py was restored byte-identical and the then-current suite passed again. That experiment was not rerun for the latest reporting and affiliation patch. The breaks marked as review findings reproduce exactly the bugs Lokesh found. Full results are in <code>reports/tests_that_fail.md</code>.</p>
+<h2 is-upgraded>Step 5.5: Unit economics</h2>
+<p>AWS estimate for 730 hours/month: m7i-flex.large in us-east-1 at $0.09576/hour ($69.90), 40 GiB gp3 ($3.20), one Elastic IP ($3.65) and 0.704 GiB of S3 objects (about $0.02): approximately $76.77/month always-on. Stopping EC2 while retaining the disk and IP costs about $6.87/month. Requests, transfer, taxes and credits are excluded. The earlier 9.7-second run was measured on an Apple M3 Pro (18 GB), not EC2, and excludes the new affiliation stage. Analyst time savings were not measured. Current coverage is 101/177 filings and 44.4% of known filed dollars; the spot check is 19/20. See reports/economics.md for assumptions and pricing sources.</p>
+<p><strong>What broke and how we fixed it</strong></p>
+<p>The download script could not be a stage: it rewrote <code>data/raw</code>, which DVC owns, and the manifest with today&#39;s date on every run. It moved unchanged to <code>tools/download_release.py</code>.</p>
+<p>Review found hardcoded paths: DVC watched <code>data/triage.csv</code> while the code read <code>triage.input</code>, so editing another triage file left the report stale. Templating the paths fixed it, tested with the reviewer&#39;s own reproduction.</p>
+<p>A stale lock file on main was refreshed with dvc repro and the current artifacts synced with dvc push. Submission safeguards now isolate notebook outputs in scratch locations, include python-multipart for fresh app installations, and use the shared deterministic sampler. These protections help prevent exploratory runs from overwriting submission evidence.</p>
+<p>The DVC bucket is private, so a fresh clone needs an authorized AWS profile: <code>dvc remote modify --local storage profile <name></code>, then <code>dvc pull</code>. The TA accepted demonstrating reproduction from the team&#39;s configured environment.</p>
+<p>Evidence: <code>dvc.yaml</code>, <code>dvc.lock</code>, <code>scripts/</code>, <code>reports/economics.md</code>, <code>reports/manifest_check.json</code>, <code>reports/tests_that_fail.md</code>, <code>docs/ai_engineering_log_shravya.md</code>.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="The app: frontend, backend and deployment" duration="0">
+        <p>Goal: let anyone use the panel and see how it is built, without running commands.</p>
+<p><img alt="App architecture: Streamlit and FastAPI on EC2" src="img/fe8e891f1e389d83.png"><em>App architecture: Streamlit and FastAPI on EC2, using the same pipeline code and DVC data</em></p>
+<p>The backend is FastAPI (<code>app/api.py</code>, <code>app/engine.py</code>). It runs our own pipeline functions from <code>src/lookthrough</code> in memory, with the settings the user picks: which months, which cleaning rules and which tolerance. Reading the files is slow, so it happens once and stays in memory, and every later run takes seconds. A run never writes to <code>outputs/</code> or <code>reports/</code>, so the DVC outputs stay exactly as the pipeline made them. All endpoints are documented in Swagger at <code>/docs</code>.</p>
+<p>The frontend is Streamlit (<code>app/ui.py</code>) and has two modes. &#34;How it&#39;s built&#34; walks through the pipeline one step at a time, with the six steps shown as boxes at the top that fill in as you go: source with the fingerprint check, read, clean with a switch for each rule, compare with a tolerance slider and a chart of every filing&#39;s gap, the final list, and the hand checks with our values and the filing&#39;s values side by side. &#34;Explore the loans&#34; is for daily use: an overview, a search that finds one company across every fund and shows how each fund values it, the fund reports split into the ones that add up and the ones that do not with their triage reason. Price-based watch lists and aggregated principal are withheld because principal currency and equity units are not verified.</p>
+<p>Users can also add months by uploading ZIPs or downloading from the SEC. Added files are checked, fingerprinted and saved only in <code>data/uploads</code> on that machine.</p>
+<p><code>uvicorn app.api:app --port 8000</code></p>
+<p><code>streamlit run app/ui.py</code></p>
+<p>Deployed on EC2: <a href="http://100.49.157.253/" target="_blank">http://100.49.157.253/</a></p>
+<p>Swagger API docs: <a href="http://100.49.157.253/docs" target="_blank">http://100.49.157.253/docs</a></p>
+<p>Evidence: <code>app/api.py</code>, <code>app/engine.py</code>, <code>app/ui.py</code>, <code>app/README.md</code>.</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="Stretch goals" duration="0">
+        <h2 is-upgraded>Second release</h2>
+<p><code>python tools/download_release.py</code> then <code>dvc repro</code>, after setting <code>release</code> and <code>releases</code> to 2026_08 in <code>params.yaml</code></p>
+<p>We ran the pipeline unchanged on 2026_08, using the five-rule baseline. Coverage was 89 of 169 filings (52.7%) and 40.5% of dollars, against 50.8% and 43.5% for 2026q2 under the same rules, so the cleaning rules generalise to a quarter they were not built on. Half of the switches between releases are near-misses at the 1% tolerance. (The final seven-rule 2026q2 result is 57.1% and 44.4%; 2026_08 was not rerun with the final rules.) See <code>reports/second_release.md</code>.</p>
+<h2 is-upgraded>Custom-tag recovery</h2>
+<p>Goal: recover fair values that filers report under custom or alternative tags, where the standard fair-value column is empty.</p>
+<p>The reproducible audit screened 3,488 current-period custom NUM facts across 39 filings. It filled 34 exact candidate matches in a copy of the inputs and reran all seven cleaning rules. Neither TCW filing was re-admitted: the gaps worsened from +16.718% to +112.455% and from +16.616% to +54.147%. Production holdings remain unchanged. The source investigation identifies the matched facts as affiliate roll-forward balances. No verified custom-tag recovery or completed recovery bonus is claimed. See reports/custom_tag_recovery.md and tools/audit_custom_fv.py.</p>
+<p>One named exception: Lord Abbett Private Credit Fund S (−5.66%) is short by exactly its JV investment ($21.608M, 2026_05 SOI row 17151), which it reports under the generic Investments tag. A fallback to that tag also picks up a category subtotal (+2.01%), so this filing went to triage instead of getting a rule.</p>
+<p>Evidence: <code>docs/cleaning_log.md</code> (section &#34;custom/alternative-tag fair values&#34;).</p>
+<h2 is-upgraded>Affiliation reconciliation</h2>
+<p>An additional DVC stage compares explicit standard SOI affiliation labels with unique current USD NUM category totals. One fully classified category matches exactly ($387,669,000); 266 comparisons remain incomplete because classification or values are missing. Unknown, custom or conflicting membership cannot pass. Overall filing admissions are unchanged. Evidence: reports/affiliation.csv and reports/<a href="http://affiliation.md" target="_blank">affiliation.md</a>.</p>
+<h2 is-upgraded>Issue draft</h2>
+<p>reports/issue_draft.md documents five issues: principal currency and equity units (Guna, PR #49), and roll-forward rows, commitment rows and generic-tag fair values (Dhruvi). No external issue has been posted.</p>
+
+
+      </google-codelab-step>
+    
+  </google-codelab>
+
+  <script src="https://storage.googleapis.com/claat-public/native-shim.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/custom-elements.min.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/prettify.js"></script>
+  <script src="https://storage.googleapis.com/claat-public/codelab-elements.js"></script>
+  <script src="//support.google.com/inapp/api.js"></script>
+
+</body>
+</html>
