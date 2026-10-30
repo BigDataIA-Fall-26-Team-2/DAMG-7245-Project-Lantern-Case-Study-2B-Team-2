@@ -2,7 +2,7 @@
 
 DAMG 7245, Fall 2026. A reproducible pipeline that turns the SEC's BDC data sets for 2026q2 into one reconciled holdings panel: every holding of every admitted filing, traceable to its filing and SOI rows, reconciled to the BDC's own reported total within 1%, and honest about what it covers.
 
-- **Demo video (maximum 5 minutes):** ADD LINK BEFORE TAGGING
+- **Demo video (maximum 5 minutes):** https://northeastern-my.sharepoint.com/personal/nandavarapu_s_northeastern_edu/_layouts/15/stream.aspx?id=%2Fpersonal%2Fnandavarapu%5Fs%5Fnortheastern%5Fedu%2FDocuments%2FBigdata%5Fteam2%5Ffall26%2FDAMG7245%5FTeam2%5Fcs2b%2Emp4&nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&ga=1&referrer=StreamWebApp%2EWeb&referrerScenario=AddressBarCopied%2Eview%2E799d18ef%2Dea04%2D40a2%2D8c77%2D802505b5b9b1
 - **Live application:** http://100.49.157.253/
 - **Swagger API documentation:** http://100.49.157.253/docs
 - **Codelab:** https://docs.google.com/document/d/1GLzlaeA_w7YedAElnZQFLLQcgpPO9HXLntwK72rK4Ck/edit
