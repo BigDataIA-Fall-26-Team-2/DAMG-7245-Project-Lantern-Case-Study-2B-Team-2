@@ -4,6 +4,7 @@ Each example in `reports/cleaning_log.csv` was opened in the raw `soi.tsv` of it
 
 | Rule | Example | What the row shows | Right filing |
 |---|---|---|---|
+| `rule_source_disclosures` | 0001193125-26-222738 / 2026_05 soi_row 50464 (file line 50466) | identifier "CO Acquisition Vehicle LLC"; fair value 17,370,481; ddate 2026-03-31 | yes |
 | `rule_totals` | 0002037804-26-000010 / 2026_05 soi_row 33021 (file line 33023) | identifier "Total of Five Largest Portfolio Company Investments"; JV "NEWCRED Senior Loan Program I, LLC [Member]"; ddate 2026-03-31 | yes |
 | `rule_cash` | 0001476765-26-000033 / 2026_05 soi_row 37364 (file line 37366) | identifier "Allspring Government Money Market Fund Select Share Class"; ddate 2026-03-31 | yes |
 | `rule_commitment_rows` | 0001193125-26-222241 / 2026_05 soi_row 87437 (file line 87439) | identifier "Investments - non-controlled /non-affiliated First Lien Debt 7Ridge Investments Commitment Type Delayed Draw Commitment Expiration Date 7/7/2026"; ddate 2026-03-31 | yes |

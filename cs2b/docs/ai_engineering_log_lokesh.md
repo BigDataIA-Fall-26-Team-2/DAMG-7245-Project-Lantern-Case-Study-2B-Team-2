@@ -117,3 +117,81 @@ reviews; new draws go to a separate file and are not represented as reviewed.
 Added a regression check for shuffled input and equal fair values to the existing
 test file. This branch passes 50/50 tests. Part 3's 49-test results above describe
 the earlier PR #42 snapshot, not this follow-up.
+
+
+## Submission-readiness audit — 2026-10-30
+
+User authorized priority fixes before freeze. Independently checked raw NUM filters
+for eight `no_filed_total` cases and current canonical identifier counts for three
+`no_identified_holdings` cases. These 11 notes now describe the narrow verified
+exclusion mechanism, carry current reviewed totals, and are marked reviewed.
+This was an AI-assisted dataset/code audit, not a claim that a teammate manually
+reviewed all original filings. In particular, an absent qualifying NUM fact does
+not mean the human-readable filing has no total. The other 65 notes remain draft.
+Archived 11 historical notes for filings now admitted rather than deleting evidence.
+
+Protected writing notebooks with a scratch-workspace guard and made the runner
+copy the project before execution. Scratch configuration intentionally uses the
+single teaching release; submission configuration remains multi-release. Shared
+one provenance-based sampler between app and CLI, including zero-count behavior;
+preserved frozen hand-check CSVs. Added `python-multipart` to requirements and
+removed duplicate requests entry. Report wording now says complete only when
+all current evidence is reviewed; real results correctly retain the warning.
+Added a clear expired-run message instead of redesigning shared app state.
+
+AWS inventory was read using `lantern`: m7i-flex.large, 40 GiB gp3, one Elastic IP,
+and 71 current objects / 755,618,206 bytes in cs2b. The public AWS catalog confirmed
+$0.09576/hour. Economics now budgets about $76.77/month always-on and explicitly
+labels runtime/human-effort scenarios as assumptions. IAM denied authenticated
+pricing and CloudWatch queries; no permissions were changed and no utilization
+measurement is invented. Broader app authentication, durable multi-user storage,
+and remaining triage investigation are outside this priority patch.
+
+Validation: 55 focused tests; app startup/OpenAPI/upload registration; app/CLI
+sample equality on the real panel; direct notebook write guards; isolated notebook
+execution; seven cleaning examples traced. DVC outputs and lockfile regenerated.
+The structural check is 9/10, with exactly 65 incomplete notes. No claim of 10/10
+or final triage completion is made. Final tag must be `cs2b-submission` after merge;
+the older `Submission` tag and deployed code have not been changed by this audit.
+
+
+## Completed exclusion-decision review and stretch audit — 2026-10-30
+
+After the user authorized completing the reviews and pushing a PR, integrated
+main through 884a333 (including Guna's issue draft and Dhruvi's cleaning note).
+Preserved the resource-based economics and included Shravya's reported 9.7-second
+laptop timing with attribution; it is not a measured EC2 timing.
+
+Independently audited all 76 current exclusions against raw tables: checked
+30,910 retained SOI references, matching filing/date, unchanged retained amounts,
+missing mapped values, sums and raw current undimensioned USD NUM references.
+FS KKR's three negative type-level adjustments exactly offset its gap. Reviewed
+all exclusion decisions and bound notes to current totals. For 64 `other` cases,
+the notes explicitly say the underlying cause remains unresolved: source amount
+traceability and exclusion correctness are established, not completeness of the
+source schedule or freedom from repeated disclosures. No claim of 64 recovered
+filings or manual review of every human-readable original is made. The user will
+review these explanations in the PR. The checker was not weakened.
+
+Added optional affiliation reconciliation using explicit standard SOI enumeration
+members and current NUM category totals. Unknown/custom/conflicting membership,
+missing values and conflicting totals cannot pass. The feature leaves the primary
+panel unchanged. Added focused regression tests for these guards.
+
+Custom-tag screen found 34 exact missing-value candidates in two TCW filings.
+A counterfactual rerun through all seven rules recovered zero filings and worsened
+both gaps. Existing source investigation identifies roll-forward balances. Kept
+these out of production and documented candidate rows and before/after gaps;
+custom-tag stretch completion is not claimed. This limitation is evidence-based,
+not bypassed for bonus credit. No external issue, tag change, or EC2 deployment
+was performed.
+
+Final validation for this follow-up: 57/57 tests and 10/10 self-checks pass;
+`dvc repro`, `dvc push`, and `dvc status` complete with the cache/remote and
+pipeline up to date. Latest main reserialized all eight work Parquet tables;
+comparison with its S3 objects confirms identical values, dtypes, and indexes.
+The audited local serialization remains recorded in this branch's lockfile.
+Affiliation output: 267 reported categories across 134 filings, one fully
+classified category matches, 266 remain explicitly incomplete. The additional
+stage is outside the teammate's earlier 9.7-second timing. No fresh-clone or EC2
+validation is claimed; the user will perform those after merging.

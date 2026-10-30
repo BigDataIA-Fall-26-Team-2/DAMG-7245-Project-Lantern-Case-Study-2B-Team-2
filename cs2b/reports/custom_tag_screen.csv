@@ -1,0 +1,13 @@
+tag,facts,filings,decision
+CashEquivalentsAtFairValue,1,1,commitment/support or cash/money-market concept; not holding FV
+CashEquivalentsFairValueDisclosure,4,2,commitment/support or cash/money-market concept; not holding FV
+InvestmentCompanyFinancialCommitmentToInvesteeFairValue,1188,5,commitment/support or cash/money-market concept; not holding FV
+InvestmentCompanyFinancialCommitmentToInvesteeFutureAmountFairValue,1580,8,commitment/support or cash/money-market concept; not holding FV
+InvestmentCompanyFinancialSupportToInvesteeContractuallyRequiredNotProvidedAmountFairValue,53,1,commitment/support or cash/money-market concept; not holding FV
+InvestmentCompanyFinancialSupportToInvesteeFairValueAmount,63,1,commitment/support or cash/money-market concept; not holding FV
+InvestmentOwnedFairValueBalance,9,1,inspect scope; not approved for recovery
+InvestmentOwnedFairValueEndingBalance,34,2,inspect scope; not approved for recovery
+InvestmentOwnedFairValueNetOfUnamortizedFees,517,2,inspect scope; not approved for recovery
+MoneyMarketFundsAtFairValue,3,3,commitment/support or cash/money-market concept; not holding FV
+MoneyMarketFundsFairValueDisclosure,25,13,commitment/support or cash/money-market concept; not holding FV
+UnfundedCommitmentFairValue,11,1,commitment/support or cash/money-market concept; not holding FV

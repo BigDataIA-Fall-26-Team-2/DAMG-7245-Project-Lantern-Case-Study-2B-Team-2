@@ -318,6 +318,8 @@ def test_reports_preserve_triage_and_flag_changed_totals():
             assert source.read_bytes() == original
         metrics = json.loads((root / "reports/coverage.json").read_text())
         assert metrics["triage_complete"] and metrics["triage_incomplete_filings"] == 0
+        assert "preliminary" not in (root / "reports/coverage.md").read_text()
+        assert "Triage review complete" in (root / "reports/coverage.md").read_text()
         cov = pd.read_csv(root / "reports/coverage.csv", keep_default_na=False)
         assert list(cov.columns) == report.COVERAGE_COLS
         assert cov.loc[cov.admitted, "triage_category"].eq("").all()
@@ -336,6 +338,7 @@ def test_reports_preserve_triage_and_flag_changed_totals():
         report.write_outputs(b["kept"], changed, b["diag"], b["log"], root, p, sub=b["sub"])
         metrics = json.loads((root / "reports/coverage.json").read_text())
         assert metrics["triage_incomplete_adsh"] == [target]
+        assert "Outputs are preliminary" in (root / "reports/coverage.md").read_text()
         assert "totals changed; re-review required" in (root / "reports/triage.md").read_text()
         assert source.read_bytes() == original
 
@@ -954,3 +957,78 @@ def test_spot_sample_is_independent_of_input_order_and_fair_value_ties():
     assert len(first) == 20 and first.adsh.nunique() == 10
     assert first.groupby('adsh').size().eq(2).all()
     assert sample(panel.iloc[:0]).empty
+
+
+def test_shared_sampling_zero_counts_and_configured_counts():
+    from lookthrough.sampling import select_sample
+    panel = pd.DataFrame([dict(adsh=f'A{i}', release='fixture', identifier=f'loan{j}',
+                               source_rows=str(j), fair_value=float(j))
+                          for i in range(4) for j in range(5)])
+    assert select_sample(panel, n_largest=0, n_random=0).empty
+    assert select_sample(panel, per_filing=0).empty
+    result = select_sample(panel, n_largest=1, n_random=2, per_filing=3)
+    assert len(result) == 9 and result.adsh.nunique() == 3
+    from unittest.mock import patch
+    sys.path.insert(0, str(ROOT))
+    from app import engine
+    app_panel = panel.assign(name="fixture", is_debt=True, principal=1., filing_url="fixture")
+    rec = pd.DataFrame({"adsh": panel.adsh.unique(), "admitted": True})
+    with patch.object(engine, '_get', return_value={"kept": app_panel, "rec": rec}):
+        assert engine.sample('fixture', 0, 0) == []
+        assert engine.sample('fixture') == engine.records(select_sample(app_panel)[engine.SAMPLE_COLS])
+    pd.testing.assert_frame_equal(result, select_sample(panel.iloc[::-1], n_largest=1,
+                                                       n_random=2, per_filing=3))
+
+
+def test_notebook_scratch_cannot_overwrite_original_evidence():
+    import runpy
+    scratch_copy = runpy.run_path(str(ROOT / 'tools/run_notebooks.py'))['scratch_copy']
+    with tempfile.TemporaryDirectory() as tmp:
+        original = Path(tmp)
+        (original / 'reports').mkdir()
+        (original / 'params.yaml').write_text("release: 2026_05\nreleases: [2026_04, 2026_05]\n")
+        evidence = original / 'reports/spot_check.csv'
+        evidence.write_text('reviewed evidence')
+        scratch = scratch_copy(original)
+        try:
+            (scratch / 'reports/spot_check.csv').write_text('blank template')
+            assert evidence.read_text() == 'reviewed evidence'
+            assert (scratch / '.notebook-scratch').exists()
+        finally:
+            shutil.rmtree(scratch.parent)
+
+
+def test_affiliation_reconciliation_rejects_unknown_and_conflicting_evidence():
+    from lookthrough import affiliation
+    member = 'InvestmentUnaffiliatedIssuerMember'
+    kept = pd.DataFrame([dict(adsh='A', affiliation_member=member, fair_value=100., source_rows='1')])
+    sub = pd.DataFrame([dict(adsh='A', period='2026-03-31')])
+    fact = dict(adsh='A', tag=reconcile.FV_TAG, qtrs='0', uom='USD', dimn='1',
+                ddate='2026-03-31', value=100.,
+                segments=f'InvestmentIssuerAffiliationAxis(us-gaap/2025)={member}(us-gaap/2025)')
+    num = pd.DataFrame([fact, fact, {**fact, 'ddate':'2025-12-31', 'value':999.},
+                        {**fact, 'uom':'EUR', 'value':999.}])
+    result = affiliation.reconcile_affiliations(kept, num, sub, .01)
+    assert result.status.tolist() == ['matched'] and result.num_fact_count.iloc[0] == 2
+    unknown = pd.concat([kept, pd.DataFrame([dict(adsh='A', affiliation_member=None,
+                                                   fair_value=20., source_rows='2')])])
+    assert affiliation.reconcile_affiliations(unknown,num,sub,.01).status.iloc[0] == 'incomplete_classification_or_values'
+    conflict = pd.concat([num,pd.DataFrame([{**fact,'value':101.}])])
+    assert affiliation.reconcile_affiliations(kept,conflict,sub,.01).status.iloc[0] == 'unusable_category_total'
+    kept['fair_value'] = 102.
+    assert affiliation.reconcile_affiliations(kept,num,sub,.01).status.iloc[0] == 'mismatch'
+
+
+def test_affiliation_source_requires_standard_unambiguous_labels():
+    from lookthrough import affiliation
+    member = 'InvestmentUnaffiliatedIssuerMember'
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        pd.DataFrame({'adsh':['A','A','A'], 'ddate':['20260331']*3, affiliation.ENUM:[
+            'http://fasb.org/us-gaap/2025#'+member,
+            'http://example.com/2025#'+member,
+            'http://fasb.org/us-gaap/2025#InvestmentAffiliatedIssuerControlledMember']}).to_csv(root/'soi.tsv',sep='\t',index=False)
+        kept = pd.DataFrame({'adsh':['A']*3,'release':['r']*3,'period':['2026-03-31']*3,'source_rows':['0','1','0;2']})
+        result = affiliation.source_members(kept,{'r':root})
+        assert result.iloc[0] == member
+        assert result.iloc[1:].isna().all()

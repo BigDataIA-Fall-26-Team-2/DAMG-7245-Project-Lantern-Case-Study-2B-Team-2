@@ -95,26 +95,26 @@ stages:
     outs:
     - path: outputs/work/canon.parquet
       hash: md5
-      md5: 66687ff9e3076d80e5691a7fbf9a67c9
+      md5: 88a46f4d8adcb31d124967e45381d047
       size: 5690456
     - path: outputs/work/holdings.parquet
       hash: md5
-      md5: 7c0337619623b5f6039f0f936bc0f77d
+      md5: 8d27b066b3caa5fdad8e801a0f82e05b
       size: 4813048
     - path: outputs/work/num.parquet
       hash: md5
-      md5: c23fe58d6445574a59ced71c61dd48ab
+      md5: 7dd3971384038727c475f127dbdae979
       size: 7731009
     - path: outputs/work/sub.parquet
       hash: md5
-      md5: ee036ea864e72e946d5755bafd17ea72
+      md5: b4654ef7e201358999965412fd73d01b
       size: 50600
   clean:
     cmd: python scripts/clean.py
     deps:
     - path: outputs/work/holdings.parquet
       hash: md5
-      md5: 7c0337619623b5f6039f0f936bc0f77d
+      md5: 8d27b066b3caa5fdad8e801a0f82e05b
       size: 4813048
     - path: scripts/clean.py
       hash: md5
@@ -141,30 +141,30 @@ stages:
     outs:
     - path: outputs/work/kept.parquet
       hash: md5
-      md5: 98f8672b967de542e0699f49984ecd23
+      md5: 71db9746fa1f5783b91a409bce010857
       size: 2756529
     - path: outputs/work/log.parquet
       hash: md5
-      md5: c1dc9331d67bf5eab7983656984ecdeb
+      md5: b67b37b57df38ab8697a8e3cf93d9900
       size: 3838
   reconcile:
     cmd: python scripts/reconcile.py
     deps:
     - path: outputs/work/canon.parquet
       hash: md5
-      md5: 66687ff9e3076d80e5691a7fbf9a67c9
+      md5: 88a46f4d8adcb31d124967e45381d047
       size: 5690456
     - path: outputs/work/kept.parquet
       hash: md5
-      md5: 98f8672b967de542e0699f49984ecd23
+      md5: 71db9746fa1f5783b91a409bce010857
       size: 2756529
     - path: outputs/work/num.parquet
       hash: md5
-      md5: c23fe58d6445574a59ced71c61dd48ab
+      md5: 7dd3971384038727c475f127dbdae979
       size: 7731009
     - path: outputs/work/sub.parquet
       hash: md5
-      md5: ee036ea864e72e946d5755bafd17ea72
+      md5: b4654ef7e201358999965412fd73d01b
       size: 50600
     - path: scripts/reconcile.py
       hash: md5
@@ -180,38 +180,38 @@ stages:
     outs:
     - path: outputs/work/diag.parquet
       hash: md5
-      md5: ebf1885a400a85bce68ea74a1553e289
+      md5: 5aadba8cf92b849b687a20c859495925
       size: 11170
     - path: outputs/work/rec.parquet
       hash: md5
-      md5: 84aed7a6d74c1491cccee53248c9f7ed
+      md5: 9d4d2c4b9c2569d8bced2963d7efb9a1
       size: 19710
   report:
     cmd: python scripts/report.py
     deps:
     - path: data/triage.csv
       hash: md5
-      md5: ffd2b0ee2e43cdc14a8f64a9b1b676fb
-      size: 80322
+      md5: ad2c8e792de38ba9e9158ed9deffa1d1
+      size: 104275
     - path: outputs/work/diag.parquet
       hash: md5
-      md5: ebf1885a400a85bce68ea74a1553e289
+      md5: 5aadba8cf92b849b687a20c859495925
       size: 11170
     - path: outputs/work/kept.parquet
       hash: md5
-      md5: 98f8672b967de542e0699f49984ecd23
+      md5: 71db9746fa1f5783b91a409bce010857
       size: 2756529
     - path: outputs/work/log.parquet
       hash: md5
-      md5: c1dc9331d67bf5eab7983656984ecdeb
+      md5: b67b37b57df38ab8697a8e3cf93d9900
       size: 3838
     - path: outputs/work/rec.parquet
       hash: md5
-      md5: 84aed7a6d74c1491cccee53248c9f7ed
+      md5: 9d4d2c4b9c2569d8bced2963d7efb9a1
       size: 19710
     - path: outputs/work/sub.parquet
       hash: md5
-      md5: ee036ea864e72e946d5755bafd17ea72
+      md5: b4654ef7e201358999965412fd73d01b
       size: 50600
     - path: scripts/report.py
       hash: md5
@@ -227,8 +227,8 @@ stages:
       size: 6869
     - path: src/lookthrough/report.py
       hash: md5
-      md5: 66b6bf040b3bae8456eb13be5c46c3bf
-      size: 10547
+      md5: 9406d07819295269617c7b4cde62c90a
+      size: 10762
     - path: src/lookthrough/tables.py
       hash: md5
       md5: 5b732399c36e58635fb42b454a6b1df9
@@ -243,7 +243,7 @@ stages:
     outs:
     - path: outputs/panel
       hash: md5
-      md5: 5f3ee848ec5e1e4667a21e1b7fcc4b4b.dir
+      md5: 40e0c248df17d8e0fa3a19c0a63319fe.dir
       size: 1542250
       nfiles: 1
     - path: reports/cleaning_log.csv
@@ -252,17 +252,78 @@ stages:
       size: 928
     - path: reports/coverage.csv
       hash: md5
-      md5: 239031c00f8ac65ff04de6d399609a71
-      size: 18213
+      md5: 46a03119c18ff867995e75a7ab19f4eb
+      size: 18047
     - path: reports/coverage.json
       hash: md5
-      md5: ce8cc25aabd2cebbd597825657a23652
-      size: 2906
+      md5: 4bf9a9f74b4b8c3a28cd07344422da47
+      size: 774
     - path: reports/coverage.md
       hash: md5
-      md5: 3bb017538bfb1a166f06f46edec0a3f7
-      size: 21384
+      md5: 037fe960d137038428062dff5997b79d
+      size: 21291
     - path: reports/triage.md
       hash: md5
-      md5: c13bfb733d7e8839e8ddbf2ae86f1692
-      size: 91863
+      md5: 20e7f576b19dc4d5bf89ff0d3cffe03f
+      size: 128574
+  affiliation:
+    cmd: python scripts/affiliation.py
+    deps:
+    - path: data/raw
+      hash: md5
+      md5: 8a010c33fa74fe29aee9f0737e7d8657.dir
+      size: 664301503
+      nfiles: 33
+    - path: outputs/work/kept.parquet
+      hash: md5
+      md5: 71db9746fa1f5783b91a409bce010857
+      size: 2756529
+    - path: outputs/work/num.parquet
+      hash: md5
+      md5: 7dd3971384038727c475f127dbdae979
+      size: 7731009
+    - path: outputs/work/sub.parquet
+      hash: md5
+      md5: b4654ef7e201358999965412fd73d01b
+      size: 50600
+    - path: scripts/affiliation.py
+      hash: md5
+      md5: c7001b95e8be46f3033e4d2c9f41c082
+      size: 2325
+    - path: src/lookthrough/affiliation.py
+      hash: md5
+      md5: 45eec1ffed82fcb13f3c28c4561e074d
+      size: 4564
+    - path: src/lookthrough/mapping.py
+      hash: md5
+      md5: f0abbef253b706e29550237a7e364491
+      size: 3559
+    - path: src/lookthrough/paths.py
+      hash: md5
+      md5: 5ac0c16a58b1417a70047a56728a5e32
+      size: 2509
+    - path: src/lookthrough/reconcile.py
+      hash: md5
+      md5: 0c799152bb4ff2d703c25e4abccbfc77
+      size: 6869
+    params:
+      params.yaml:
+        data:
+          use_fixture: false
+          raw_dir: data/raw
+          fixture_dir: data/fixture
+        outputs.reports: reports
+        reconcile.tolerance: 0.01
+        releases:
+        - '2026_04'
+        - '2026_05'
+        - '2026_06'
+    outs:
+    - path: reports/affiliation.csv
+      hash: md5
+      md5: 9fa74b07d110dade7949700695d94d36
+      size: 55510
+    - path: reports/affiliation.md
+      hash: md5
+      md5: da381237e19630cbbc87ac0e23ef8364
+      size: 1187

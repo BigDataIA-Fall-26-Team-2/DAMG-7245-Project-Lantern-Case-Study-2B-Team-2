@@ -40,11 +40,11 @@ Edit data/triage.csv, not generated triage.md. A note records accession, categor
 
 Recovered example: AGL (0001193125-26-214378) summed to $1,278,898,000 against $1,249,444,000 reported. The original filing identifies $29,454,000 as cash outside the investment total. A source-verified rule removes that row and the sum matches exactly.
 
-Still excluded: Blackstone Private Credit Fund (0001803498-26-000031) sums to $88,167,227,000 against $80,469,381,000, a +9.566% gap. No supported correction is established. Missing-value contexts are clues, not proof of the cause. Keep the filing excluded and the investigation draft.
+Still excluded: Blackstone Private Credit Fund (0001803498-26-000031) sums to $88,167,227,000 against $80,469,381,000, a +9.566% gap. No supported correction is established. Missing-value contexts are clues, not proof of the cause. Keep the filing excluded. Its exclusion evidence is reviewed, while its underlying cause remains unresolved.
 
 The source-evidence extension carries curated roles, instrument links and XBRL precision through parsing. It verifies snapshot fingerprints, source contexts and values before guarded cleaning. It recovered AGL, TriplePoint Private Venture, Chicago Atlantic and Prospect Floating Rate, moving admissions from 97 to 101. Three match exactly; Chicago differs by $287. These are generic evidence checks, not issuer-specific branches or target-gap matching. Unannotated future filings remain unchanged.
 
-All 76 current exclusion notes remain draft/incomplete. Complete review requires evidence, an explanation and current totals. A status label alone is insufficient. Historical notes for recovered filings remain saved; changed totals require re-review. Not every filing must pass, and unresolved drafts must not be marked reviewed simply to satisfy acceptance.
+All 76 current exclusion decisions have reviewed dataset evidence (2026-10-30 audit). The underlying causes of 64 discrepancies remain unresolved under `other`; review completion does not mean those causes are known or the filings recovered. Complete review requires evidence, an explanation and current totals. A status label alone is insufficient. Historical notes for recovered filings remain saved; changed totals require re-review. Not every filing must pass, and unresolved drafts must not be marked reviewed simply to satisfy acceptance.
 
 ## Step 3.5: Validate and share the artifacts
 
@@ -56,7 +56,7 @@ python tools/baseline.py
 
 python tools/rule_impact.py
 
-49/49 tests pass. All 25 deliberate rule breaks are caught; clean.py is restored byte-identical and the suite passes again. Structural checks pass 9/10; the remaining failure is incomplete triage for 76 exclusions. The provenance check sampled 25 rows. These checks do not replace reviewing the original filings.
+Current validation: 57/57 tests and 10/10 structural checks pass. The 2026-10-29 snapshot previously passed 49 tests and caught 25 deliberate rule breaks; that mutation experiment was not rerun for this documentation/reporting patch. The provenance self-check samples 25 rows; the separate exclusion audit checked all 30,910 retained references for exclusions. Neither claims that all original filings were manually read.
 
 After an intentional rule or evidence change, run dvc repro, refresh supplementary reports, review differences, then publish with AWS_PROFILE=lantern dvc push and commit the lockfile, code and small reports. PR #42’s snapshots and rebuilt artifacts are already uploaded; DVC confirmed cache and remote in sync. Computation runs locally; S3 stores artifacts.
 
@@ -75,3 +75,21 @@ The second-release and economics reports describe earlier experiments, not fresh
 Publication status: published to the shared codelab on 2026-10-29 through the authorized personal Gmail browser session. Verified replacement content, headings and preservation of neighboring sections. Google Docs showed Saved to Drive. Repository documentation changes are included in PR #43.
 
 PR #43 refresh: the 20-holding spot check now covers the 101-filing panel (19 matches; one equity quantity stored as principal). The frozen reviewed sample is preserved separately from future deterministic draws. Principal currency and equity quantity remain limitations.
+
+
+## Submission-readiness update — 2026-10-30
+
+The local section is updated; this paragraph has not yet been republished to the shared Google Doc.
+The panel remains 101 admitted / 177 attempted. All 76 exclusion decisions now
+have reviewed dataset evidence and current totals: 8 missing required totals,
+3 without recognized identifiers, 1 unfunded adjustment explanation, and 64
+verified but unresolved discrepancies (`other`). The audit independently checks
+raw NUM reference totals and 30,910 retained SOI references; it does not claim
+that every original filing has been manually read or every cause determined.
+See `reports/triage_review_audit.csv` and individual notes.
+
+Recovered filings' 11 historical notes remain in `data/triage_recovered.csv`.
+Teaching notebooks write only in the runner's scratch workspace. Regenerate
+submission evidence with `dvc repro`. The optional affiliation stage and custom-tag
+counterfactual audit are described in `reports/affiliation.md` and
+`reports/custom_tag_recovery.md`. No new custom-tag admissions were established.
